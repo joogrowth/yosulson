@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>요술손 배송비 계산기</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f7f6f2;color:#28251d;font-size:16px;line-height:1.6}
+header{background:#fff;border-bottom:1px solid #e0ddd8;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;color:#01696f}
+.logo-icon{width:32px;height:32px;background:#01696f;border-radius:8px;display:flex;align-items:center;justify-content:center}
+#theme-btn{background:none;border:1px solid #d4d1ca;border-radius:99px;padding:6px 14px;font-size:12px;color:#7a7974;cursor:pointer;font-family:inherit}
+main{max-width:640px;margin:0 auto;padding:28px 16px 80px}
+h1{font-size:26px;font-weight:700;margin-bottom:6px}
+.subtitle{font-size:14px;color:#7a7974;margin-bottom:24px}
+.type-tabs{display:flex;gap:8px;margin-bottom:20px}
+.type-tab{flex:1;padding:12px 8px;border:2px solid #d4d1ca;border-radius:12px;background:#fff;color:#7a7974;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;text-align:center}
+.type-tab.on{background:#01696f;color:#fff;border-color:#01696f}
+.card{background:#fff;border:1px solid #e0ddd8;border-radius:16px;padding:20px;margin-bottom:14px}
+.card-title{font-size:11px;font-weight:700;color:#7a7974;text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:480px){.fg{grid-template-columns:1fr}}
+.fi{display:flex;flex-direction:column;gap:5px}
+.fi.full{grid-column:1/-1}
+label{font-size:12px;font-weight:600;color:#7a7974}
+input[type=text],input[type=number],input[type=date],input[type=time]{background:#f9f8f5;border:1px solid #d4d1ca;border-radius:8px;padding:10px 12px;font-size:14px;color:#28251d;font-family:inherit;width:100%}
+input:focus{outline:2px solid #01696f;outline-offset:1px}
+input::placeholder{color:#bab9b4}
+input:disabled{opacity:.4;cursor:not-allowed}
+.sur-info{font-size:12px;color:#7a7974;background:#f3f0ec;border-radius:8px;padding:8px 12px;margin-bottom:12px}
+.sur-list{display:flex;flex-direction:column;gap:8px}
+.sur-item{display:grid;grid-template-columns:1fr 110px 36px;gap:8px;align-items:center}
+.del-btn{width:36px;height:36px;background:#fff;border:1px solid #d4d1ca;border-radius:8px;cursor:pointer;font-size:15px;color:#7a7974;font-family:inherit}
+.add-btn{margin-top:10px;background:#fff;border:1px dashed #aaa;border-radius:8px;padding:10px;font-size:14px;color:#7a7974;cursor:pointer;width:100%;font-family:inherit}
+.tgl-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;gap:12px}
+.tgl-row+.tgl-row{border-top:1px solid #e8e6e1}
+.tgl-left{flex:1}
+.tgl-name{font-size:14px;color:#28251d}
+.tgl-sub{font-size:12px;color:#7a7974;margin-top:2px}
+.tgl-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.tgl-amt{width:90px !important}
+.sw{position:relative;width:44px;height:24px;flex-shrink:0}
+.sw input{position:absolute;opacity:0;width:0;height:0}
+.sw-sl{position:absolute;inset:0;background:#d4d1ca;border-radius:99px;cursor:pointer;transition:background .2s}
+.sw-sl:before{content:"";position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:transform .2s}
+.sw input:checked+.sw-sl{background:#01696f}
+.sw input:checked+.sw-sl:before{transform:translateX(20px)}
+#btn-calc{width:100%;background:#01696f;color:#fff;border:none;border-radius:12px;padding:16px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px}
+#btn-calc:active{opacity:.85}
+.result{display:none;background:#fff;border:1px solid #e0ddd8;border-radius:16px;overflow:hidden;margin-top:20px}
+.result.show{display:block}
+.r-head{background:#01696f;color:#fff;padding:18px 20px}
+.r-head h2{font-size:18px;font-weight:700;margin-bottom:4px}
+.r-meta{font-size:12px;opacity:.88;line-height:1.8}
+.r-body{padding:20px}
+.r-info{font-size:14px;color:#7a7974;line-height:2;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #e8e6e1}
+.r-row{display:flex;justify-content:space-between;align-items:flex-start;padding:11px 0;border-bottom:1px solid #e8e6e1;gap:12px}
+.r-row:last-of-type{border-bottom:none}
+.r-lbl{font-size:14px;font-weight:600;color:#28251d}
+.r-sub{font-size:12px;color:#7a7974;margin-top:3px;line-height:1.5;max-width:34ch}
+.r-val{font-size:14px;font-weight:700;color:#28251d;white-space:nowrap}
+.total-box{background:#d4e8e6;border-radius:12px;padding:16px;margin-top:16px}
+.total-box-t{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#01696f;margin-bottom:12px}
+.total-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.total-row:last-child{margin-bottom:0}
+.total-wl{font-size:14px;color:#7a7974}
+.total-wv{font-size:16px;font-weight:700;color:#01696f}
+#copy-btn{margin-top:14px;width:100%;background:#f9f8f5;border:1px solid #d4d1ca;border-radius:8px;padding:12px;font-size:14px;color:#7a7974;cursor:pointer;font-family:inherit}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M4 7c0-.8.7-1.5 1.5-1.5h2C8.3 5.5 9 6.2 9 7v1.5H4V7z" fill="white"/>
+        <path d="M11 7c0-.8.7-1.5 1.5-1.5h2C15.3 5.5 16 6.2 16 7v1.5h-5V7z" fill="white" opacity=".75"/>
+        <rect x="3.5" y="9.5" width="13" height="1.2" rx=".6" fill="white" opacity=".6"/>
+        <path d="M6 11.5v5a.8.8 0 001.6 0v-5H6z" fill="white"/>
+        <path d="M9.2 11.5v5a.8.8 0 001.6 0v-5H9.2z" fill="white" opacity=".8"/>
+        <path d="M12.4 11.5v5a.8.8 0 001.6 0v-5h-1.6z" fill="white" opacity=".65"/>
+      </svg>
+    </div>
+    요술손케이터링
+  </div>
+  <button id="theme-btn">다크모드</button>
+</header>
+
+<main>
+  <h1>배송비 계산기</h1>
+  <p class="subtitle">기본 정보를 입력하면 배송 세팅 시트가 자동으로 완성됨</p>
+
+  <div class="type-tabs">
+    <button class="type-tab on" data-v="배송">배송</button>
+    <button class="type-tab" data-v="배송세팅">배송세팅</button>
+    <button class="type-tab" data-v="출장">출장</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">기본 정보</div>
+    <div class="fg">
+      <div class="fi"><label>날짜</label><input type="date" id="f-date"></div>
+      <div class="fi"><label>이름</label><input type="text" id="f-name" placeholder="예) 홍길동"></div>
+      <div class="fi"><label>소속 / 행사명</label><input type="text" id="f-org" placeholder="예) 국가보훈부"></div>
+      <div class="fi"><label>연락처</label><input type="text" id="f-phone" placeholder="예) 010 0000 0000"></div>
+      <div class="fi full"><label>장소</label><input type="text" id="f-addr" placeholder="예) 서울 종로구 삼봉로 95 대성스카이렉스 3층"></div>
+      <div class="fi full"><label>품목</label><input type="text" id="f-items" placeholder="예) 도시락 50개"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">시간 정보</div>
+    <div class="fg">
+      <div class="fi"><label>출발 시간</label><input type="time" id="f-dep" value="12:00"></div>
+      <div class="fi"><label>도착 시간</label><input type="time" id="f-arr" value="13:00"></div>
+      <div class="fi full"><label>행사 시간</label><input type="text" id="f-evt" placeholder="예) 13:00 또는 13:00~18:00"></div>
+      <div class="fi"><label>갈 때 (분)</label><input type="number" id="f-go" placeholder="예) 60" min="0"></div>
+      <div class="fi"><label>올 때 (분)</label><input type="number" id="f-bk" placeholder="예) 60" min="0"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">거리 및 비용</div>
+    <div class="fg">
+      <div class="fi"><label>편도 거리 (km)</label><input type="number" id="f-dist" placeholder="예) 21" min="0" step="0.1"></div>
+      <div class="fi"><label>편도 연료비 (원)</label><input type="number" id="f-fuel" placeholder="예) 4158" min="0"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">배송 수고비 구성</div>
+    <div class="sur-info" id="sur-info">거리 입력 시 기본 구간 수고비가 자동 계산됨</div>
+    <div class="sur-list" id="sur-list">
+      <div class="sur-item">
+        <input type="text" value="적재수고비" placeholder="항목명">
+        <input type="number" placeholder="금액(원)" min="0">
+        <button class="del-btn">✕</button>
+      </div>
+      <div class="sur-item">
+        <input type="text" value="외곽수고비" placeholder="항목명">
+        <input type="number" placeholder="금액(원)" min="0">
+        <button class="del-btn">✕</button>
+      </div>
+    </div>
+    <button class="add-btn" id="btn-add">+ 항목 추가</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">추가 비용 옵션</div>
+    <div class="tgl-row">
+      <div class="tgl-left">
+        <div class="tgl-name">통행료</div>
+        <div class="tgl-sub">편도 금액 입력 → 왕복 자동 계산</div>
+      </div>
+      <div class="tgl-right">
+        <label class="sw"><input type="checkbox" id="toll-on"><span class="sw-sl"></span></label>
+        <input type="number" id="toll-val" class="tgl-amt" placeholder="편도 원" min="0" disabled>
+      </div>
+    </div>
+    <div class="tgl-row">
+      <div class="tgl-left">
+        <div class="tgl-name">주차비</div>
+        <div class="tgl-sub">현장 실비</div>
+      </div>
+      <div class="tgl-right">
+        <label class="sw"><input type="checkbox" id="park-on"><span class="sw-sl"></span></label>
+        <input type="number" id="park-val" class="tgl-amt" placeholder="원" min="0" disabled>
+      </div>
+    </div>
+  </div>
+
+  <button id="btn-calc">계산하기</button>
+
+  <div class="result" id="result">
+    <div class="r-head">
+      <h2 id="r-title"></h2>
+      <div class="r-meta" id="r-meta"></div>
+    </div>
+    <div class="r-body">
+      <div class="r-info" id="r-info"></div>
+      <div id="r-rows"></div>
+      <div class="total-box">
+        <div class="total-box-t">합계</div>
+        <div id="r-totals"></div>
+      </div>
+      <button id="copy-btn">텍스트 복사</button>
+    </div>
+  </div>
+</main>
+
+<script>
+(function(){
+  var selectedType = '배송';
+  var copyLines = [];
+  var dark = false;
+
+  function q(id){ return document.getElementById(id); }
+  function val(id){ return (q(id).value||'').trim(); }
+  function num(id){ return parseFloat(q(id).value)||0; }
+  function chk(id){ return q(id).checked; }
+  function comma(n){ return n.toLocaleString('ko-KR'); }
+  function fmt(n){ return comma(n)+'원'; }
+  function up100(n){ return Math.ceil(n/100)*100; }
+
+  function band(km){
+    if(km<=40)return 8000; if(km<=60)return 9000; if(km<=80)return 10000;
+    if(km<=100)return 11000; if(km<=120)return 12000; if(km<=140)return 13000;
+    if(km<=160)return 14000; if(km<=180)return 15000; if(km<=200)return 16000;
+    return 17000;
+  }
+  function bandLbl(km){
+    if(km<=40)return '40km 이하'; if(km<=60)return '41~60km 구간';
+    if(km<=80)return '61~80km 구간'; if(km<=100)return '81~100km 구간';
+    if(km<=120)return '101~120km 구간'; if(km<=140)return '121~140km 구간';
+    if(km<=160)return '141~160km 구간'; if(km<=180)return '161~180km 구간';
+    if(km<=200)return '181~200km 구간'; return '201km↑';
+  }
+
+  // 탭
+  var tabs = document.querySelectorAll('.type-tab');
+  for(var i=0;i<tabs.length;i++){
+    tabs[i].addEventListener('click', function(){
+      for(var j=0;j<tabs.length;j++) tabs[j].className='type-tab';
+      this.className='type-tab on';
+      selectedType = this.getAttribute('data-v');
+    });
+  }
+
+  // 토글
+  q('toll-on').addEventListener('change', function(){
+    q('toll-val').disabled = !this.checked;
+    if(this.checked) q('toll-val').focus(); else q('toll-val').value='';
+  });
+  q('park-on').addEventListener('change', function(){
+    q('park-val').disabled = !this.checked;
+    if(this.checked) q('park-val').focus(); else q('park-val').value='';
+  });
+
+  // 거리 안내
+  q('f-dist').addEventListener('input', function(){
+    var km = (parseFloat(this.value)||0)*2;
+    q('sur-info').textContent = km>0
+      ? '기본 수고비: 왕복 '+km+'km ('+bandLbl(km)+') → '+comma(band(km))+'원 자동 포함'
+      : '거리 입력 시 기본 구간 수고비가 자동 계산됨';
+  });
+
+  // 항목 추가/삭제
+  function bindDel(btn){
+    btn.addEventListener('click', function(){
+      var item = this.parentNode;
+      item.parentNode.removeChild(item);
+    });
+  }
+  var delBtns = document.querySelectorAll('.del-btn');
+  for(var d=0;d<delBtns.length;d++) bindDel(delBtns[d]);
+
+  q('btn-add').addEventListener('click', function(){
+    var list = q('sur-list');
+    var item = document.createElement('div');
+    item.className = 'sur-item';
+    var n = document.createElement('input'); n.type='text'; n.placeholder='항목명 입력';
+    var v = document.createElement('input'); v.type='number'; v.placeholder='금액(원)'; v.min='0';
+    var b = document.createElement('button'); b.className='del-btn'; b.textContent='✕';
+    bindDel(b);
+    item.appendChild(n); item.appendChild(v); item.appendChild(b);
+    list.appendChild(item);
+    n.focus();
+  });
+
+  // 다크모드
+  q('theme-btn').addEventListener('click', function(){
+    dark = !dark;
+    document.body.style.background = dark?'#131211':'#f7f6f2';
+    document.body.style.color = dark?'#d4d3d0':'#28251d';
+    this.textContent = dark?'라이트모드':'다크모드';
+    var cards = document.querySelectorAll('.card,.result');
+    for(var c=0;c<cards.length;c++){
+      cards[c].style.background = dark?'#1c1b19':'#fff';
+      cards[c].style.borderColor = dark?'#353330':'#e0ddd8';
+    }
+    var hdr = document.querySelector('header');
+    hdr.style.background = dark?'#1c1b19':'#fff';
+    hdr.style.borderColor = dark?'#353330':'#e0ddd8';
+    var inputs = document.querySelectorAll('input[type=text],input[type=number],input[type=date],input[type=time]');
+    for(var inp=0;inp<inputs.length;inp++){
+      inputs[inp].style.background = dark?'#242321':'#f9f8f5';
+      inputs[inp].style.borderColor = dark?'#353330':'#d4d1ca';
+      inputs[inp].style.color = dark?'#d4d3d0':'#28251d';
+    }
+  });
+
+  // 계산
+  q('btn-calc').addEventListener('click', function(){
+    var name    = val('f-name');
+    var org     = val('f-org');
+    var date    = val('f-date');
+    var address = val('f-addr');
+    var phone   = val('f-phone');
+    var items   = val('f-items');
+    var dep     = val('f-dep');
+    var arr     = val('f-arr');
+    var evt     = val('f-evt');
+    var goMin   = parseInt(q('f-go').value)||0;
+    var bkMin   = parseInt(q('f-bk').value)||0;
+    var dist    = num('f-dist');
+    var fuel    = num('f-fuel');
+    var tollOn  = chk('toll-on');
+    var tollVal = tollOn?(parseInt(q('toll-val').value)||0):0;
+    var parkOn  = chk('park-on');
+    var parkVal = parkOn?(parseInt(q('park-val').value)||0):0;
+
+    var extras = [];
+    var surItems = document.querySelectorAll('#sur-list .sur-item');
+    for(var si=0;si<surItems.length;si++){
+      var ins = surItems[si].querySelectorAll('input');
+      var lbl = (ins[0].value||'').trim();
+      var sv  = parseInt(ins[1].value)||0;
+      if(lbl && sv>0) extras.push({label:lbl, val:sv});
+    }
+
+    var totalMin = goMin+bkMin;
+    var wages    = [11000,12000,13000];
+    var labors   = wages.map(function(w){ return Math.round(w*totalMin/60); });
+    var roundKm  = dist*2;
+    var vehCost  = Math.round(roundKm*222);
+    var fuelCost = up100(fuel*2);
+    var baseSur  = band(roundKm);
+    var extraSur = extras.reduce(function(a,b){ return a+b.val; },0);
+    var totalSur = baseSur+extraSur;
+    var tollCost = tollOn?tollVal*2:0;
+
+    var dateStr='';
+    if(date){
+      var p=date.split('-');
+      var dy=new Date(+p[0],+p[1]-1,+p[2]).getDay();
+      dateStr=p[0].slice(2)+'.'+p[1]+'.'+p[2]+'('+'일월화수목금토'[dy]+')';
+    }
+
+    var titleName = name+(org?' / '+org:'');
+    q('r-title').textContent = '['+selectedType+'] '+titleName;
+
+    var meta=[];
+    if(dateStr) meta.push('일시: '+dateStr);
+    if(dep) meta.push('출발: '+dep);
+    if(arr) meta.push('도착: '+arr);
+    if(evt) meta.push('행사시간: '+evt);
+    q('r-meta').textContent = meta.join(' / ');
+
+    var info=[];
+    if(address) info.push('장소: '+address);
+    if(phone)   info.push('연락처: '+phone);
+    if(items)   info.push('품목: '+items);
+    q('r-info').innerHTML = info.join('<br>');
+
+    var hStr=Math.floor(totalMin/60)+'시간'+(totalMin%60?' '+(totalMin%60)+'분':'');
+    var laborStr=labors.map(fmt).join(' / ');
+    var laborSub=wages.map(function(w){ return '시급 '+comma(w)+'원 × 왕복 '+hStr; }).join(' / ');
+    var surSub='왕복 '+roundKm+'km → '+bandLbl(roundKm)+' 기본 '+fmt(baseSur);
+    extras.forEach(function(e){ surSub+=' + '+e.label+' '+fmt(e.val); });
+    var vehSub='왕복 '+roundKm+'km × 222원/km / 감가상각·소모품·유지비 포함 / 유류비 제외';
+    var fuelSub='편도 '+comma(fuel)+'원 × 왕복 2 = '+comma(fuel*2)+'원 → 100단위 올림';
+
+    var rows=[
+      {l:'배송 인건비', v:laborStr,    s:laborSub},
+      {l:'배송 수고비', v:fmt(totalSur),s:surSub},
+      {l:'차량 운영비', v:fmt(vehCost), s:vehSub},
+      {l:'유류비',      v:fmt(fuelCost),s:fuelSub}
+    ];
+    if(tollOn&&tollVal>0) rows.push({l:'통행료',v:fmt(tollCost),s:'편도 '+fmt(tollVal)+' × 왕복 2'});
+    if(parkOn&&parkVal>0) rows.push({l:'주차비',v:fmt(parkVal),s:'현장 실비 / 실정산 시 조정'});
+
+    var rEl=q('r-rows'); rEl.innerHTML='';
+    rows.forEach(function(r){
+      rEl.innerHTML+='<div class="r-row"><div><div class="r-lbl">'+r.l+'</div><div class="r-sub">'+r.s+'</div></div><div class="r-val">'+r.v+'</div></div>';
+    });
+
+    var base=vehCost+fuelCost+totalSur+tollCost;
+    var totals=wages.map(function(w,i){ return base+labors[i]+(parkOn?parkVal:0); });
+    var tEl=q('r-totals'); tEl.innerHTML='';
+    wages.forEach(function(w,i){
+      tEl.innerHTML+='<div class="total-row"><span class="total-wl">시급 '+comma(w)+'원 기준</span><span class="total-wv">'+fmt(totals[i])+'</span></div>';
+    });
+
+    copyLines=[];
+    copyLines.push('['+selectedType+'] '+titleName);
+    if(meta.length) copyLines.push(meta.join(' / '));
+    if(address) copyLines.push('장소: '+address);
+    if(phone)   copyLines.push('연락처: '+phone);
+    if(items)   copyLines.push('품목: '+items);
+    copyLines.push('');
+    copyLines.push('•배송 인건비 '+laborStr); copyLines.push('('+laborSub+')');
+    copyLines.push('•배송 수고비 '+fmt(totalSur)); copyLines.push('('+surSub+')');
+    copyLines.push('•차량 운영비 '+fmt(vehCost)); copyLines.push('('+vehSub+')');
+    copyLines.push('•유류비 '+fmt(fuelCost)); copyLines.push('('+fuelSub+')');
+    if(tollOn&&tollVal>0){ copyLines.push('•통행료 '+fmt(tollCost)); copyLines.push('(편도 '+fmt(tollVal)+' × 왕복 2)'); }
+    if(parkOn&&parkVal>0){ copyLines.push('•주차비 '+fmt(parkVal)); copyLines.push('(현장 실비 / 실정산 시 조정)'); }
+    copyLines.push('');
+    copyLines.push('•합계 '+totals.map(fmt).join(' / '));
+    copyLines.push('(시급 11,000 / 12,000 / 13,000원 기준)');
+    if(parkOn&&parkVal>0) copyLines.push('•주차비 제외 '+wages.map(function(w,i){ return fmt(base+labors[i]); }).join(' / '));
+
+    var rc=q('result');
+    rc.className='result show';
+    rc.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+
+  // 복사
+  q('copy-btn').addEventListener('click', function(){
+    var text=copyLines.join('
+');
+    var btn=this;
+    function done(){ btn.textContent='복사됨'; setTimeout(function(){ btn.textContent='텍스트 복사'; },2000); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(function(){
+        var ta=document.createElement('textarea');
+        ta.value=text; ta.style.cssText='position:fixed;opacity:0';
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        try{ document.execCommand('copy'); done(); }catch(e){}
+        document.body.removeChild(ta);
+      });
+    } else {
+      var ta=document.createElement('textarea');
+      ta.value=text; ta.style.cssText='position:fixed;opacity:0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      try{ document.execCommand('copy'); done(); }catch(e){}
+      document.body.removeChild(ta);
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
