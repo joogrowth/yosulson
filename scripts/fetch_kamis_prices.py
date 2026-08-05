@@ -11,6 +11,10 @@ price-insight.html의 "가져오기" 기능에서 바로 쓸 수 있는 JSON으�
    아래 ITEMS 목록을 채워 넣어야 함. (코드값은 문서마다 갱신될 수 있어 이 스크립트에는
    임의로 채워 넣지 않았으니 반드시 공식 코드표로 확인할 것.)
 
+   중요(실측 확인): 품목코드를 하나도 안 넣으면 "전체 품목"이 오는 게 아니라 KAMIS가
+   정한 기본 품목(예: 쌀) 1건만 내려옴. 여러 품목(양파, 대파 등)을 각각 받고 싶으면
+   ITEMS 목록에 품목마다 코드를 채워 넣어야 함 — 그러면 품목 개수만큼 API를 반복 호출함.
+
 사용 예시
 ---------
     export KAMIS_CERT_KEY="발급받은키"
@@ -57,10 +61,14 @@ ITEMS = [
 ]
 
 
-def fetch_period_prices(cert_key, cert_id, start_day, end_day, product_cls_code="01"):
+def fetch_period_prices(cert_key, cert_id, start_day, end_day, product_cls_code="01", item=None):
     """periodProductList API로 기간별 도/소매가격 원자료를 조회.
 
     product_cls_code: '01'=소매, '02'=도매
+    item: ITEMS 항목(dict) 하나. None이면 품목코드를 지정하지 않고 호출함.
+          (실측 결과: 품목코드를 안 주면 "전체 품목"이 아니라 KAMIS 서버가 정한
+          기본 품목 1개만 내려옴 — 예: 쌀. 여러 품목을 받으려면 반드시 item마다
+          한 번씩 호출해야 함.)
     """
     params = {
         "action": "periodProductList",
@@ -72,6 +80,10 @@ def fetch_period_prices(cert_key, cert_id, start_day, end_day, product_cls_code=
         "p_productclscode": product_cls_code,
         "p_convert_kg_yn": "N",
     }
+    if item:
+        for key in ("itemcategorycode", "itemcode", "kindcode", "productrankcode", "countrycode"):
+            if item.get(key):
+                params["p_" + key] = item[key]
     url = KAMIS_BASE_URL + "?" + urllib.parse.urlencode(params)
     with urllib.request.urlopen(url, timeout=20) as resp:
         raw = resp.read().decode("utf-8", errors="replace")
@@ -82,7 +94,13 @@ def fetch_period_prices(cert_key, cert_id, start_day, end_day, product_cls_code=
         return None
 
 
-def to_tracker_records(kamis_rows, category_hint=None, unit_hint=None):
+def _s(value):
+    """KAMIS는 값이 없는 필드를 ""가 아니라 빈 리스트([])로 내려주는 경우가 있어,
+    문자열이 아닌 값은 빈 문자열로 취급하도록 방어적으로 변환."""
+    return value.strip() if isinstance(value, str) else ""
+
+
+def to_tracker_records(kamis_rows, category_hint=None, unit_hint=None, name_fallback=None):
     """KAMIS periodProductList 응답 행을 price-insight.html 가져오기 형식으로 변환."""
     records = []
     for row in kamis_rows or []:
@@ -93,20 +111,24 @@ def to_tracker_records(kamis_rows, category_hint=None, unit_hint=None):
             price_val = float(str(price).replace(",", ""))
         except (TypeError, ValueError):
             continue
-        yyyy = row.get("yyyy", "")
+        yyyy = _s(row.get("yyyy")) or str(row.get("yyyy") or "")
         regday = row.get("regday", "")  # 보통 'MM/DD' 형식으로 내려옴
         date_str = None
-        if yyyy and regday and "/" in regday:
+        if yyyy and regday and isinstance(regday, str) and "/" in regday:
             mm, dd = regday.split("/")
             date_str = "{}-{:0>2}-{:0>2}".format(yyyy, mm, dd)
+        name = _s(row.get("itemname")) or _s(row.get("kindname")) or (name_fallback or "")
+        if not name:
+            # 이름을 전혀 알 수 없는 행(전국 평균/평년 등 집계행)은 트래커에 의미가 없어 건너뜀
+            continue
         records.append(common.normalize_record(
-            name=row.get("itemname", "").strip() or row.get("kindname", "").strip(),
+            name=name,
             category=category_hint or "채소",
             price=price_val,
-            unit=unit_hint or row.get("unit", "kg"),
+            unit=unit_hint or _s(row.get("unit")) or "kg",
             date=date_str,
             source="KAMIS",
-            memo="{} / {}".format(row.get("kindname", ""), row.get("countyname", "")).strip(" /"),
+            memo="{} / {}".format(_s(row.get("kindname")), _s(row.get("countyname"))).strip(" /"),
         ))
     return records
 
@@ -125,35 +147,48 @@ def main():
         print("발급 방법은 이 스크립트 상단 docstring 또는 data/sources.json 참고.", file=sys.stderr)
         sys.exit(1)
 
-    if not ITEMS:
-        print(
-            "안내: ITEMS 목록이 비어 있어 개별 품목 코드 기반 조회를 건너뜀.\n"
-            "대신 periodProductList API로 최근 {}일간 전체 품목 원자료를 조회함.\n"
-            "특정 품목만 추적하려면 스크립트 상단 ITEMS 목록에 품목코드를 채워 넣고,\n"
-            "fetch_period_prices 호출 시 p_itemcategorycode/p_itemcode 파라미터를 추가하는 방식으로 확장할 것.".format(args.days)
-        )
-
     end_day = datetime.date.today()
     start_day = end_day - datetime.timedelta(days=args.days)
 
-    result = fetch_period_prices(
-        cert_key, cert_id,
-        start_day.isoformat(), end_day.isoformat(),
-        product_cls_code=args.product_cls,
-    )
+    queries = ITEMS if ITEMS else [None]
+    if not ITEMS:
+        print(
+            "안내: ITEMS 목록이 비어 있어 품목코드 없이 1회 호출함.\n"
+            "(실측 결과: 품목코드를 지정하지 않으면 KAMIS가 기본값으로 특정 품목 1개만 돌려줌 —\n"
+            "'전체 품목'이 오는 게 아님.) 여러 품목을 받으려면 스크립트 상단 ITEMS 목록에\n"
+            "품목코드를 채워 넣을 것 (KAMIS 고객센터 > Open-API 이용안내의 코드표 참고)."
+        )
 
-    if not result:
-        print("오류: KAMIS 응답을 받지 못함", file=sys.stderr)
-        sys.exit(2)
+    all_records = []
+    for item in queries:
+        result = fetch_period_prices(
+            cert_key, cert_id,
+            start_day.isoformat(), end_day.isoformat(),
+            product_cls_code=args.product_cls,
+            item=item,
+        )
+        if not result:
+            print("오류: KAMIS 응답을 받지 못함 (item={})".format(item and item.get("label")), file=sys.stderr)
+            continue
 
-    condition = result.get("condition")
-    if isinstance(condition, list) and condition and condition[0].get("code") not in (None, "000"):
-        print("KAMIS 응답 코드:", condition[0], file=sys.stderr)
+        # 실제 응답 구조: {"condition": [...요청 파라미터 그대로...], "data": {"error_code": "000", "item": [...]}}
+        data = result.get("data") or {}
+        error_code = data.get("error_code")
+        if error_code and error_code != "000":
+            print("KAMIS 응답 오류코드: {} (item={})".format(error_code, item and item.get("label")), file=sys.stderr)
+            continue
 
-    rows = result.get("price") or []
-    records = to_tracker_records(rows)
+        rows = data.get("item") or []
+        records = to_tracker_records(
+            rows,
+            category_hint=item and item.get("category"),
+            unit_hint=item and item.get("unit"),
+            name_fallback=item and item.get("label"),
+        )
+        print("  {} -> {}건".format((item and item.get("label")) or "(품목코드 미지정)", len(records)))
+        all_records.extend(records)
 
-    count = common.save_records(records, args.out)
+    count = common.save_records(all_records, args.out)
     print("{}건 저장됨 -> {}".format(count, args.out))
 
 
