@@ -270,8 +270,8 @@ def main():
     parser.add_argument("--product-cls", choices=["01", "02"], default="01", help="01=소매, 02=도매 (기본 소매)")
     parser.add_argument("--country-code", default=DEFAULT_COUNTRY_CODE,
                          help="지역코드 (기본: {} = 고양/일산). 빈 문자열('')이면 지역 제한 없이 전국 평균".format(DEFAULT_COUNTRY_CODE))
-    parser.add_argument("--delay", type=float, default=0.5,
-                         help="API 요청 사이 대기 시간(초). 너무 빠르게 연속 요청하면 KAMIS 서버가 일시적으로 이상한 응답을 줄 수 있어 기본 0.5초 대기 (기본 0.5)")
+    parser.add_argument("--delay", type=float, default=1.0,
+                         help="API 요청 사이 대기 시간(초). 너무 빠르게 연속 요청하면 KAMIS 서버가 일시적으로 이상한 응답을 줄 수 있어 기본 1초 대기 (기본 1.0)")
     parser.add_argument("--out", default="data/kamis_latest.json", help="출력 JSON 파일 경로")
     args = parser.parse_args()
 
@@ -303,37 +303,60 @@ def main():
             return None, "오류코드 {}".format(error_code)
         return data.get("item") or [], None
 
-    def try_fetch(item, country_code, retries=2):
-        """일시적인 서버 이상 응답(레이트리밋 등)을 구분하기 위해 같은 조건으로 몇 번 재시도함."""
+    def try_fetch(item, country_code, retries=3):
+        """일시적인 서버 이상 응답(레이트리밋 등)을 구분하기 위해 같은 조건으로 몇 번 재시도함.
+        재시도할 때마다 대기시간을 2배씩 늘림(지수 백오프)."""
         err = None
         for attempt in range(retries):
             rows, err = raw_fetch(item, country_code)
             if rows is not None:
                 return rows, None
             if attempt < retries - 1:
-                time.sleep(args.delay * 3)  # 재시도 전에는 좀 더 오래 대기
+                time.sleep(args.delay * (2 ** (attempt + 1)))  # 2배, 4배, 8배...로 점점 오래 대기
         return None, err
 
-    all_records = []
-    region = args.country_code or None
-    for item in ITEMS:
+    def fetch_item(item, region):
         rows, err = try_fetch(item, region)
         note = ""
         if rows is None and region:
             # 특정 지역(예: 고양)에 해당 품목 데이터가 아예 없는 경우가 있어(수산물 등),
             # 전국 데이터로 한 번 더 시도함.
-            rows, err2 = try_fetch(item, None)
+            rows, err = try_fetch(item, None)
             if rows is not None:
                 note = " (지역 데이터 없어 전국 평균으로 대체)"
-                err = None
+        return rows, err, note
 
+    all_records = []
+    failed_items = []
+    region = args.country_code or None
+    for item in ITEMS:
+        rows, err, note = fetch_item(item, region)
         if rows is None:
             print("오류: {} 조회 실패 - {}".format(item["label"], err), file=sys.stderr)
+            failed_items.append(item)
             continue
-
         records = to_tracker_records(rows, item)
         print("  {} -> {}건{}".format(item["label"], len(records), note))
         all_records.extend(records)
+
+    # 1차 시도에서 실패한 품목은 서버가 일시적으로 불안정했을 가능성이 있어,
+    # 충분히 쉬었다가 마지막에 한 번 더 통째로 재도전함.
+    if failed_items:
+        print("\n{}개 품목이 실패해서 15초 대기 후 재시도함: {}".format(
+            len(failed_items), ", ".join(i["label"] for i in failed_items)))
+        time.sleep(15)
+        still_failed = []
+        for item in failed_items:
+            rows, err, note = fetch_item(item, region)
+            if rows is None:
+                print("오류(재시도): {} 조회 실패 - {}".format(item["label"], err), file=sys.stderr)
+                still_failed.append(item["label"])
+                continue
+            records = to_tracker_records(rows, item)
+            print("  {} -> {}건{} (재시도 성공)".format(item["label"], len(records), note))
+            all_records.extend(records)
+        if still_failed:
+            print("\n끝까지 실패한 품목({}개): {}".format(len(still_failed), ", ".join(still_failed)))
 
     count = common.save_records(all_records, args.out)
     print("{}건 저장됨 -> {}".format(count, args.out))
