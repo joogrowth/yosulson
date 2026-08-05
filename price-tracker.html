@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>식재료 시세 분석 트래커</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f7f6f2;color:#28251d;font-size:16px;line-height:1.6}
+header{background:#fff;border-bottom:1px solid #e0ddd8;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;color:#01696f}
+.logo-icon{width:32px;height:32px;background:#01696f;border-radius:8px;display:flex;align-items:center;justify-content:center}
+#theme-btn{background:none;border:1px solid #d4d1ca;border-radius:99px;padding:6px 14px;font-size:12px;color:#7a7974;cursor:pointer;font-family:inherit}
+main{max-width:760px;margin:0 auto;padding:28px 16px 80px}
+h1{font-size:26px;font-weight:700;margin-bottom:6px}
+.subtitle{font-size:14px;color:#7a7974;margin-bottom:24px}
+.type-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.type-tab{flex:1;min-width:100px;padding:12px 8px;border:2px solid #d4d1ca;border-radius:12px;background:#fff;color:#7a7974;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;text-align:center}
+.type-tab.on{background:#01696f;color:#fff;border-color:#01696f}
+.pane{display:none}
+.pane.on{display:block}
+.card{background:#fff;border:1px solid #e0ddd8;border-radius:16px;padding:20px;margin-bottom:14px}
+.card-title{font-size:11px;font-weight:700;color:#7a7974;text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px}
+.card-desc{font-size:13px;color:#7a7974;margin-bottom:14px;line-height:1.6}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:480px){.fg{grid-template-columns:1fr}}
+.fi{display:flex;flex-direction:column;gap:5px}
+.fi.full{grid-column:1/-1}
+label{font-size:12px;font-weight:600;color:#7a7974}
+input[type=text],input[type=number],input[type=date],select,textarea{background:#f9f8f5;border:1px solid #d4d1ca;border-radius:8px;padding:10px 12px;font-size:14px;color:#28251d;font-family:inherit;width:100%}
+input:focus,select:focus,textarea:focus{outline:2px solid #01696f;outline-offset:1px}
+input::placeholder,textarea::placeholder{color:#bab9b4}
+textarea{resize:vertical;min-height:80px}
+.btn{background:#01696f;color:#fff;border:none;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn:active{opacity:.85}
+.btn.ghost{background:#fff;border:1px solid #d4d1ca;color:#7a7974}
+.btn.danger{background:#fff;border:1px solid #e0a9a9;color:#c0392b}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid #e8e6e1;white-space:nowrap}
+th{color:#7a7974;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.tbl-wrap{overflow-x:auto}
+.empty{font-size:13px;color:#a9a7a1;text-align:center;padding:24px 0}
+.chip{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px}
+.chip.veg{background:#e3f2e6;color:#1e7a3d}
+.chip.fruit{background:#fdeee0;color:#c0631a}
+.chip.grain{background:#f1ead9;color:#8a6d1f}
+.chip.fish{background:#e1eef7;color:#1c5f8c}
+.chip.meat{background:#fbe4e4;color:#b23b3b}
+.chip.processed{background:#eee7f7;color:#6c4ab0}
+.chip.etc{background:#eeece7;color:#7a7974}
+.del-x{background:none;border:none;color:#bab9b4;font-size:14px;cursor:pointer}
+.del-x:hover{color:#c0392b}
+.summary-grid{display:grid;grid-template-columns:1fr;gap:10px}
+.sum-item{border:1px solid #e0ddd8;border-radius:12px;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.sum-l{flex:1;min-width:0}
+.sum-name{font-size:15px;font-weight:700;margin-bottom:2px}
+.sum-meta{font-size:12px;color:#7a7974}
+.sum-action{font-size:12px;color:#7a7974;margin-top:6px;line-height:1.5}
+.sum-r{text-align:right;flex-shrink:0}
+.sum-price{font-size:16px;font-weight:700}
+.badge{display:inline-block;margin-top:4px;font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;white-space:nowrap}
+.badge.surge{background:#fbe4e4;color:#c0392b}
+.badge.up{background:#fdeee0;color:#c0631a}
+.badge.flat{background:#e3f2e6;color:#1e7a3d}
+.badge.down{background:#e1eef7;color:#1c5f8c}
+.badge.plunge{background:#eee7f7;color:#6c4ab0}
+.thresh-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.thresh-row label{flex:1}
+.thresh-row input{width:90px;flex-shrink:0}
+#chart-wrap{position:relative}
+canvas#chart{width:100%;height:260px;display:block}
+#chart-tip{position:absolute;background:#28251d;color:#fff;font-size:12px;padding:6px 10px;border-radius:8px;pointer-events:none;display:none;white-space:nowrap;transform:translate(-50%,-110%)}
+.src-card{border:1px solid #e0ddd8;border-radius:14px;padding:16px;margin-bottom:12px}
+.src-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px}
+.src-name{font-size:15px;font-weight:700}
+.src-desc{font-size:13px;color:#514f49;margin-bottom:10px;line-height:1.6}
+.src-meta{font-size:12px;color:#7a7974;display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+.src-link{display:inline-block;font-size:13px;font-weight:600;color:#01696f;text-decoration:none;border-bottom:1px solid #01696f}
+.note{font-size:12px;color:#7a7974;background:#f3f0ec;border-radius:8px;padding:10px 12px;margin-bottom:14px;line-height:1.6}
+#import-status{font-size:12px;margin-top:8px}
+#import-status.ok{color:#1e7a3d}
+#import-status.err{color:#c0392b}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M4 12l3-8 3 8" stroke="white" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M10 12l3-8 3 8" stroke="white" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>
+        <rect x="3.5" y="13" width="13" height="1.6" rx=".8" fill="white" opacity=".7"/>
+      </svg>
+    </div>
+    요술손케이터링
+  </div>
+  <button id="theme-btn">다크모드</button>
+</header>
+
+<main>
+  <h1>식재료 시세 분석</h1>
+  <p class="subtitle">식재료 가격을 기록하고 추세를 확인해서 가격 급등락에 미리 대응하는 도구</p>
+
+  <div class="type-tabs">
+    <button class="type-tab on" data-v="input">시세 입력</button>
+    <button class="type-tab" data-v="dashboard">트렌드 대시보드</button>
+    <button class="type-tab" data-v="sources">데이터 출처 안내</button>
+  </div>
+
+  <!-- ===== 입력 탭 ===== -->
+  <div class="pane on" id="pane-input">
+    <div class="card">
+      <div class="card-title">새 시세 기록 추가</div>
+      <div class="fg">
+        <div class="fi"><label>품목명</label><input type="text" id="f-name" placeholder="예) 양파" list="name-suggest"></div>
+        <datalist id="name-suggest"></datalist>
+        <div class="fi">
+          <label>카테고리</label>
+          <select id="f-cat">
+            <option value="채소">채소</option>
+            <option value="과일">과일</option>
+            <option value="곡물">곡물</option>
+            <option value="수산물">수산물</option>
+            <option value="축산물">축산물</option>
+            <option value="가공식품">가공식품</option>
+            <option value="기타">기타</option>
+          </select>
+        </div>
+        <div class="fi"><label>가격 (원)</label><input type="number" id="f-price" placeholder="예) 2400" min="0"></div>
+        <div class="fi"><label>단위</label><input type="text" id="f-unit" placeholder="예) kg, 개, box(15kg)"></div>
+        <div class="fi"><label>날짜</label><input type="date" id="f-date"></div>
+        <div class="fi"><label>출처</label><input type="text" id="f-source" placeholder="예) KAMIS, 가락시장, 직접 확인"></div>
+        <div class="fi full"><label>메모</label><input type="text" id="f-memo" placeholder="예) 산지 작황 부진으로 상승 예상"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="btn-add">기록 추가</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">가져오기 / 내보내기</div>
+      <div class="card-desc">JSON 파일로 백업하거나, <code>scripts/fetch_kamis_prices.py</code> 등으로 수집한 데이터를 붙여넣어 한 번에 가져올 수 있음</div>
+      <textarea id="import-text" placeholder='[{"name":"양파","category":"채소","price":2400,"unit":"kg","date":"2026-08-01","source":"KAMIS"}]'></textarea>
+      <div class="btn-row">
+        <input type="file" id="import-file" accept="application/json" style="display:none">
+        <button class="btn ghost" id="btn-import-file">파일 선택</button>
+        <button class="btn ghost" id="btn-import-text">붙여넣은 JSON 가져오기</button>
+        <button class="btn ghost" id="btn-sample">샘플 데이터 불러오기</button>
+        <button class="btn ghost" id="btn-export">전체 내보내기(JSON)</button>
+        <button class="btn danger" id="btn-clear">전체 삭제</button>
+      </div>
+      <div id="import-status"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">등록된 시세 기록</div>
+      <div class="fg" style="margin-bottom:12px">
+        <div class="fi"><label>품목 검색</label><input type="text" id="filter-name" placeholder="품목명으로 검색"></div>
+        <div class="fi">
+          <label>카테고리 필터</label>
+          <select id="filter-cat">
+            <option value="">전체</option>
+            <option value="채소">채소</option>
+            <option value="과일">과일</option>
+            <option value="곡물">곡물</option>
+            <option value="수산물">수산물</option>
+            <option value="축산물">축산물</option>
+            <option value="가공식품">가공식품</option>
+            <option value="기타">기타</option>
+          </select>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table id="entry-table">
+          <thead>
+            <tr><th>날짜</th><th>품목</th><th>분류</th><th>가격</th><th>출처</th><th>메모</th><th></th></tr>
+          </thead>
+          <tbody id="entry-tbody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="entry-empty" style="display:none">아직 등록된 시세 기록이 없음. 위에서 직접 입력하거나 샘플 데이터를 불러와서 시작할 수 있음</div>
+    </div>
+  </div>
+
+  <!-- ===== 대시보드 탭 ===== -->
+  <div class="pane" id="pane-dashboard">
+    <div class="card">
+      <div class="card-title">경고 기준 설정</div>
+      <div class="card-desc">직전 기록 대비 가격 변동률이 아래 기준을 넘으면 자동으로 등급이 표시됨</div>
+      <div class="thresh-row">
+        <label>상승/하락 주의 기준 (±%)</label>
+        <input type="number" id="th-warn" min="0" step="0.5">
+      </div>
+      <div class="thresh-row">
+        <label>급등/급락 경고 기준 (±%)</label>
+        <input type="number" id="th-alert" min="0" step="0.5">
+      </div>
+      <div class="btn-row"><button class="btn ghost" id="btn-save-thresh">기준 저장</button></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">품목별 현황 (변동폭이 큰 순서)</div>
+      <div class="summary-grid" id="summary-grid"></div>
+      <div class="empty" id="summary-empty" style="display:none">품목당 2건 이상 기록이 있어야 변동률을 계산할 수 있음</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">품목별 시세 추이</div>
+      <div class="fg" style="margin-bottom:14px">
+        <div class="fi full">
+          <label>품목 선택</label>
+          <select id="chart-select"></select>
+        </div>
+      </div>
+      <div id="chart-wrap">
+        <canvas id="chart"></canvas>
+        <div id="chart-tip"></div>
+      </div>
+      <div class="empty" id="chart-empty" style="display:none">선택한 품목의 기록이 없음</div>
+    </div>
+  </div>
+
+  <!-- ===== 데이터 출처 탭 ===== -->
+  <div class="pane" id="pane-sources">
+    <div class="card">
+      <div class="card-title">왜 데이터 출처가 필요한가</div>
+      <div class="card-desc">
+        이 도구는 브라우저에서만 동작하는 오프라인 기록장이라 시세를 자동으로 긁어오지 않음(공공 API는 대부분 인증키가 필요하고, 브라우저에서 직접 호출하면 CORS로 막히는 경우가 많음).
+        대신 아래 공식 출처에서 API 인증키를 발급받아 <code>scripts/fetch_kamis_prices.py</code> 같은 스크립트로 주기적으로 데이터를 내려받은 뒤,
+        위 "가져오기" 기능으로 이 도구에 불러오는 방식을 권장함. <code>data/sources.json</code> 파일에도 동일한 목록이 정리되어 있어 다른 자동화 스크립트에서도 재사용 가능함.
+      </div>
+    </div>
+    <div id="source-list"></div>
+  </div>
+</main>
+
+<script>
+(function(){
+  var LS_ENTRIES = 'ipt_entries_v1';
+  var LS_THRESH  = 'ipt_thresholds_v1';
+  var dark = false;
+
+  function q(id){ return document.getElementById(id); }
+  function comma(n){ return Math.round(n).toLocaleString('ko-KR'); }
+  function todayStr(){ var d=new Date(); return d.toISOString().slice(0,10); }
+  function uid(){ return 'e'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+  var CAT_CLASS = {'채소':'veg','과일':'fruit','곡물':'grain','수산물':'fish','축산물':'meat','가공식품':'processed','기타':'etc'};
+
+  // ---------- state ----------
+  function loadEntries(){
+    try{ return JSON.parse(localStorage.getItem(LS_ENTRIES))||[]; }catch(e){ return []; }
+  }
+  function saveEntries(list){ localStorage.setItem(LS_ENTRIES, JSON.stringify(list)); }
+  var entries = loadEntries();
+
+  function loadThresh(){
+    try{
+      var t = JSON.parse(localStorage.getItem(LS_THRESH));
+      if(t && typeof t.warn==='number' && typeof t.alert==='number') return t;
+    }catch(e){}
+    return {warn:5, alert:15};
+  }
+  var thresh = loadThresh();
+
+  // ---------- tabs ----------
+  var tabs = document.querySelectorAll('.type-tab');
+  var panes = { input: q('pane-input'), dashboard: q('pane-dashboard'), sources: q('pane-sources') };
+  for(var i=0;i<tabs.length;i++){
+    tabs[i].addEventListener('click', function(){
+      for(var j=0;j<tabs.length;j++) tabs[j].className='type-tab';
+      this.className='type-tab on';
+      var v=this.getAttribute('data-v');
+      for(var k in panes) panes[k].className = (k===v) ? 'pane on' : 'pane';
+      if(v==='dashboard') renderDashboard();
+      if(v==='sources') renderSources();
+    });
+  }
+
+  q('f-date').value = todayStr();
+
+  // ---------- add entry ----------
+  q('btn-add').addEventListener('click', function(){
+    var name = (q('f-name').value||'').trim();
+    var price = parseFloat(q('f-price').value);
+    var date = q('f-date').value || todayStr();
+    if(!name){ alert('품목명을 입력하세요'); return; }
+    if(!price || price<=0){ alert('가격을 입력하세요'); return; }
+    entries.push({
+      id: uid(),
+      name: name,
+      category: q('f-cat').value,
+      price: price,
+      unit: (q('f-unit').value||'').trim() || 'kg',
+      date: date,
+      source: (q('f-source').value||'').trim(),
+      memo: (q('f-memo').value||'').trim()
+    });
+    saveEntries(entries);
+    q('f-name').value=''; q('f-price').value=''; q('f-unit').value=''; q('f-source').value=''; q('f-memo').value='';
+    q('f-date').value = todayStr();
+    renderAll();
+  });
+
+  // ---------- import / export ----------
+  function normalizeImported(arr){
+    var out=[];
+    arr.forEach(function(r){
+      if(!r || !r.name || !r.price) return;
+      out.push({
+        id: r.id || uid(),
+        name: String(r.name).trim(),
+        category: r.category || '기타',
+        price: parseFloat(r.price),
+        unit: r.unit || 'kg',
+        date: r.date || todayStr(),
+        source: r.source || '',
+        memo: r.memo || ''
+      });
+    });
+    return out;
+  }
+
+  function doImport(arr, statusEl){
+    try{
+      var added = normalizeImported(arr);
+      if(!added.length){ statusEl.className='err'; statusEl.textContent='가져올 수 있는 유효한 기록이 없음 (name, price 필드 필요)'; return; }
+      entries = entries.concat(added);
+      saveEntries(entries);
+      statusEl.className='ok'; statusEl.textContent=added.length+'건을 가져왔음';
+      renderAll();
+    }catch(e){
+      statusEl.className='err'; statusEl.textContent='가져오기 실패: '+e.message;
+    }
+  }
+
+  q('btn-import-text').addEventListener('click', function(){
+    var status=q('import-status');
+    var txt=(q('import-text').value||'').trim();
+    if(!txt){ status.className='err'; status.textContent='붙여넣은 JSON이 없음'; return; }
+    try{
+      var arr=JSON.parse(txt);
+      if(!Array.isArray(arr)) arr=[arr];
+      doImport(arr, status);
+    }catch(e){ status.className='err'; status.textContent='JSON 형식이 올바르지 않음: '+e.message; }
+  });
+
+  q('btn-import-file').addEventListener('click', function(){ q('import-file').click(); });
+  q('import-file').addEventListener('change', function(e){
+    var file=e.target.files[0];
+    var status=q('import-status');
+    if(!file) return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      try{
+        var arr=JSON.parse(ev.target.result);
+        if(!Array.isArray(arr)) arr=[arr];
+        doImport(arr, status);
+      }catch(err){ status.className='err'; status.textContent='파일을 읽는 중 오류: '+err.message; }
+    };
+    reader.readAsText(file);
+    e.target.value='';
+  });
+
+  q('btn-sample').addEventListener('click', function(){
+    var status=q('import-status');
+    doImport(SAMPLE_DATA(), status);
+  });
+
+  q('btn-export').addEventListener('click', function(){
+    var blob=new Blob([JSON.stringify(entries, null, 2)], {type:'application/json'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url; a.download='ingredient-prices-'+todayStr()+'.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  q('btn-clear').addEventListener('click', function(){
+    if(!entries.length) return;
+    if(!confirm('등록된 시세 기록 '+entries.length+'건을 모두 삭제할까요?')) return;
+    entries=[]; saveEntries(entries); renderAll();
+  });
+
+  function SAMPLE_DATA(){
+    var today = new Date();
+    function d(offsetDays){
+      var t=new Date(today.getTime()-offsetDays*86400000);
+      return t.toISOString().slice(0,10);
+    }
+    return [
+      {name:'양파', category:'채소', unit:'kg', price:1900, date:d(30), source:'KAMIS'},
+      {name:'양파', category:'채소', unit:'kg', price:2050, date:d(14), source:'KAMIS'},
+      {name:'양파', category:'채소', unit:'kg', price:2600, date:d(2), source:'KAMIS'},
+      {name:'대파', category:'채소', unit:'kg', price:2800, date:d(30), source:'KAMIS'},
+      {name:'대파', category:'채소', unit:'kg', price:2900, date:d(14), source:'KAMIS'},
+      {name:'대파', category:'채소', unit:'kg', price:3050, date:d(2), source:'KAMIS'},
+      {name:'배추', category:'채소', unit:'포기', price:3800, date:d(30), source:'KAMIS'},
+      {name:'배추', category:'채소', unit:'포기', price:3200, date:d(14), source:'KAMIS'},
+      {name:'배추', category:'채소', unit:'포기', price:2600, date:d(2), source:'KAMIS'},
+      {name:'돼지고기(삼겹살)', category:'축산물', unit:'kg', price:19500, date:d(30), source:'축산유통정보'},
+      {name:'돼지고기(삼겹살)', category:'축산물', unit:'kg', price:20200, date:d(14), source:'축산유통정보'},
+      {name:'돼지고기(삼겹살)', category:'축산물', unit:'kg', price:21800, date:d(2), source:'축산유통정보'},
+      {name:'계란', category:'축산물', unit:'30개', price:6200, date:d(30), source:'축산유통정보'},
+      {name:'계란', category:'축산물', unit:'30개', price:6100, date:d(14), source:'축산유통정보'},
+      {name:'계란', category:'축산물', unit:'30개', price:6050, date:d(2), source:'축산유통정보'}
+    ];
+  }
+
+  // ---------- entry table ----------
+  function renderTable(){
+    var nameFilter=(q('filter-name').value||'').trim().toLowerCase();
+    var catFilter=q('filter-cat').value;
+    var list=entries.slice().sort(function(a,b){ return b.date.localeCompare(a.date); });
+    var tbody=q('entry-tbody');
+    tbody.innerHTML='';
+    var shown=0;
+    list.forEach(function(r){
+      if(nameFilter && r.name.toLowerCase().indexOf(nameFilter)===-1) return;
+      if(catFilter && r.category!==catFilter) return;
+      shown++;
+      var cls = CAT_CLASS[r.category] || 'etc';
+      var tr=document.createElement('tr');
+      tr.innerHTML =
+        '<td>'+r.date+'</td>'+
+        '<td>'+escapeHtml(r.name)+'</td>'+
+        '<td><span class="chip '+cls+'">'+escapeHtml(r.category)+'</span></td>'+
+        '<td>'+comma(r.price)+'원/'+escapeHtml(r.unit)+'</td>'+
+        '<td>'+escapeHtml(r.source||'-')+'</td>'+
+        '<td>'+escapeHtml(r.memo||'')+'</td>'+
+        '<td><button class="del-x" data-id="'+r.id+'">✕</button></td>';
+      tbody.appendChild(tr);
+    });
+    q('entry-empty').style.display = shown ? 'none' : 'block';
+    var delBtns = tbody.querySelectorAll('.del-x');
+    for(var i=0;i<delBtns.length;i++){
+      delBtns[i].addEventListener('click', function(){
+        var id=this.getAttribute('data-id');
+        entries = entries.filter(function(e){ return e.id!==id; });
+        saveEntries(entries);
+        renderAll();
+      });
+    }
+  }
+  function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  q('filter-name').addEventListener('input', renderTable);
+  q('filter-cat').addEventListener('change', renderTable);
+
+  function renderNameSuggest(){
+    var names=uniqueNames();
+    var dl=q('name-suggest');
+    dl.innerHTML = names.map(function(n){ return '<option value="'+escapeHtml(n)+'"></option>'; }).join('');
+  }
+  function uniqueNames(){
+    var set={};
+    entries.forEach(function(e){ set[e.name]=true; });
+    return Object.keys(set).sort();
+  }
+
+  // ---------- dashboard ----------
+  q('th-warn').value = thresh.warn;
+  q('th-alert').value = thresh.alert;
+  q('btn-save-thresh').addEventListener('click', function(){
+    var w=parseFloat(q('th-warn').value); var a=parseFloat(q('th-alert').value);
+    if(isNaN(w)||isNaN(a)||w<0||a<0||a<w){ alert('경고 기준은 주의 기준보다 크거나 같은 0 이상의 값이어야 함'); return; }
+    thresh={warn:w, alert:a};
+    localStorage.setItem(LS_THRESH, JSON.stringify(thresh));
+    renderDashboard();
+  });
+
+  function itemSeries(name){
+    return entries.filter(function(e){ return e.name===name; })
+      .slice().sort(function(a,b){ return a.date.localeCompare(b.date); });
+  }
+
+  function classify(changePct){
+    if(changePct >= thresh.alert) return {cls:'surge', label:'🔴 급등', action:'가격이 크게 올랐음. 대체 식재료·공급처 검토, 필요 시 선구매나 메뉴 단가 조정을 고려하세요.'};
+    if(changePct >= thresh.warn)  return {cls:'up',    label:'🟠 상승', action:'상승세가 보임. 구매 시점을 앞당기거나 대체 거래처 견적을 미리 받아두세요.'};
+    if(changePct <= -thresh.alert) return {cls:'plunge', label:'🟣 급락', action:'가격이 크게 내렸음. 저가 매입 기회이니 필요한 만큼 재고 확보를 검토하세요.'};
+    if(changePct <= -thresh.warn)  return {cls:'down',  label:'🔵 하락', action:'하락세가 보임. 여유 있게 구매하되 추가 하락 여지가 있는지 지켜보세요.'};
+    return {cls:'flat', label:'🟢 보합', action:'특별한 변동 없음. 현재 구매 전략을 유지하면 됨.'};
+  }
+
+  function renderSummary(){
+    var names=uniqueNames();
+    var rows=[];
+    names.forEach(function(name){
+      var series=itemSeries(name);
+      if(series.length<2) return;
+      var latest=series[series.length-1];
+      var prev=series[series.length-2];
+      var change=((latest.price-prev.price)/prev.price)*100;
+      rows.push({name:name, category:latest.category, latest:latest, change:change});
+    });
+    rows.sort(function(a,b){ return Math.abs(b.change)-Math.abs(a.change); });
+
+    var grid=q('summary-grid');
+    grid.innerHTML='';
+    q('summary-empty').style.display = rows.length ? 'none' : 'block';
+    rows.forEach(function(r){
+      var info=classify(r.change);
+      var cls = CAT_CLASS[r.category] || 'etc';
+      var sign = r.change>0 ? '+' : '';
+      var div=document.createElement('div');
+      div.className='sum-item';
+      div.innerHTML =
+        '<div class="sum-l">'+
+          '<div class="sum-name">'+escapeHtml(r.name)+' <span class="chip '+cls+'" style="margin-left:4px">'+escapeHtml(r.category)+'</span></div>'+
+          '<div class="sum-meta">'+r.latest.date+' 기준 · '+comma(r.latest.price)+'원/'+escapeHtml(r.latest.unit)+'</div>'+
+          '<div class="sum-action">'+info.action+'</div>'+
+        '</div>'+
+        '<div class="sum-r">'+
+          '<div class="sum-price">'+sign+r.change.toFixed(1)+'%</div>'+
+          '<div class="badge '+info.cls+'">'+info.label+'</div>'+
+        '</div>';
+      grid.appendChild(div);
+    });
+  }
+
+  function renderChartSelect(){
+    var names=uniqueNames();
+    var sel=q('chart-select');
+    var prev=sel.value;
+    sel.innerHTML = names.map(function(n){ return '<option value="'+escapeHtml(n)+'">'+escapeHtml(n)+'</option>'; }).join('');
+    if(names.indexOf(prev)!==-1) sel.value=prev;
+  }
+  q('chart-select').addEventListener('change', drawChart);
+
+  function drawChart(){
+    var name=q('chart-select').value;
+    var canvas=q('chart');
+    var ctx=canvas.getContext('2d');
+    var wrap=q('chart-wrap');
+    var dpr=window.devicePixelRatio||1;
+    var W=wrap.clientWidth, H=260;
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,W,H);
+
+    var series=name?itemSeries(name):[];
+    q('chart-empty').style.display = series.length ? 'none' : 'block';
+    if(!series.length) return;
+
+    var pad={l:60,r:16,t:20,b:32};
+    var plotW=W-pad.l-pad.r, plotH=H-pad.t-pad.b;
+    var prices=series.map(function(s){ return s.price; });
+    var min=Math.min.apply(null,prices), max=Math.max.apply(null,prices);
+    if(min===max){ min=min*0.9; max=max*1.1||1; }
+    var range=max-min;
+    min-=range*0.1; max+=range*0.1; range=max-min;
+
+    function xAt(i){ return pad.l + (series.length===1?plotW/2:(plotW*i/(series.length-1))); }
+    function yAt(p){ return pad.t + plotH - ((p-min)/range)*plotH; }
+
+    ctx.strokeStyle=dark?'#353330':'#e8e6e1';
+    ctx.fillStyle=dark?'#8a8880':'#7a7974';
+    ctx.font='11px -apple-system,sans-serif';
+    ctx.lineWidth=1;
+    var gridN=4;
+    for(var g=0;g<=gridN;g++){
+      var gy=pad.t+plotH*g/gridN;
+      var gp=max-range*g/gridN;
+      ctx.beginPath(); ctx.moveTo(pad.l,gy); ctx.lineTo(W-pad.r,gy); ctx.stroke();
+      ctx.fillText(comma(gp), 4, gy+3);
+    }
+
+    ctx.fillText(series[0].date, pad.l, H-10);
+    var lastLabel=series[series.length-1].date;
+    ctx.fillText(lastLabel, W-pad.r-lastLabel.length*5.6, H-10);
+
+    ctx.strokeStyle='#01696f';
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    series.forEach(function(s,i){
+      var x=xAt(i), y=yAt(s.price);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+
+    ctx.fillStyle='#01696f';
+    series.forEach(function(s,i){
+      var x=xAt(i), y=yAt(s.price);
+      ctx.beginPath(); ctx.arc(x,y,3.2,0,Math.PI*2); ctx.fill();
+    });
+
+    var tip=q('chart-tip');
+    canvas.onmousemove = function(evt){
+      var rect=canvas.getBoundingClientRect();
+      var mx=evt.clientX-rect.left;
+      var closest=0, closestDist=Infinity;
+      series.forEach(function(s,i){
+        var d=Math.abs(xAt(i)-mx);
+        if(d<closestDist){ closestDist=d; closest=i; }
+      });
+      var s=series[closest];
+      tip.style.display='block';
+      tip.style.left=xAt(closest)+'px';
+      tip.style.top=yAt(s.price)+'px';
+      tip.textContent=s.date+' · '+comma(s.price)+'원/'+s.unit;
+    };
+    canvas.onmouseleave = function(){ tip.style.display='none'; };
+  }
+
+  function renderDashboard(){
+    renderSummary();
+    renderChartSelect();
+    drawChart();
+  }
+  window.addEventListener('resize', function(){
+    if(panes.dashboard.className.indexOf('on')!==-1) drawChart();
+  });
+
+  // ---------- sources ----------
+  var SOURCES = [
+    {name:'KAMIS 농산물유통정보', org:'한국농수산식품유통공사(aT)', category:'농산물(채소·과일·곡물)', url:'https://www.kamis.or.kr', auth:'회원가입 후 Open-API 이용신청 → 인증키 발급', cycle:'일별', desc:'전국 도매·소매시장의 품목별 가격을 매일 조사해 제공하는 대표적인 농산물 시세 정보. 채소·과일·곡물 위주로 30년 이상 축적된 데이터 보유.'},
+    {name:'축산물유통정보(KMIX)', org:'축산물품질평가원', category:'축산물(소·돼지·닭·계란 등)', url:'https://www.data.go.kr/data/15000577/openapi.do', auth:'공공데이터포털 회원가입 후 인증키 발급', cycle:'일/순/월별', desc:'소·돼지·닭·계란·오리 등 축산물의 소비자가격·경락가격 정보를 제공. 공공데이터포털을 통해 Open API로 이용 가능.'},
+    {name:'수산물 위탁판매(위판) 정보', org:'해양수산부', category:'수산물', url:'https://www.data.go.kr/search/dataSearchList.do?dsrvcSe=DATASET&keyword=위탁판매', auth:'공공데이터포털 인증키 필요', cycle:'일별', desc:'전국 수협 위판장의 어종별 위탁판매 가격·물량 정보. 위판장·어종 단위로 조회 가능해 수산물 매입 시세 파악에 유용.'},
+    {name:'공공데이터포털', org:'행정안전부', category:'통합 허브', url:'https://www.data.go.kr', auth:'회원가입 시 인증키 발급(API별 활용신청 필요)', cycle:'API별 상이', desc:'농산물·축산물·수산물 관련 정부 API를 한 곳에서 검색하고 신청할 수 있는 허브 사이트. 인증키 1개로 여러 API를 함께 사용 가능.'},
+    {name:'농림축산식품 공공데이터포털', org:'농림축산식품부', category:'농축산물', url:'https://data.mafra.go.kr', auth:'회원가입 시 인증키 자동 발급', cycle:'API별 상이', desc:'농식품 관련 공공데이터와 Open API를 제공. 가입만 하면 인증키가 즉시 발급되어 진입 장벽이 낮음.'},
+    {name:'참가격(가격정보종합포털)', org:'한국소비자원', category:'가공식품·외식·생활물가', url:'https://www.price.go.kr', auth:'홈페이지 조회 중심(별도 Open API는 기관에 확인 필요)', cycle:'주/월별', desc:'가공식품, 외식비, 생활 밀접 품목의 지역별·업체별 가격을 비교해주는 소비자 대상 서비스. 원재료 외 가공식품 시세 참고에 적합.'},
+    {name:'KOSIS 소비자물가지수', org:'통계청', category:'물가 지표(추세 참고용)', url:'https://kosis.kr', auth:'KOSIS Open API 이용자 등록 필요', cycle:'월별', desc:'품목별 소비자물가지수로 전월·전년 대비 변동률을 확인할 수 있음. 실제 구매 단가는 아니지만 큰 흐름과 계절성 파악에 유용.'},
+    {name:'수출입무역통계', org:'관세청', category:'수입 식재료', url:'https://unipass.customs.go.kr', auth:'일부 통계는 Open API 제공, 상세 이용은 관세청 확인', cycle:'월별', desc:'수입 식재료(커피, 견과류, 냉동육, 열대과일 등)의 통관가격·물량 추이를 제공해 국제 시세·환율 영향을 파악하는 데 활용.'},
+    {name:'가락시장 경락정보', org:'서울시농수산식품공사', category:'농산물 도매(가락동)', url:'https://www.garak.co.kr', auth:'홈페이지 게시 정보 중심, API는 기관에 별도 문의', cycle:'일별', desc:'국내 최대 농산물 도매시장인 가락시장의 품목별 경락가격 정보. 대량 구매를 하는 업체의 도매가 기준선으로 참고하기 좋음.'},
+    {name:'노량진수산시장 시세정보', org:'수협노량진수산㈜', category:'수산물 도매', url:'https://susansijang.co.kr', auth:'별도 API 없음, 홈페이지 게시 정보 수기 확인', cycle:'일별', desc:'국내 대표 수산물 도매시장의 품목별 시세를 게시. API가 없어 자동 수집은 어렵지만 수산물 벤치마크 가격으로 활용 가능.'}
+  ];
+
+  function renderSources(){
+    var list=q('source-list');
+    if(list.childElementCount) return;
+    list.innerHTML = SOURCES.map(function(s){
+      return '<div class="src-card">'+
+        '<div class="src-head"><div class="src-name">'+escapeHtml(s.name)+'</div><span class="chip etc">'+escapeHtml(s.category)+'</span></div>'+
+        '<div class="src-desc">'+escapeHtml(s.desc)+'</div>'+
+        '<div class="src-meta"><span>제공기관: '+escapeHtml(s.org)+'</span><span>인증: '+escapeHtml(s.auth)+'</span><span>갱신주기: '+escapeHtml(s.cycle)+'</span></div>'+
+        '<a class="src-link" href="'+s.url+'" target="_blank" rel="noopener">사이트 바로가기 →</a>'+
+        '</div>';
+    }).join('');
+  }
+
+  // ---------- dark mode ----------
+  q('theme-btn').addEventListener('click', function(){
+    dark = !dark;
+    document.body.style.background = dark?'#131211':'#f7f6f2';
+    document.body.style.color = dark?'#d4d3d0':'#28251d';
+    this.textContent = dark?'라이트모드':'다크모드';
+    var cards = document.querySelectorAll('.card,.sum-item,.src-card');
+    for(var c=0;c<cards.length;c++){
+      cards[c].style.background = dark?'#1c1b19':'#fff';
+      cards[c].style.borderColor = dark?'#353330':'#e0ddd8';
+    }
+    var hdr = document.querySelector('header');
+    hdr.style.background = dark?'#1c1b19':'#fff';
+    hdr.style.borderColor = dark?'#353330':'#e0ddd8';
+    var inputs = document.querySelectorAll('input[type=text],input[type=number],input[type=date],select,textarea');
+    for(var inp=0;inp<inputs.length;inp++){
+      inputs[inp].style.background = dark?'#242321':'#f9f8f5';
+      inputs[inp].style.borderColor = dark?'#353330':'#d4d1ca';
+      inputs[inp].style.color = dark?'#d4d3d0':'#28251d';
+    }
+    drawChart();
+  });
+
+  function renderAll(){
+    renderTable();
+    renderNameSuggest();
+    if(panes.dashboard.className.indexOf('on')!==-1) renderDashboard();
+  }
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
