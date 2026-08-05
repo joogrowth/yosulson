@@ -48,3 +48,5 @@ python3 scripts/fetch_kamis_prices.py --days 30 --out data/kamis_latest.json
 ```
 
 Python 표준 라이브러리만 사용하므로 별도 패키지 설치가 필요 없음(Python 3.8 이상 권장).
+
+`data/reference/kamis_품목_등급_코드표.xlsx`는 KAMIS 공식 품목/등급 코드표 원본(부류코드, 품목코드, 품종코드, 축산물 코드 등)이며, `scripts/fetch_kamis_prices.py`의 `LIVESTOCK_ITEMS` 목록을 채우거나 새 품목을 추가할 때 참고용으로 저장해 둠.
