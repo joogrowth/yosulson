@@ -8,7 +8,7 @@
 
 배송/배송세팅/출장 유형별로 기본 정보, 거리, 시급 등을 입력하면 인건비·수고비·차량 운영비·유류비를 자동 계산해 결과를 텍스트로 복사할 수 있는 도구.
 
-### 2. `price-tracker.html` — 식재료 시세 분석 트래커
+### 2. `price-insight.html` — 식재료 시세 분석 트래커
 
 식재료 가격을 기록하고 추세를 확인해서 가격 급등락에 미리 대응하기 위한 도구.
 
@@ -20,7 +20,7 @@
 
 ## 데이터 출처
 
-`data/sources.json`에 식재료 시세 관련 국내 공공/민간 데이터 출처를 구조화해 정리해 두었음. `price-tracker.html`의 "데이터 출처 안내" 탭과 같은 내용이며, 다른 자동화 스크립트에서도 재사용 가능.
+`data/sources.json`에 식재료 시세 관련 국내 공공/민간 데이터 출처를 구조화해 정리해 두었음. `price-insight.html`의 "데이터 출처 안내" 탭과 같은 내용이며, 다른 자동화 스크립트에서도 재사용 가능.
 
 주요 출처:
 
@@ -39,7 +39,7 @@
 
 ## 데이터 수집 스크립트
 
-`scripts/fetch_kamis_prices.py`는 KAMIS Open API에서 기간별 시세 원자료를 내려받아 `price-tracker.html`이 바로 가져올 수 있는 JSON으로 변환하는 예시 스크립트. 사용하려면 KAMIS 회원가입 후 발급받은 인증키를 환경변수로 설정해야 함.
+`scripts/fetch_kamis_prices.py`는 KAMIS Open API에서 기간별 시세 원자료를 내려받아 `price-insight.html`이 바로 가져올 수 있는 JSON으로 변환하는 예시 스크립트. 사용하려면 KAMIS 회원가입 후 발급받은 인증키를 환경변수로 설정해야 함.
 
 ```bash
 export KAMIS_CERT_KEY="발급받은키"

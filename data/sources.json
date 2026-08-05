@@ -1,5 +1,5 @@
 {
-  "description": "식재료 시세 분석에 활용할 수 있는 한국 공공/민간 데이터 출처 목록. price-tracker.html의 '데이터 출처 안내' 탭과 동일한 내용을 구조화한 파일로, 자동화 스크립트(예: scripts/fetch_kamis_prices.py)에서 참조하거나 다른 도구에서 재사용할 수 있음.",
+  "description": "식재료 시세 분석에 활용할 수 있는 한국 공공/민간 데이터 출처 목록. price-insight.html의 '데이터 출처 안내' 탭과 동일한 내용을 구조화한 파일로, 자동화 스크립트(예: scripts/fetch_kamis_prices.py)에서 참조하거나 다른 도구에서 재사용할 수 있음.",
   "updated": "2026-08-05",
   "sources": [
     {

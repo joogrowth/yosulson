@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """KAMIS(농산물유통정보) Open API에서 품목별 최근 시세를 내려받아
-price-tracker.html의 "가져오기" 기능에서 바로 쓸 수 있는 JSON으로 변환하는 스크립트.
+price-insight.html의 "가져오기" 기능에서 바로 쓸 수 있는 JSON으로 변환하는 스크립트.
 
 사용 전 준비물
 ---------------
@@ -17,7 +17,7 @@ price-tracker.html의 "가져오기" 기능에서 바로 쓸 수 있는 JSON으�
     export KAMIS_CERT_ID="발급받은아이디"
     python3 scripts/fetch_kamis_prices.py --days 30 --out data/kamis_latest.json
 
-출력된 JSON 파일은 price-tracker.html의 "시세 입력 > 가져오기/내보내기" 카드에서
+출력된 JSON 파일은 price-insight.html의 "시세 입력 > 가져오기/내보내기" 카드에서
 파일 선택으로 바로 불러올 수 있음.
 """
 
@@ -33,7 +33,7 @@ KAMIS_BASE_URL = "https://www.kamis.or.kr/service/price/xml.do"
 
 # 추적할 품목 목록. 카테고리/코드는 KAMIS 공식 코드표를 참고해서 직접 채워 넣을 것.
 # itemcategorycode: 부류코드, itemcode: 품목코드, kindcode: 품종코드, productrankcode: 등급코드
-# unit: 이 도구(price-tracker.html)에 기록할 때 표시할 단위 라벨(참고용, API 응답 단위와 다를 수 있음)
+# unit: 이 도구(price-insight.html)에 기록할 때 표시할 단위 라벨(참고용, API 응답 단위와 다를 수 있음)
 ITEMS = [
     # 예시 형태 (실제 코드값은 반드시 공식 코드표에서 확인 후 채워 넣기)
     # {
@@ -74,7 +74,7 @@ def fetch_period_prices(cert_key, cert_id, start_day, end_day, product_cls_code=
 
 
 def to_tracker_records(kamis_rows, category_hint=None, unit_hint=None):
-    """KAMIS periodProductList 응답 행을 price-tracker.html 가져오기 형식으로 변환."""
+    """KAMIS periodProductList 응답 행을 price-insight.html 가져오기 형식으로 변환."""
     records = []
     for row in kamis_rows or []:
         try:
