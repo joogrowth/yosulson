@@ -78,7 +78,7 @@ PRODUCE_ITEMS = [
     {"label": "부추", "category": "채소", "unit": "kg", "itemcategorycode": "200", "itemcode": "254", "kindcode": "00"},
     {"label": "토마토", "category": "채소", "unit": "kg", "itemcategorycode": "200", "itemcode": "225", "kindcode": "00"},
     {"label": "풋고추", "category": "채소", "unit": "kg", "itemcategorycode": "200", "itemcode": "242", "kindcode": "00"},
-    {"label": "고구마", "category": "과일", "unit": "kg", "itemcategorycode": "100", "itemcode": "151", "kindcode": "00"},
+    {"label": "고구마", "category": "채소", "unit": "kg", "itemcategorycode": "100", "itemcode": "151", "kindcode": "00"},
     {"label": "쌀", "category": "곡물", "unit": "20kg", "itemcategorycode": "100", "itemcode": "111", "kindcode": "01"},
 ]
 

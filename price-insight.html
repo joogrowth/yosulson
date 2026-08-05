@@ -103,18 +103,45 @@ canvas#chart{width:100%;height:260px;display:block}
   <p class="subtitle">식재료 가격을 기록하고 추세를 확인해서 가격 급등락에 미리 대응하는 도구</p>
 
   <div class="type-tabs">
-    <button class="type-tab on" data-v="input">시세 입력</button>
-    <button class="type-tab" data-v="dashboard">트렌드 대시보드</button>
+    <button class="type-tab on" data-v="lookup">시세 조회</button>
+    <button class="type-tab" data-v="manage">데이터 관리</button>
     <button class="type-tab" data-v="sources">데이터 출처 안내</button>
   </div>
 
-  <!-- ===== 입력 탭 ===== -->
-  <div class="pane on" id="pane-input">
+  <!-- ===== 시세 조회 탭 (기본 화면) ===== -->
+  <div class="pane on" id="pane-lookup">
+    <div class="card">
+      <div class="card-title">품목 검색</div>
+      <div class="fi full">
+        <input type="text" id="lookup-input" placeholder="품목명을 입력하세요 (예: 양파, 고등어, 돼지고기(삼겹살))" list="name-suggest" autocomplete="off">
+      </div>
+      <datalist id="name-suggest"></datalist>
+    </div>
+
+    <div class="card" id="lookup-detail-card" style="display:none">
+      <div class="card-title" id="lookup-detail-title">선택한 품목</div>
+      <div id="lookup-detail-body"></div>
+      <div id="chart-wrap" style="margin-top:14px">
+        <canvas id="chart"></canvas>
+        <div id="chart-tip"></div>
+      </div>
+      <div class="empty" id="chart-empty" style="display:none">이 품목의 기록이 없음</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">전체 품목 현황 (변동폭이 큰 순서)</div>
+      <div class="card-desc">품목을 클릭하면 위에 상세 추이가 표시됨</div>
+      <div class="summary-grid" id="summary-grid"></div>
+      <div class="empty" id="summary-empty" style="display:none">품목당 2건 이상 기록이 있어야 변동률을 계산할 수 있음. "데이터 관리" 탭에서 시세를 입력하거나 가져오세요.</div>
+    </div>
+  </div>
+
+  <!-- ===== 데이터 관리 탭 ===== -->
+  <div class="pane" id="pane-manage">
     <div class="card">
       <div class="card-title">새 시세 기록 추가</div>
       <div class="fg">
         <div class="fi"><label>품목명</label><input type="text" id="f-name" placeholder="예) 양파" list="name-suggest"></div>
-        <datalist id="name-suggest"></datalist>
         <div class="fi">
           <label>카테고리</label>
           <select id="f-cat">
@@ -181,13 +208,10 @@ canvas#chart{width:100%;height:260px;display:block}
       </div>
       <div class="empty" id="entry-empty" style="display:none">아직 등록된 시세 기록이 없음. 위에서 직접 입력하거나 샘플 데이터를 불러와서 시작할 수 있음</div>
     </div>
-  </div>
 
-  <!-- ===== 대시보드 탭 ===== -->
-  <div class="pane" id="pane-dashboard">
     <div class="card">
       <div class="card-title">경고 기준 설정</div>
-      <div class="card-desc">직전 기록 대비 가격 변동률이 아래 기준을 넘으면 자동으로 등급이 표시됨</div>
+      <div class="card-desc">"시세 조회" 탭에서 직전 기록 대비 가격 변동률이 아래 기준을 넘으면 자동으로 등급이 표시됨</div>
       <div class="thresh-row">
         <label>상승/하락 주의 기준 (±%)</label>
         <input type="number" id="th-warn" min="0" step="0.5">
@@ -197,27 +221,6 @@ canvas#chart{width:100%;height:260px;display:block}
         <input type="number" id="th-alert" min="0" step="0.5">
       </div>
       <div class="btn-row"><button class="btn ghost" id="btn-save-thresh">기준 저장</button></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">품목별 현황 (변동폭이 큰 순서)</div>
-      <div class="summary-grid" id="summary-grid"></div>
-      <div class="empty" id="summary-empty" style="display:none">품목당 2건 이상 기록이 있어야 변동률을 계산할 수 있음</div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">품목별 시세 추이</div>
-      <div class="fg" style="margin-bottom:14px">
-        <div class="fi full">
-          <label>품목 선택</label>
-          <select id="chart-select"></select>
-        </div>
-      </div>
-      <div id="chart-wrap">
-        <canvas id="chart"></canvas>
-        <div id="chart-tip"></div>
-      </div>
-      <div class="empty" id="chart-empty" style="display:none">선택한 품목의 기록이 없음</div>
     </div>
   </div>
 
@@ -266,14 +269,14 @@ canvas#chart{width:100%;height:260px;display:block}
 
   // ---------- tabs ----------
   var tabs = document.querySelectorAll('.type-tab');
-  var panes = { input: q('pane-input'), dashboard: q('pane-dashboard'), sources: q('pane-sources') };
+  var panes = { lookup: q('pane-lookup'), manage: q('pane-manage'), sources: q('pane-sources') };
   for(var i=0;i<tabs.length;i++){
     tabs[i].addEventListener('click', function(){
       for(var j=0;j<tabs.length;j++) tabs[j].className='type-tab';
       this.className='type-tab on';
       var v=this.getAttribute('data-v');
       for(var k in panes) panes[k].className = (k===v) ? 'pane on' : 'pane';
-      if(v==='dashboard') renderDashboard();
+      if(v==='lookup') renderLookup();
       if(v==='sources') renderSources();
     });
   }
@@ -467,7 +470,8 @@ canvas#chart{width:100%;height:260px;display:block}
     if(isNaN(w)||isNaN(a)||w<0||a<0||a<w){ alert('경고 기준은 주의 기준보다 크거나 같은 0 이상의 값이어야 함'); return; }
     thresh={warn:w, alert:a};
     localStorage.setItem(LS_THRESH, JSON.stringify(thresh));
-    renderDashboard();
+    renderLookup();
+    alert('저장되었습니다. "시세 조회" 탭에서 확인하세요.');
   });
 
   function itemSeries(name){
@@ -483,7 +487,7 @@ canvas#chart{width:100%;height:260px;display:block}
     return {cls:'flat', label:'🟢 보합', action:'특별한 변동 없음. 현재 구매 전략을 유지하면 됨.'};
   }
 
-  function renderSummary(){
+  function summaryRows(){
     var names=uniqueNames();
     var rows=[];
     names.forEach(function(name){
@@ -495,7 +499,11 @@ canvas#chart{width:100%;height:260px;display:block}
       rows.push({name:name, category:latest.category, latest:latest, change:change});
     });
     rows.sort(function(a,b){ return Math.abs(b.change)-Math.abs(a.change); });
+    return rows;
+  }
 
+  function renderSummary(){
+    var rows=summaryRows();
     var grid=q('summary-grid');
     grid.innerHTML='';
     q('summary-empty').style.display = rows.length ? 'none' : 'block';
@@ -505,6 +513,7 @@ canvas#chart{width:100%;height:260px;display:block}
       var sign = r.change>0 ? '+' : '';
       var div=document.createElement('div');
       div.className='sum-item';
+      div.style.cursor='pointer';
       div.innerHTML =
         '<div class="sum-l">'+
           '<div class="sum-name">'+escapeHtml(r.name)+' <span class="chip '+cls+'" style="margin-left:4px">'+escapeHtml(r.category)+'</span></div>'+
@@ -515,21 +524,72 @@ canvas#chart{width:100%;height:260px;display:block}
           '<div class="sum-price">'+sign+r.change.toFixed(1)+'%</div>'+
           '<div class="badge '+info.cls+'">'+info.label+'</div>'+
         '</div>';
+      div.addEventListener('click', function(){
+        q('lookup-input').value = r.name;
+        showLookupDetail(r.name);
+        q('lookup-detail-card').scrollIntoView({behavior:'smooth', block:'start'});
+      });
       grid.appendChild(div);
     });
   }
 
-  function renderChartSelect(){
-    var names=uniqueNames();
-    var sel=q('chart-select');
-    var prev=sel.value;
-    sel.innerHTML = names.map(function(n){ return '<option value="'+escapeHtml(n)+'">'+escapeHtml(n)+'</option>'; }).join('');
-    if(names.indexOf(prev)!==-1) sel.value=prev;
+  // ---------- 시세 조회 (검색 기반) ----------
+  function showLookupDetail(name){
+    var card=q('lookup-detail-card');
+    var series=itemSeries(name);
+    if(!name || !series.length){
+      card.style.display='none';
+      return;
+    }
+    card.style.display='block';
+    q('lookup-detail-title').textContent=name;
+    var latest=series[series.length-1];
+    var cls = CAT_CLASS[latest.category] || 'etc';
+    var body=q('lookup-detail-body');
+    if(series.length>=2){
+      var prev=series[series.length-2];
+      var change=((latest.price-prev.price)/prev.price)*100;
+      var info=classify(change);
+      var sign = change>0 ? '+' : '';
+      body.innerHTML =
+        '<div class="sum-item" style="border:none;padding:0">'+
+          '<div class="sum-l">'+
+            '<div class="sum-name"><span class="chip '+cls+'">'+escapeHtml(latest.category)+'</span></div>'+
+            '<div class="sum-meta">'+latest.date+' 기준 · '+comma(latest.price)+'원/'+escapeHtml(latest.unit)+(latest.source?(' · '+escapeHtml(latest.source)):'')+'</div>'+
+            '<div class="sum-action">'+info.action+'</div>'+
+          '</div>'+
+          '<div class="sum-r">'+
+            '<div class="sum-price">'+sign+change.toFixed(1)+'%</div>'+
+            '<div class="badge '+info.cls+'">'+info.label+'</div>'+
+          '</div>'+
+        '</div>';
+    } else {
+      body.innerHTML =
+        '<div class="sum-meta">'+latest.date+' 기준 · '+comma(latest.price)+'원/'+escapeHtml(latest.unit)+(latest.source?(' · '+escapeHtml(latest.source)):'')+'</div>'+
+        '<div class="card-desc" style="margin-top:6px">기록이 1건뿐이라 변동률은 아직 계산할 수 없음. 기록이 더 쌓이면 추세가 표시됨.</div>';
+    }
+    drawChart(name);
   }
-  q('chart-select').addEventListener('change', drawChart);
 
-  function drawChart(){
-    var name=q('chart-select').value;
+  var lookupInput = q('lookup-input');
+  lookupInput.addEventListener('input', function(){
+    var val=(lookupInput.value||'').trim();
+    var names=uniqueNames();
+    var match = names.filter(function(n){ return n.toLowerCase()===val.toLowerCase(); })[0];
+    showLookupDetail(match);
+  });
+
+  function renderLookup(){
+    renderSummary();
+    showLookupDetail((lookupInput.value||'').trim() ? uniqueNames().filter(function(n){ return n.toLowerCase()===lookupInput.value.trim().toLowerCase(); })[0] : null);
+  }
+  window.addEventListener('resize', function(){
+    if(panes.lookup.className.indexOf('on')!==-1 && q('lookup-detail-card').style.display!=='none'){
+      drawChart(lookupInput.value.trim());
+    }
+  });
+
+  function drawChart(name){
     var canvas=q('chart');
     var ctx=canvas.getContext('2d');
     var wrap=q('chart-wrap');
@@ -604,15 +664,6 @@ canvas#chart{width:100%;height:260px;display:block}
     canvas.onmouseleave = function(){ tip.style.display='none'; };
   }
 
-  function renderDashboard(){
-    renderSummary();
-    renderChartSelect();
-    drawChart();
-  }
-  window.addEventListener('resize', function(){
-    if(panes.dashboard.className.indexOf('on')!==-1) drawChart();
-  });
-
   // ---------- sources ----------
   var SOURCES = [
     {name:'KAMIS 농산물유통정보', org:'한국농수산식품유통공사(aT)', category:'농산물(채소·과일·곡물)', url:'https://www.kamis.or.kr', auth:'회원가입 후 Open-API 이용신청 → 인증키 발급', cycle:'일별', desc:'전국 도매·소매시장의 품목별 가격을 매일 조사해 제공하는 대표적인 농산물 시세 정보. 채소·과일·곡물 위주로 30년 이상 축적된 데이터 보유.'},
@@ -660,13 +711,13 @@ canvas#chart{width:100%;height:260px;display:block}
       inputs[inp].style.borderColor = dark?'#353330':'#d4d1ca';
       inputs[inp].style.color = dark?'#d4d3d0':'#28251d';
     }
-    drawChart();
+    if(q('lookup-detail-card').style.display!=='none') drawChart(lookupInput.value.trim());
   });
 
   function renderAll(){
     renderTable();
     renderNameSuggest();
-    if(panes.dashboard.className.indexOf('on')!==-1) renderDashboard();
+    renderLookup();
   }
 
   renderAll();
