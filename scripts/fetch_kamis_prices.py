@@ -1,25 +1,26 @@
 #!/usr/bin/env python3
-"""KAMIS(농산물유통정보) Open API에서 품목별 최근 시세를 내려받아
-price-insight.html의 "가져오기" 기능에서 바로 쓸 수 있는 JSON으로 변환하는 스크립트.
+"""KAMIS(농산물유통정보) Open API에서 카테고리(부류) 단위로 전체 품목 시세를
+내려받아 price-insight.html이 가져올 수 있는 JSON으로 변환하는 스크립트.
 
 사용 전 준비물
 ---------------
 1. https://www.kamis.or.kr 에서 회원가입 후 "고객센터 > Open-API > Open-API 이용신청"에서
    신청서를 제출하면 심사 후 인증키(KAMIS_CERT_KEY)와 아이디(KAMIS_CERT_ID)가 발급됨.
-2. 같은 메뉴의 "농축수산물 품목 및 등급 코드표" 파일을 내려받아, 추적하려는 품목의
-   품목코드(itemcode)/부류코드(itemcategorycode)/품종코드(kindcode)를 확인해서
-   아래 ITEMS 목록을 채워 넣어야 함. (코드값은 문서마다 갱신될 수 있어 이 스크립트에는
-   임의로 채워 넣지 않았으니 반드시 공식 코드표로 확인할 것.)
 
-   중요(실측 확인): 품목코드를 하나도 안 넣으면 "전체 품목"이 오는 게 아니라 KAMIS가
-   정한 기본 품목(예: 쌀) 1건만 내려옴. 여러 품목(양파, 대파 등)을 각각 받고 싶으면
-   ITEMS 목록에 품목마다 코드를 채워 넣어야 함 — 그러면 품목 개수만큼 API를 반복 호출함.
+품목코드표 없이도 되는 이유
+---------------------------
+KAMIS의 "일별 부류별 도소매가격정보"(dailyPriceByCategoryList) API는 부류코드
+(100=식량작물, 200=채소류, 300=특용작물, 400=과일류, 500=축산물, 600=수산물)
+하나만 지정하면 그 부류에 속한 전체 품목(약 180개)의 가격을 한 번에 돌려줌.
+게다가 오늘/1일전/1주일전/2주일전/1개월전/1년전/평년, 이렇게 7개 시점 가격을
+같이 주기 때문에 품목별 코드를 몰라도 바로 트렌드 데이터를 채울 수 있음.
 
 사용 예시
 ---------
     export KAMIS_CERT_KEY="발급받은키"
     export KAMIS_CERT_ID="발급받은아이디"
-    python3 scripts/fetch_kamis_prices.py --days 30 --out data/kamis_latest.json
+    python3 scripts/fetch_kamis_prices.py --out data/kamis_latest.json
+    # 특정 부류만: --categories 200,400  (채소류, 과일류만)
 
 출력된 JSON 파일은 price-insight.html의 "시세 입력 > 가져오기/내보내기" 카드에서
 파일 선택으로 바로 불러올 수 있음.
@@ -44,46 +45,43 @@ import common  # noqa: E402
 
 KAMIS_BASE_URL = "https://www.kamis.or.kr/service/price/xml.do"
 
-# 추적할 품목 목록. 카테고리/코드는 KAMIS 공식 코드표를 참고해서 직접 채워 넣을 것.
-# itemcategorycode: 부류코드, itemcode: 품목코드, kindcode: 품종코드, productrankcode: 등급코드
-# unit: 이 도구(price-insight.html)에 기록할 때 표시할 단위 라벨(참고용, API 응답 단위와 다를 수 있음)
-ITEMS = [
-    # 예시 형태 (실제 코드값은 반드시 공식 코드표에서 확인 후 채워 넣기)
-    # {
-    #     "label": "양파",
-    #     "category": "채소",
-    #     "unit": "kg",
-    #     "itemcategorycode": "200",
-    #     "itemcode": "245",
-    #     "kindcode": "00",
-    #     "productrankcode": "04",
-    # },
-]
+CATEGORY_LABELS = {
+    "100": "곡물",
+    "200": "채소",
+    "300": "채소",       # 특용작물(참깨/들깨 등)도 트래커 카테고리상 채소로 분류
+    "400": "과일",
+    "500": "축산물",
+    "600": "수산물",
+}
+
+DEFAULT_CATEGORIES = ["200", "400", "500", "600"]  # 채소류, 과일류, 축산물, 수산물
+
+# day1~day7 / dpr1~dpr7 이 각각 어떤 시점인지 (KAMIS 응답 순서 기준)
+DAY_POINT_LABELS = ["당일", "1일전", "1주일전", "2주일전", "1개월전", "1년전", "평년"]
 
 
-def fetch_period_prices(cert_key, cert_id, start_day, end_day, product_cls_code="01", item=None):
-    """periodProductList API로 기간별 도/소매가격 원자료를 조회.
+def _get(row, *keys):
+    """KAMIS 응답의 키 표기(밑줄 유무 등)가 API마다 달라 여러 후보를 순서대로 시도."""
+    for k in keys:
+        if k in row and row[k] not in (None, "", []):
+            v = row[k]
+            return v.strip() if isinstance(v, str) else v
+    return None
 
-    product_cls_code: '01'=소매, '02'=도매
-    item: ITEMS 항목(dict) 하나. None이면 품목코드를 지정하지 않고 호출함.
-          (실측 결과: 품목코드를 안 주면 "전체 품목"이 아니라 KAMIS 서버가 정한
-          기본 품목 1개만 내려옴 — 예: 쌀. 여러 품목을 받으려면 반드시 item마다
-          한 번씩 호출해야 함.)
-    """
+
+def fetch_daily_by_category(cert_key, cert_id, item_category_code, product_cls_code="01", regday=None):
+    """dailyPriceByCategoryList API로 부류 전체 품목의 최근 시세(7개 비교시점 포함)를 조회."""
     params = {
-        "action": "periodProductList",
+        "action": "dailyPriceByCategoryList",
         "p_cert_key": cert_key,
         "p_cert_id": cert_id,
         "p_returntype": "json",
-        "p_startday": start_day,
-        "p_endday": end_day,
-        "p_productclscode": product_cls_code,
+        "p_product_cls_code": product_cls_code,
+        "p_item_category_code": item_category_code,
         "p_convert_kg_yn": "N",
     }
-    if item:
-        for key in ("itemcategorycode", "itemcode", "kindcode", "productrankcode", "countrycode"):
-            if item.get(key):
-                params["p_" + key] = item[key]
+    if regday:
+        params["p_regday"] = regday
     url = KAMIS_BASE_URL + "?" + urllib.parse.urlencode(params)
     with urllib.request.urlopen(url, timeout=20) as resp:
         raw = resp.read().decode("utf-8", errors="replace")
@@ -94,98 +92,106 @@ def fetch_period_prices(cert_key, cert_id, start_day, end_day, product_cls_code=
         return None
 
 
-def _s(value):
-    """KAMIS는 값이 없는 필드를 ""가 아니라 빈 리스트([])로 내려주는 경우가 있어,
-    문자열이 아닌 값은 빈 문자열로 취급하도록 방어적으로 변환."""
-    return value.strip() if isinstance(value, str) else ""
+def parse_kamis_date(day_str):
+    """KAMIS 날짜 표기(예: '08/04', '2026-08-04', '20260804')를 ISO(YYYY-MM-DD)로 변환.
+    연도가 없는 MM/DD 형식은 오늘 기준으로 가장 가까운 과거 연도를 추정."""
+    if not isinstance(day_str, str) or not day_str.strip():
+        return None
+    s = day_str.strip()
+    today = datetime.date.today()
+    try:
+        if "-" in s and len(s) >= 8:
+            return datetime.date.fromisoformat(s[:10]).isoformat()
+        if len(s) == 8 and s.isdigit():
+            return "{}-{}-{}".format(s[0:4], s[4:6], s[6:8])
+        if "/" in s:
+            mm, dd = s.split("/")
+            year = today.year
+            candidate = datetime.date(year, int(mm), int(dd))
+            if candidate > today:
+                candidate = datetime.date(year - 1, int(mm), int(dd))
+            return candidate.isoformat()
+    except (ValueError, IndexError):
+        return None
+    return None
 
 
-def to_tracker_records(kamis_rows, category_hint=None, unit_hint=None, name_fallback=None):
-    """KAMIS periodProductList 응답 행을 price-insight.html 가져오기 형식으로 변환."""
+def to_tracker_records_from_category(rows, category_label):
+    """dailyPriceByCategoryList 응답 행(품목당 최대 7개 시점 가격 포함)을
+    price-insight.html 가져오기 형식의 여러 레코드로 펼침."""
     records = []
-    for row in kamis_rows or []:
-        try:
-            price = row.get("price")
-            if not price or price in ("-", "0"):
-                continue
-            price_val = float(str(price).replace(",", ""))
-        except (TypeError, ValueError):
-            continue
-        yyyy = _s(row.get("yyyy")) or str(row.get("yyyy") or "")
-        regday = row.get("regday", "")  # 보통 'MM/DD' 형식으로 내려옴
-        date_str = None
-        if yyyy and regday and isinstance(regday, str) and "/" in regday:
-            mm, dd = regday.split("/")
-            date_str = "{}-{:0>2}-{:0>2}".format(yyyy, mm, dd)
-        name = _s(row.get("itemname")) or _s(row.get("kindname")) or (name_fallback or "")
+    for row in rows or []:
+        name = _get(row, "item_name", "itemname", "itemName")
+        kind = _get(row, "kind_name", "kindname", "kindName") or ""
+        unit = _get(row, "unit") or "kg"
         if not name:
-            # 이름을 전혀 알 수 없는 행(전국 평균/평년 등 집계행)은 트래커에 의미가 없어 건너뜀
             continue
-        records.append(common.normalize_record(
-            name=name,
-            category=category_hint or "채소",
-            price=price_val,
-            unit=unit_hint or _s(row.get("unit")) or "kg",
-            date=date_str,
-            source="KAMIS",
-            memo="{} / {}".format(_s(row.get("kindname")), _s(row.get("countyname"))).strip(" /"),
-        ))
+        full_name = "{}({})".format(name, kind) if kind and kind != name else name
+        for i in range(1, 8):
+            day_val = _get(row, "day{}".format(i))
+            price_val = _get(row, "dpr{}".format(i))
+            if day_val is None or price_val in (None, "-", "0", 0):
+                continue
+            try:
+                price_num = float(str(price_val).replace(",", ""))
+            except ValueError:
+                continue
+            date_str = parse_kamis_date(str(day_val))
+            if not date_str:
+                continue
+            records.append(common.normalize_record(
+                name=full_name,
+                category=category_label,
+                price=price_num,
+                unit=unit,
+                date=date_str,
+                source="KAMIS",
+                memo=DAY_POINT_LABELS[i - 1] if i - 1 < len(DAY_POINT_LABELS) else "",
+            ))
     return records
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--days", type=int, default=30, help="오늘 기준 며칠 전부터 조회할지 (기본 30일)")
-    parser.add_argument("--out", default="data/kamis_latest.json", help="출력 JSON 파일 경로")
+    parser.add_argument(
+        "--categories", default=",".join(DEFAULT_CATEGORIES),
+        help="콤마로 구분한 부류코드 (100=곡물,200=채소,300=특용작물,400=과일,500=축산물,600=수산물). "
+             "기본값: {}".format(",".join(DEFAULT_CATEGORIES)),
+    )
     parser.add_argument("--product-cls", choices=["01", "02"], default="01", help="01=소매, 02=도매 (기본 소매)")
+    parser.add_argument("--out", default="data/kamis_latest.json", help="출력 JSON 파일 경로")
     args = parser.parse_args()
 
     cert_key = os.environ.get("KAMIS_CERT_KEY")
     cert_id = os.environ.get("KAMIS_CERT_ID")
     if not cert_key or not cert_id:
         print("오류: 환경변수 KAMIS_CERT_KEY, KAMIS_CERT_ID를 설정해야 함.", file=sys.stderr)
-        print("발급 방법은 이 스크립트 상단 docstring 또는 data/sources.json 참고.", file=sys.stderr)
         sys.exit(1)
 
-    end_day = datetime.date.today()
-    start_day = end_day - datetime.timedelta(days=args.days)
-
-    queries = ITEMS if ITEMS else [None]
-    if not ITEMS:
-        print(
-            "안내: ITEMS 목록이 비어 있어 품목코드 없이 1회 호출함.\n"
-            "(실측 결과: 품목코드를 지정하지 않으면 KAMIS가 기본값으로 특정 품목 1개만 돌려줌 —\n"
-            "'전체 품목'이 오는 게 아님.) 여러 품목을 받으려면 스크립트 상단 ITEMS 목록에\n"
-            "품목코드를 채워 넣을 것 (KAMIS 고객센터 > Open-API 이용안내의 코드표 참고)."
-        )
-
+    categories = [c.strip() for c in args.categories.split(",") if c.strip()]
     all_records = []
-    for item in queries:
-        result = fetch_period_prices(
-            cert_key, cert_id,
-            start_day.isoformat(), end_day.isoformat(),
-            product_cls_code=args.product_cls,
-            item=item,
-        )
+    for cat_code in categories:
+        label = CATEGORY_LABELS.get(cat_code, "기타")
+        result = fetch_daily_by_category(cert_key, cert_id, cat_code, product_cls_code=args.product_cls)
         if not result:
-            print("오류: KAMIS 응답을 받지 못함 (item={})".format(item and item.get("label")), file=sys.stderr)
+            print("오류: KAMIS 응답을 받지 못함 (부류코드={})".format(cat_code), file=sys.stderr)
             continue
 
-        # 실제 응답 구조: {"condition": [...요청 파라미터 그대로...], "data": {"error_code": "000", "item": [...]}}
-        data = result.get("data") or {}
-        error_code = data.get("error_code")
+        data = result.get("data")
+        if isinstance(data, dict):
+            error_code = data.get("error_code")
+            rows = data.get("item") or []
+        else:
+            # 일부 액션은 data가 아니라 최상위에 바로 item 배열을 줄 수 있어 방어적으로 처리
+            error_code = None
+            rows = result.get("item") or (data if isinstance(data, list) else [])
+
         if error_code and error_code != "000":
-            print("KAMIS 응답 오류코드: {} (item={})".format(error_code, item and item.get("label")), file=sys.stderr)
+            print("KAMIS 응답 오류코드: {} (부류코드={})".format(error_code, cat_code), file=sys.stderr)
             continue
 
-        rows = data.get("item") or []
-        records = to_tracker_records(
-            rows,
-            category_hint=item and item.get("category"),
-            unit_hint=item and item.get("unit"),
-            name_fallback=item and item.get("label"),
-        )
-        print("  {} -> {}건".format((item and item.get("label")) or "(품목코드 미지정)", len(records)))
+        records = to_tracker_records_from_category(rows, label)
+        print("  부류 {}({}) -> 품목 {}개, 레코드 {}건".format(cat_code, label, len(rows), len(records)))
         all_records.extend(records)
 
     count = common.save_records(all_records, args.out)
