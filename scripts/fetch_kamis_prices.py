@@ -281,31 +281,43 @@ def main():
     end_day = datetime.date.today()
     start_day = end_day - datetime.timedelta(days=args.days)
 
-    all_records = []
-    for item in ITEMS:
+    def try_fetch(item, country_code):
         result = fetch_period_prices(
             cert_key, cert_id,
             start_day.isoformat(), end_day.isoformat(),
             item, product_cls_code=args.product_cls,
-            country_code=args.country_code or None,
+            country_code=country_code,
         )
         if not result:
-            print("오류: KAMIS 응답을 받지 못함 (품목={})".format(item["label"]), file=sys.stderr)
-            continue
-
+            return None, "응답 없음"
         # 실제 응답 구조: {"condition": [...요청 파라미터 그대로...], "data": {"error_code": "000", "item": [...]}}
         data = result.get("data")
         if not isinstance(data, dict):
-            print("경고: 예상과 다른 응답 구조 (품목={}): {}".format(item["label"], str(result)[:200]), file=sys.stderr)
-            continue
+            return None, "응답 구조 이상(해당 지역 데이터 없음일 가능성)"
         error_code = data.get("error_code")
         if error_code and error_code != "000":
-            print("KAMIS 응답 오류코드: {} (품목={})".format(error_code, item["label"]), file=sys.stderr)
+            return None, "오류코드 {}".format(error_code)
+        return data.get("item") or [], None
+
+    all_records = []
+    region = args.country_code or None
+    for item in ITEMS:
+        rows, err = try_fetch(item, region)
+        note = ""
+        if rows is None and region:
+            # 특정 지역(예: 고양)에 해당 품목 데이터가 아예 없는 경우가 있어(수산물 등),
+            # 전국 데이터로 한 번 더 시도함.
+            rows, err2 = try_fetch(item, None)
+            if rows is not None:
+                note = " (지역 데이터 없어 전국 평균으로 대체)"
+                err = None
+
+        if rows is None:
+            print("오류: {} 조회 실패 - {}".format(item["label"], err), file=sys.stderr)
             continue
 
-        rows = data.get("item") or []
         records = to_tracker_records(rows, item)
-        print("  {} -> {}건".format(item["label"], len(records)))
+        print("  {} -> {}건{}".format(item["label"], len(records), note))
         all_records.extend(records)
 
     count = common.save_records(all_records, args.out)
