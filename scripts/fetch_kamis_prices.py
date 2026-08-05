@@ -19,6 +19,12 @@ price-insight.html의 "가져오기" 기능에서 바로 쓸 수 있는 JSON으�
 
 출력된 JSON 파일은 price-insight.html의 "시세 입력 > 가져오기/내보내기" 카드에서
 파일 선택으로 바로 불러올 수 있음.
+
+중요: 실행 위치에 대한 안내
+---------------------------
+KAMIS는 해외/클라우드 IP를 웹방화벽(WAF)에서 차단하는 것으로 확인됨. 클라우드
+서버(예: AWS 등 해외 리전)에서 실행하면 "Web firewall security policies" 에러로
+막힐 수 있으니, 국내 IP 환경(본인 컴퓨터, 국내 호스팅 서버 등)에서 실행할 것.
 """
 
 import argparse
@@ -28,6 +34,9 @@ import os
 import sys
 import urllib.parse
 import urllib.request
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import common  # noqa: E402
 
 KAMIS_BASE_URL = "https://www.kamis.or.kr/service/price/xml.do"
 
@@ -90,15 +99,15 @@ def to_tracker_records(kamis_rows, category_hint=None, unit_hint=None):
         if yyyy and regday and "/" in regday:
             mm, dd = regday.split("/")
             date_str = "{}-{:0>2}-{:0>2}".format(yyyy, mm, dd)
-        records.append({
-            "name": row.get("itemname", "").strip() or row.get("kindname", "").strip(),
-            "category": category_hint or "채소",
-            "price": price_val,
-            "unit": unit_hint or row.get("unit", "kg"),
-            "date": date_str or datetime.date.today().isoformat(),
-            "source": "KAMIS",
-            "memo": "{} / {}".format(row.get("kindname", ""), row.get("countyname", "")).strip(" /"),
-        })
+        records.append(common.normalize_record(
+            name=row.get("itemname", "").strip() or row.get("kindname", "").strip(),
+            category=category_hint or "채소",
+            price=price_val,
+            unit=unit_hint or row.get("unit", "kg"),
+            date=date_str,
+            source="KAMIS",
+            memo="{} / {}".format(row.get("kindname", ""), row.get("countyname", "")).strip(" /"),
+        ))
     return records
 
 
@@ -144,11 +153,8 @@ def main():
     rows = result.get("price") or []
     records = to_tracker_records(rows)
 
-    os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
-    with open(args.out, "w", encoding="utf-8") as f:
-        json.dump(records, f, ensure_ascii=False, indent=2)
-
-    print("{}건 저장됨 -> {}".format(len(records), args.out))
+    count = common.save_records(records, args.out)
+    print("{}건 저장됨 -> {}".format(count, args.out))
 
 
 if __name__ == "__main__":
