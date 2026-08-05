@@ -54,6 +54,11 @@ import common  # noqa: E402
 
 KAMIS_BASE_URL = "https://www.kamis.or.kr/service/price/xml.do"
 
+# 소매가격 기준 지역코드(p_countrycode). 기본값은 고양(일산 포함 수도권 서북부).
+# 다른 지역 기준으로 바꾸고 싶으면 --country-code 옵션으로 바꿀 수 있음.
+# 주요 코드: 1101=서울, 3138=고양, 3112=성남, 3111=수원, 3145=용인, 2300=인천, 3113=의정부
+DEFAULT_COUNTRY_CODE = "3138"  # 고양(일산)
+
 # 공식 코드표("코드통합" 시트) 기준으로 확인한 채소/과일/곡물 품목.
 # kindcode는 대표 품종 1개만 선택해둔 것으로, 계절에 따라 다른 품종이 유통되는
 # 품목(배추/무 등)은 필요 시 계절에 맞는 kindcode로 바꿔서 사용할 것.
@@ -104,8 +109,13 @@ def _get(row, *keys):
     return None
 
 
-def fetch_period_prices(cert_key, cert_id, start_day, end_day, item, product_cls_code="01"):
-    """periodProductList API로 특정 품목(itemcode+kindcode)의 기간별 시세를 조회."""
+def fetch_period_prices(cert_key, cert_id, start_day, end_day, item, product_cls_code="01", country_code=None):
+    """periodProductList API로 특정 품목(itemcode+kindcode)의 기간별 시세를 조회.
+
+    country_code를 지정하면(예: 3138=고양) 그 지역 소매가격만 조회함. None이면
+    지역 제한 없이 전국 데이터가 오는데, 이 경우 같은 날짜에도 지역별로 값이
+    여러 개 내려와 to_tracker_records()가 평균을 내서 하루 1개로 정리함.
+    """
     params = {
         "action": "periodProductList",
         "p_cert_key": cert_key,
@@ -122,6 +132,8 @@ def fetch_period_prices(cert_key, cert_id, start_day, end_day, item, product_cls
         params["p_itemcategorycode"] = item["itemcategorycode"]
     if item.get("productrankcode"):
         params["p_productrankcode"] = item["productrankcode"]
+    if country_code:
+        params["p_countrycode"] = country_code
     url = KAMIS_BASE_URL + "?" + urllib.parse.urlencode(params)
     with urllib.request.urlopen(url, timeout=20) as resp:
         raw = resp.read().decode("utf-8", errors="replace")
@@ -133,8 +145,13 @@ def fetch_period_prices(cert_key, cert_id, start_day, end_day, item, product_cls
 
 
 def to_tracker_records(rows, item):
-    """periodProductList 응답 행을 price-insight.html 가져오기 형식으로 변환."""
-    records = []
+    """periodProductList 응답 행을 price-insight.html 가져오기 형식으로 변환.
+
+    KAMIS는 같은 날짜에도 지역(서울/부산/대구...)별로 가격을 따로 내려주기 때문에,
+    그대로 저장하면 트렌드 차트가 지역별 가격이 뒤섞여 톱니 모양으로 보임.
+    이를 막기 위해 날짜별로 지역 가격을 평균 내어 "하루에 한 개" 레코드만 만듦.
+    """
+    by_date = {}
     for row in rows or []:
         price = _get(row, "price")
         if price in (None, "-", "0", 0):
@@ -152,14 +169,26 @@ def to_tracker_records(rows, item):
         if not date_str:
             continue
         county = _get(row, "countyname") or ""
+        by_date.setdefault(date_str, []).append((price_val, county))
+
+    records = []
+    for date_str in sorted(by_date.keys()):
+        entries = by_date[date_str]
+        prices = [p for p, _ in entries]
+        avg_price = sum(prices) / len(prices)
+        counties = sorted({c for _, c in entries if c})
+        if len(entries) == 1:
+            memo = counties[0] if counties else ""
+        else:
+            memo = "평균({}건: {})".format(len(entries), ", ".join(counties)) if counties else "평균({}건)".format(len(entries))
         records.append(common.normalize_record(
             name=item["label"],
             category=item.get("category", "기타"),
-            price=price_val,
+            price=round(avg_price, 1),
             unit=item.get("unit", "kg"),
             date=date_str,
             source="KAMIS",
-            memo=county,
+            memo=memo,
         ))
     return records
 
@@ -168,6 +197,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--days", type=int, default=30, help="오늘 기준 며칠 전부터 조회할지 (기본 30일)")
     parser.add_argument("--product-cls", choices=["01", "02"], default="01", help="01=소매, 02=도매 (기본 소매)")
+    parser.add_argument("--country-code", default=DEFAULT_COUNTRY_CODE,
+                         help="지역코드 (기본: {} = 고양/일산). 빈 문자열('')이면 지역 제한 없이 전국 평균".format(DEFAULT_COUNTRY_CODE))
     parser.add_argument("--out", default="data/kamis_latest.json", help="출력 JSON 파일 경로")
     args = parser.parse_args()
 
@@ -186,6 +217,7 @@ def main():
             cert_key, cert_id,
             start_day.isoformat(), end_day.isoformat(),
             item, product_cls_code=args.product_cls,
+            country_code=args.country_code or None,
         )
         if not result:
             print("오류: KAMIS 응답을 받지 못함 (품목={})".format(item["label"]), file=sys.stderr)
