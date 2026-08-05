@@ -269,6 +269,9 @@ def main():
     parser.add_argument("--delay", type=float, default=1.0,
                          help="API 요청 사이 대기 시간(초). 너무 빠르게 연속 요청하면 KAMIS 서버가 일시적으로 이상한 응답을 줄 수 있어 기본 1초 대기 (기본 1.0)")
     parser.add_argument("--out", default="data/kamis_latest.json", help="출력 JSON 파일 경로")
+    parser.add_argument("--debug", action="store_true",
+                         help="실패한 요청의 전체 응답 원문을 --debug-log 파일에 기록함 (원인 진단용)")
+    parser.add_argument("--debug-log", default="debug.log", help="--debug 사용 시 기록할 로그 파일 경로")
     args = parser.parse_args()
 
     cert_key = os.environ.get("KAMIS_CERT_KEY")
@@ -279,6 +282,8 @@ def main():
 
     end_day = datetime.date.today()
     start_day = end_day - datetime.timedelta(days=args.days)
+
+    debug_log = open(args.debug_log, "a", encoding="utf-8") if args.debug else None
 
     def raw_fetch(item, country_code):
         result = fetch_period_prices(
@@ -293,9 +298,17 @@ def main():
         # 실제 응답 구조: {"condition": [...요청 파라미터 그대로...], "data": {"error_code": "000", "item": [...]}}
         data = result.get("data")
         if not isinstance(data, dict):
+            if debug_log:
+                debug_log.write("=== {} (country_code={}) 실패, 전체 응답 ===\n{}\n\n".format(
+                    item["label"], country_code, json.dumps(result, ensure_ascii=False, indent=2)))
+                debug_log.flush()
             return None, "응답 구조 이상"
         error_code = data.get("error_code")
         if error_code and error_code != "000":
+            if debug_log:
+                debug_log.write("=== {} (country_code={}) 오류코드 {}, 전체 응답 ===\n{}\n\n".format(
+                    item["label"], country_code, error_code, json.dumps(result, ensure_ascii=False, indent=2)))
+                debug_log.flush()
             return None, "오류코드 {}".format(error_code)
         return data.get("item") or [], None
 
@@ -356,6 +369,9 @@ def main():
 
     count = common.save_records(all_records, args.out)
     print("{}건 저장됨 -> {}".format(count, args.out))
+    if debug_log:
+        debug_log.close()
+        print("디버그 로그 저장됨 -> {}".format(args.debug_log))
 
 
 if __name__ == "__main__":
