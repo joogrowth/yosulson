@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+
+# 로컬 수집 산출물 (Mac에서 생성)
+debug.log
+data/kamis_latest.json
+data/*.local.json
