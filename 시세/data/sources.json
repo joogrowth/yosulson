@@ -126,21 +126,21 @@
       "update_cycle": "일별",
       "formats": ["html"],
       "description": "국내 최대 농산물 도매시장인 가락시장의 품목별 경락가격 정보. 대량 구매를 하는 업체의 도매가 기준선으로 참고하기 좋음.",
-      "notes": "자동 수집 API가 공식적으로 열려있지 않아 수기 확인 위주."
+      "notes": "자동 수집: 시세/scripts/fetch_month.py 가 KAMIS 서울 도매(가락 조사분)를 가락도매 출처로 저장함. 가락 홈 경락 그리드는 별도 BI 권한이라 공개 API로 숫자 표를 받지 못함."
     },
     {
       "id": "noryangjin-market",
       "name": "노량진수산시장 시세정보",
       "org": "수협노량진수산㈜",
       "category": "수산물 도매",
-      "url": "https://susansijang.co.kr",
+      "url": "https://www.susansijang.co.kr/nsis/miw/ko/info/miw3130",
       "api_base": null,
-      "auth": "별도 API 없음, 홈페이지 게시 정보 수기 확인",
+      "auth": "공개 조회 화면, 인증 없음",
       "auth_required": false,
       "update_cycle": "일별",
       "formats": ["html"],
-      "description": "국내 대표 수산물 도매시장의 품목별 시세를 게시. API가 없어 자동 수집은 어렵지만 수산물 벤치마크 가격으로 활용 가능.",
-      "notes": "정기적으로 화면을 확인하고 수동 입력하는 방식을 권장."
+      "description": "노량진 경매 낙찰 평균가. 굴·조기·오징어 등 수산 실거래 벤치마크.",
+      "notes": "시세/scripts/fetch_noryangjin_prices.py 가 어종별 일별 조회 화면을 읽어 JSON으로 저장함."
     }
   ]
 }

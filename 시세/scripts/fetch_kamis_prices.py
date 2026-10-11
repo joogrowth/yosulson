@@ -20,7 +20,7 @@ https://www.kamis.or.kr 에서 회원가입 후 "고객센터 > Open-API > Open-
 ---------------------------
 아래 ITEMS 목록에 항목을 추가하면 됨. 정확한 코드는 KAMIS 고객센터 > Open-API >
 Open-API 이용안내 하단 첨부파일 "농축수산물 품목 및 등급 코드표"(같은 파일이
-data/reference/kamis_품목_등급_코드표.xlsx 에도 저장되어 있음)에서 확인.
+시세/data/reference/kamis_품목_등급_코드표.xlsx 에도 저장되어 있음)에서 확인.
 - 채소/과일/곡물: itemcategorycode + itemcode + kindcode 모두 필요
 - 축산물(소/돼지/닭/계란/우유): itemcode + kindcode만 필요 (itemcategorycode 없음,
   코드표에 "축산물데이터는 축평원 데이터 사용, 부류코드 없이 조회"라고 명시됨)
@@ -29,6 +29,7 @@ data/reference/kamis_품목_등급_코드표.xlsx 에도 저장되어 있음)에
 ---------
     export KAMIS_CERT_KEY="발급받은키"
     export KAMIS_CERT_ID="발급받은아이디"
+    cd ~/yosulson/시세
     python3 scripts/fetch_kamis_prices.py --days 30 --out data/kamis_latest.json
 
 출력된 JSON 파일은 price-insight.html의 "시세 입력 > 가져오기/내보내기" 카드에서
@@ -53,6 +54,8 @@ import urllib.request
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import common  # noqa: E402
 
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 KAMIS_BASE_URL = "https://www.kamis.or.kr/service/price/xml.do"
 
 # 소매가격 기준 지역코드(p_countrycode). 기본값은 고양(일산 포함 수도권 서북부).
@@ -66,7 +69,7 @@ DEFAULT_COUNTRY_CODE = "3138"  # 고양(일산)
 # 않았는데, 특정 등급을 고정하면 그 등급 조사 데이터가 없는 날 전체가 실패로 처리되는
 # 문제가 있어 등급 제한 없이(=KAMIS가 그날 조사된 등급을 알아서 주도록) 조회함.
 # 품목당 여러 품종이 있을 경우 가장 일반적인(수입/냉동/염장 등이 아닌) 품종 1개를
-# 대표로 선택함. 필요 없는 품목은 지워도 되고, data/reference/kamis_품목_등급_코드표.xlsx의
+# 대표로 선택함. 필요 없는 품목은 지워도 되고, 시세/data/reference/kamis_품목_등급_코드표.xlsx의
 # "코드통합" 시트를 보고 다른 품종으로 바꿔도 됨.
 PRODUCE_ITEMS = [
     {"label": "쌀", "category": "곡물", "unit": "20kg", "itemcategorycode": "100", "itemcode": "111", "kindcode": "01"},
@@ -74,10 +77,10 @@ PRODUCE_ITEMS = [
     {"label": "콩", "category": "곡물", "unit": "500g", "itemcategorycode": "100", "itemcode": "141", "kindcode": "01"},
     {"label": "팥", "category": "곡물", "unit": "500g", "itemcategorycode": "100", "itemcode": "142", "kindcode": "00"},
     {"label": "녹두", "category": "곡물", "unit": "500g", "itemcategorycode": "100", "itemcode": "143", "kindcode": "00"},
-    {"label": "메밀", "category": "곡물", "unit": "kg", "itemcategorycode": "100", "itemcode": "144", "kindcode": "01"},
+    {"label": "메밀", "category": "곡물", "unit": "kg", "itemcategorycode": "100", "itemcode": "144", "kindcode": "01", "product_cls": "02"},
     {"label": "고구마", "category": "채소", "unit": "1kg", "itemcategorycode": "100", "itemcode": "151", "kindcode": "00"},
-    {"label": "감자", "category": "채소", "unit": "1kg", "itemcategorycode": "100", "itemcode": "152", "kindcode": "00"},
-    {"label": "배추", "category": "채소", "unit": "1포기", "itemcategorycode": "200", "itemcode": "211", "kindcode": "01"},
+    {"label": "감자", "category": "채소", "unit": "1kg", "itemcategorycode": "100", "itemcode": "152", "kindcode": "01"},
+    {"label": "배추", "category": "채소", "unit": "1포기", "itemcategorycode": "200", "itemcode": "211", "kindcode": "02"},
     {"label": "양배추", "category": "채소", "unit": "1포기", "itemcategorycode": "200", "itemcode": "212", "kindcode": "00"},
     {"label": "시금치", "category": "채소", "unit": "100g", "itemcategorycode": "200", "itemcode": "213", "kindcode": "00"},
     {"label": "상추", "category": "채소", "unit": "100g", "itemcategorycode": "200", "itemcode": "214", "kindcode": "01"},
@@ -89,12 +92,12 @@ PRODUCE_ITEMS = [
     {"label": "토마토", "category": "채소", "unit": "1kg", "itemcategorycode": "200", "itemcode": "225", "kindcode": "00"},
     {"label": "딸기", "category": "채소", "unit": "100g", "itemcategorycode": "200", "itemcode": "226", "kindcode": "00"},
     {"label": "무", "category": "채소", "unit": "1개", "itemcategorycode": "200", "itemcode": "231", "kindcode": "01"},
-    {"label": "당근", "category": "채소", "unit": "1kg", "itemcategorycode": "200", "itemcode": "232", "kindcode": "00"},
+    {"label": "당근", "category": "채소", "unit": "1kg", "itemcategorycode": "200", "itemcode": "232", "kindcode": "01"},
     {"label": "열무", "category": "채소", "unit": "1kg", "itemcategorycode": "200", "itemcode": "233", "kindcode": "00"},
     {"label": "건고추", "category": "채소", "unit": "600g", "itemcategorycode": "200", "itemcode": "241", "kindcode": "00"},
     {"label": "풋고추", "category": "채소", "unit": "100g", "itemcategorycode": "200", "itemcode": "242", "kindcode": "00"},
     {"label": "붉은고추", "category": "채소", "unit": "100g", "itemcategorycode": "200", "itemcode": "243", "kindcode": "00"},
-    {"label": "피마늘", "category": "채소", "unit": "kg", "itemcategorycode": "200", "itemcode": "244", "kindcode": "01"},
+    {"label": "피마늘", "category": "채소", "unit": "kg", "itemcategorycode": "200", "itemcode": "244", "kindcode": "22", "product_cls": "02"},
     {"label": "양파", "category": "채소", "unit": "1kg", "itemcategorycode": "200", "itemcode": "245", "kindcode": "00"},
     {"label": "파", "category": "채소", "unit": "1kg", "itemcategorycode": "200", "itemcode": "246", "kindcode": "00"},
     {"label": "생강", "category": "채소", "unit": "1kg", "itemcategorycode": "200", "itemcode": "247", "kindcode": "00"},
@@ -106,42 +109,42 @@ PRODUCE_ITEMS = [
     {"label": "파프리카", "category": "채소", "unit": "200g", "itemcategorycode": "200", "itemcode": "256", "kindcode": "00"},
     {"label": "멜론", "category": "채소", "unit": "1개", "itemcategorycode": "200", "itemcode": "257", "kindcode": "00"},
     {"label": "깐마늘(국산)", "category": "채소", "unit": "1kg", "itemcategorycode": "200", "itemcode": "258", "kindcode": "01"},
-    {"label": "깐마늘(수입)", "category": "채소", "unit": "kg", "itemcategorycode": "200", "itemcode": "259", "kindcode": "01"},
+    {"label": "깐마늘(수입)", "category": "채소", "unit": "kg", "itemcategorycode": "200", "itemcode": "259", "kindcode": "01", "alt_kinds": ["03"]},
     {"label": "알배기배추", "category": "채소", "unit": "1포기", "itemcategorycode": "200", "itemcode": "279", "kindcode": "00"},
     {"label": "브로콜리", "category": "채소", "unit": "1개", "itemcategorycode": "200", "itemcode": "280", "kindcode": "00"},
     {"label": "참깨", "category": "채소", "unit": "500g", "itemcategorycode": "300", "itemcode": "312", "kindcode": "01"},
-    {"label": "들깨", "category": "채소", "unit": "kg", "itemcategorycode": "300", "itemcode": "313", "kindcode": "01"},
+    {"label": "들깨", "category": "채소", "unit": "kg", "itemcategorycode": "300", "itemcode": "313", "kindcode": "02", "product_cls": "02"},
     {"label": "땅콩", "category": "채소", "unit": "100g", "itemcategorycode": "300", "itemcode": "314", "kindcode": "01"},
     {"label": "느타리버섯", "category": "채소", "unit": "100g", "itemcategorycode": "300", "itemcode": "315", "kindcode": "00"},
     {"label": "팽이버섯", "category": "채소", "unit": "150g", "itemcategorycode": "300", "itemcode": "316", "kindcode": "00"},
     {"label": "새송이버섯", "category": "채소", "unit": "100g", "itemcategorycode": "300", "itemcode": "317", "kindcode": "00"},
     {"label": "방울토마토", "category": "채소", "unit": "1kg", "itemcategorycode": "200", "itemcode": "422", "kindcode": "01"},
-    {"label": "사과", "category": "과일", "unit": "10개", "itemcategorycode": "400", "itemcode": "411", "kindcode": "01"},
+    {"label": "사과", "category": "과일", "unit": "10개", "itemcategorycode": "400", "itemcode": "411", "kindcode": "07", "alt_kinds": ["06", "05"]},
     {"label": "배", "category": "과일", "unit": "10개", "itemcategorycode": "400", "itemcode": "412", "kindcode": "01"},
     {"label": "복숭아", "category": "과일", "unit": "10개", "itemcategorycode": "400", "itemcode": "413", "kindcode": "01"},
     {"label": "포도", "category": "과일", "unit": "1kg", "itemcategorycode": "400", "itemcode": "414", "kindcode": "01"},
-    {"label": "감귤", "category": "과일", "unit": "10개", "itemcategorycode": "400", "itemcode": "415", "kindcode": "00"},
+    {"label": "감귤", "category": "과일", "unit": "10개", "itemcategorycode": "400", "itemcode": "415", "kindcode": "02"},
     {"label": "단감", "category": "과일", "unit": "10개", "itemcategorycode": "400", "itemcode": "416", "kindcode": "00"},
     {"label": "바나나", "category": "과일", "unit": "100g", "itemcategorycode": "400", "itemcode": "418", "kindcode": "02"},
-    {"label": "참다래", "category": "과일", "unit": "10개", "itemcategorycode": "400", "itemcode": "419", "kindcode": "01"},
+    {"label": "참다래", "category": "과일", "unit": "10개", "itemcategorycode": "400", "itemcode": "419", "kindcode": "02", "alt_kinds": ["01"]},
     {"label": "파인애플", "category": "과일", "unit": "1개", "itemcategorycode": "400", "itemcode": "420", "kindcode": "02"},
-    {"label": "오렌지", "category": "과일", "unit": "10개", "itemcategorycode": "400", "itemcode": "421", "kindcode": "03"},
+    {"label": "오렌지", "category": "과일", "unit": "10개", "itemcategorycode": "400", "itemcode": "421", "kindcode": "06", "alt_kinds": ["03"]},
     {"label": "레몬", "category": "과일", "unit": "10개", "itemcategorycode": "400", "itemcode": "424", "kindcode": "00"},
     {"label": "체리", "category": "과일", "unit": "100g", "itemcategorycode": "400", "itemcode": "425", "kindcode": "00"},
     {"label": "망고", "category": "과일", "unit": "1개", "itemcategorycode": "400", "itemcode": "428", "kindcode": "00"},
-    {"label": "고등어", "category": "수산물", "unit": "1마리", "itemcategorycode": "600", "itemcode": "611", "kindcode": "01"},
-    {"label": "갈치", "category": "수산물", "unit": "1마리", "itemcategorycode": "600", "itemcode": "613", "kindcode": "01"},
-    {"label": "조기", "category": "수산물", "unit": "1마리", "itemcategorycode": "600", "itemcode": "614", "kindcode": "01"},
-    {"label": "명태", "category": "수산물", "unit": "1마리", "itemcategorycode": "600", "itemcode": "615", "kindcode": "01"},
+    {"label": "고등어", "category": "수산물", "unit": "1마리", "itemcategorycode": "600", "itemcode": "611", "kindcode": "05"},
+    {"label": "갈치", "category": "수산물", "unit": "1마리", "itemcategorycode": "600", "itemcode": "613", "kindcode": "03"},
+    {"label": "조기", "category": "수산물", "unit": "1마리", "itemcategorycode": "600", "itemcode": "614", "kindcode": "06"},
+    {"label": "명태", "category": "수산물", "unit": "1마리", "itemcategorycode": "600", "itemcode": "615", "kindcode": "02", "product_cls": "02"},
     {"label": "삼치", "category": "수산물", "unit": "1마리", "itemcategorycode": "600", "itemcode": "616", "kindcode": "02"},
-    {"label": "물오징어", "category": "수산물", "unit": "1마리", "itemcategorycode": "600", "itemcode": "619", "kindcode": "01"},
+    {"label": "물오징어", "category": "수산물", "unit": "1마리", "itemcategorycode": "600", "itemcode": "619", "kindcode": "03"},
     {"label": "건멸치", "category": "수산물", "unit": "100g", "itemcategorycode": "600", "itemcode": "638", "kindcode": "00"},
-    {"label": "북어", "category": "수산물", "unit": "kg", "itemcategorycode": "600", "itemcode": "639", "kindcode": "01"},
+    {"label": "북어", "category": "수산물", "unit": "kg", "itemcategorycode": "600", "itemcode": "639", "kindcode": "01", "product_cls": "02"},
     {"label": "건오징어", "category": "수산물", "unit": "10마리", "itemcategorycode": "600", "itemcode": "640", "kindcode": "00"},
     {"label": "김", "category": "수산물", "unit": "10장", "itemcategorycode": "600", "itemcode": "641", "kindcode": "00"},
     {"label": "건미역", "category": "수산물", "unit": "100g", "itemcategorycode": "600", "itemcode": "642", "kindcode": "00"},
     {"label": "굴", "category": "수산물", "unit": "1kg", "itemcategorycode": "600", "itemcode": "644", "kindcode": "00"},
-    {"label": "수입조기", "category": "수산물", "unit": "1마리", "itemcategorycode": "600", "itemcode": "649", "kindcode": "01"},
+    {"label": "수입조기", "category": "수산물", "unit": "1마리", "itemcategorycode": "600", "itemcode": "649", "kindcode": "04"},
     {"label": "전복", "category": "수산물", "unit": "5마리", "itemcategorycode": "600", "itemcode": "653", "kindcode": "00"},
     {"label": "새우", "category": "수산물", "unit": "10마리", "itemcategorycode": "600", "itemcode": "654", "kindcode": "01"},
     {"label": "홍합", "category": "수산물", "unit": "100g", "itemcategorycode": "600", "itemcode": "658", "kindcode": "01"},
@@ -157,9 +160,13 @@ LIVESTOCK_ITEMS = [
     {"label": "돼지고기(갈비)", "category": "축산물", "unit": "kg", "itemcode": "4304", "kindcode": "28"},
     {"label": "소고기(안심)", "category": "축산물", "unit": "kg", "itemcode": "4301", "kindcode": "21"},
     {"label": "소고기(등심)", "category": "축산물", "unit": "kg", "itemcode": "4301", "kindcode": "22"},
+    {"label": "소고기(설도)", "category": "축산물", "unit": "kg", "itemcode": "4301", "kindcode": "36"},
+    {"label": "소고기(양지)", "category": "축산물", "unit": "kg", "itemcode": "4301", "kindcode": "40"},
     {"label": "소고기(갈비)", "category": "축산물", "unit": "kg", "itemcode": "4301", "kindcode": "50"},
     {"label": "닭고기(육계)", "category": "축산물", "unit": "kg", "itemcode": "9901", "kindcode": "99"},
-    {"label": "계란(특란30구/일반란)", "category": "축산물", "unit": "30구", "itemcode": "9903", "kindcode": "23", "productrankcode": "71"},
+    {"label": "닭고기(가슴살)", "category": "축산물", "unit": "kg", "itemcode": "9901", "kindcode": "06"},
+    {"label": "닭고기(북채)", "category": "축산물", "unit": "kg", "itemcode": "9901", "kindcode": "08"},
+    {"label": "계란(특란30구/일반란)", "category": "축산물", "unit": "30구", "itemcode": "9903", "kindcode": "23"},
     {"label": "우유(흰우유)", "category": "축산물", "unit": "L", "itemcode": "9908", "kindcode": "01"},
 ]
 
@@ -190,7 +197,7 @@ def fetch_period_prices(cert_key, cert_id, start_day, end_day, item, product_cls
         "p_returntype": "json",
         "p_startday": start_day,
         "p_endday": end_day,
-        "p_productclscode": product_cls_code,
+        "p_productclscode": item.get("product_cls") or product_cls_code,
         "p_convert_kg_yn": "N",
         "p_itemcode": item["itemcode"],
         "p_kindcode": item["kindcode"],
@@ -236,11 +243,16 @@ def to_tracker_records(rows, item):
         if not date_str:
             continue
         county = _get(row, "countyname") or ""
+        if county == "평년":
+            continue  # 5년 평균. 당월 시세가 아님.
         by_date.setdefault(date_str, []).append((price_val, county))
 
     records = []
     for date_str in sorted(by_date.keys()):
         entries = by_date[date_str]
+        live = [(p, c) for p, c in entries if c != "평균"]
+        if live:
+            entries = live  # 시·군이 있으면 전국집계 행은 빼고 평균
         prices = [p for p, _ in entries]
         avg_price = sum(prices) / len(prices)
         counties = sorted({c for _, c in entries if c})
@@ -248,16 +260,38 @@ def to_tracker_records(rows, item):
             memo = counties[0] if counties else ""
         else:
             memo = "평균({}건: {})".format(len(entries), ", ".join(counties)) if counties else "평균({}건)".format(len(entries))
+        if (item.get("source") or "").startswith("가락"):
+            memo = ((memo + " · ") if memo else "") + "가락 도매(서울)"
+        elif item.get("product_cls") == "02":
+            memo = ((memo + " · ") if memo else "") + "도매(소매 시세 없음)"
         records.append(common.normalize_record(
             name=item["label"],
             category=item.get("category", "기타"),
             price=round(avg_price, 1),
             unit=item.get("unit", "kg"),
             date=date_str,
-            source="KAMIS",
+            source=item.get("source") or "KAMIS",
             memo=memo,
         ))
     return records
+
+
+def kind_variants(item):
+    kinds = [item["kindcode"]]
+    for k in item.get("alt_kinds") or []:
+        if k not in kinds:
+            kinds.append(k)
+    return kinds
+
+
+def date_windows(start, end, chunk_days=92):
+    windows = []
+    cur = start
+    while cur <= end:
+        nxt = min(cur + datetime.timedelta(days=chunk_days - 1), end)
+        windows.append((cur, nxt))
+        cur = nxt + datetime.timedelta(days=1)
+    return windows
 
 
 def main():
@@ -268,10 +302,13 @@ def main():
                          help="지역코드 (기본: {} = 고양/일산). 빈 문자열('')이면 지역 제한 없이 전국 평균".format(DEFAULT_COUNTRY_CODE))
     parser.add_argument("--delay", type=float, default=1.0,
                          help="API 요청 사이 대기 시간(초). 너무 빠르게 연속 요청하면 KAMIS 서버가 일시적으로 이상한 응답을 줄 수 있어 기본 1초 대기 (기본 1.0)")
-    parser.add_argument("--out", default="data/kamis_latest.json", help="출력 JSON 파일 경로")
+    parser.add_argument("--out", default=os.path.join(ROOT, "data", "kamis_latest.json"), help="출력 JSON 파일 경로")
+    parser.add_argument("--only", default="", help="쉼표로 구분한 품목명만 조회 (예: 감자,사과,계란)")
+    parser.add_argument("--merge", action="store_true", help="기존 --out 파일에 같은 품목을 덮어쓰고 나머지는 유지")
+    parser.add_argument("--source", default="KAMIS", help="기록에 넣을 출처명 (기본 KAMIS). 가락 도매는 가락도매")
     parser.add_argument("--debug", action="store_true",
                          help="실패한 요청의 전체 응답 원문을 --debug-log 파일에 기록함 (원인 진단용)")
-    parser.add_argument("--debug-log", default="debug.log", help="--debug 사용 시 기록할 로그 파일 경로")
+    parser.add_argument("--debug-log", default=os.path.join(ROOT, "debug.log"), help="--debug 사용 시 기록할 로그 파일 경로")
     args = parser.parse_args()
 
     cert_key = os.environ.get("KAMIS_CERT_KEY")
@@ -285,10 +322,10 @@ def main():
 
     debug_log = open(args.debug_log, "a", encoding="utf-8") if args.debug else None
 
-    def raw_fetch(item, country_code):
+    def raw_fetch(item, country_code, range_start, range_end):
         result = fetch_period_prices(
             cert_key, cert_id,
-            start_day.isoformat(), end_day.isoformat(),
+            range_start.isoformat(), range_end.isoformat(),
             item, product_cls_code=args.product_cls,
             country_code=country_code,
         )
@@ -297,6 +334,10 @@ def main():
             return None, "응답 없음"
         # 실제 응답 구조: {"condition": [...요청 파라미터 그대로...], "data": {"error_code": "000", "item": [...]}}
         data = result.get("data")
+        if isinstance(data, list):
+            # KAMIS는 데이터 없을 때 {"data":["001"]} 형태로 줌. 재시도해도 의미 없음.
+            code = data[0] if data else ""
+            return None, "데이터 없음" if str(code) == "001" else "응답 구조 이상"
         if not isinstance(data, dict):
             if debug_log:
                 debug_log.write("=== {} (country_code={}) 실패, 전체 응답 ===\n{}\n\n".format(
@@ -310,41 +351,66 @@ def main():
                     item["label"], country_code, error_code, json.dumps(result, ensure_ascii=False, indent=2)))
                 debug_log.flush()
             return None, "오류코드 {}".format(error_code)
-        return data.get("item") or [], None
+        rows = data.get("item") or []
+        if isinstance(rows, dict):
+            rows = [rows]
+        return rows, None
 
-    def try_fetch(item, country_code, retries=3):
+    def try_fetch(item, country_code, range_start, range_end, retries=3):
         """일시적인 서버 이상 응답(레이트리밋 등)을 구분하기 위해 같은 조건으로 몇 번 재시도함.
         재시도할 때마다 대기시간을 2배씩 늘림(지수 백오프)."""
         err = None
         for attempt in range(retries):
-            rows, err = raw_fetch(item, country_code)
+            rows, err = raw_fetch(item, country_code, range_start, range_end)
             if rows is not None:
                 return rows, None
+            if err == "데이터 없음":
+                return None, err
             if attempt < retries - 1:
                 time.sleep(args.delay * (2 ** (attempt + 1)))  # 2배, 4배, 8배...로 점점 오래 대기
         return None, err
 
-    def fetch_item(item, region):
-        rows, err = try_fetch(item, region)
+    def collect_rows(item, region, range_start, range_end):
+        collected = []
         note = ""
-        if rows is None and region:
-            # 특정 지역(예: 고양)에 해당 품목 데이터가 아예 없는 경우가 있어(수산물 등),
-            # 전국 데이터로 한 번 더 시도함.
-            rows, err = try_fetch(item, None)
-            if rows is not None:
-                note = " (지역 데이터 없어 전국 평균으로 대체)"
-        return rows, err, note
+        last_err = "데이터 없음"
+        for kind in kind_variants(item):
+            variant = dict(item, kindcode=kind)
+            for wstart, wend in date_windows(range_start, range_end):
+                rows, err = try_fetch(variant, region, wstart, wend)
+                if rows is None and region:
+                    rows, err = try_fetch(variant, None, wstart, wend)
+                    if rows is not None:
+                        note = " (지역 데이터 없어 전국 평균으로 대체)"
+                if rows:
+                    collected.extend(rows)
+                else:
+                    last_err = err
+        return (collected or None), last_err, note
+
+    def fetch_item(item, region):
+        return collect_rows(item, region, start_day, end_day)
+
+    items = ITEMS
+    if args.only.strip():
+        wanted = [s.strip() for s in args.only.split(",") if s.strip()]
+        items = [it for it in ITEMS if it["label"] in wanted]
+        missing = [w for w in wanted if w not in {it["label"] for it in items}]
+        if missing:
+            print("목록에 없는 품목:", ", ".join(missing), file=sys.stderr)
+        if not items:
+            sys.exit(1)
 
     all_records = []
     failed_items = []
     region = args.country_code or None
-    for item in ITEMS:
+    for item in items:
         rows, err, note = fetch_item(item, region)
         if rows is None:
             print("오류: {} 조회 실패 - {}".format(item["label"], err), file=sys.stderr)
             failed_items.append(item)
             continue
-        records = to_tracker_records(rows, item)
+        records = to_tracker_records(rows, dict(item, source=args.source, product_cls=item.get("product_cls") or args.product_cls))
         print("  {} -> {}건{}".format(item["label"], len(records), note))
         all_records.extend(records)
 
@@ -361,11 +427,20 @@ def main():
                 print("오류(재시도): {} 조회 실패 - {}".format(item["label"], err), file=sys.stderr)
                 still_failed.append(item["label"])
                 continue
-            records = to_tracker_records(rows, item)
+            records = to_tracker_records(rows, dict(item, source=args.source, product_cls=item.get("product_cls") or args.product_cls))
             print("  {} -> {}건{} (재시도 성공)".format(item["label"], len(records), note))
             all_records.extend(records)
         if still_failed:
             print("\n끝까지 실패한 품목({}개): {}".format(len(still_failed), ", ".join(still_failed)))
+
+    if args.merge and os.path.exists(args.out):
+        with open(args.out, encoding="utf-8") as f:
+            existing = json.load(f)
+        if not isinstance(existing, list):
+            existing = []
+        replaced = {r["name"] for r in all_records}
+        existing = [r for r in existing if r.get("name") not in replaced]
+        all_records = existing + all_records
 
     count = common.save_records(all_records, args.out)
     print("{}건 저장됨 -> {}".format(count, args.out))

@@ -21,6 +21,7 @@ price-insight.html이 가져올 수 있는 JSON으로 변환하는 스크립트.
 사용 예시
 ---------
     export PRICEGOKR_SERVICE_KEY="발급받은키(디코딩 안 된 원본 그대로)"
+    cd ~/yosulson/시세
     python3 scripts/fetch_price_go_kr.py --keyword 두부 --keyword 만두 --out data/pricegokr_latest.json
 """
 
@@ -34,6 +35,8 @@ import xml.etree.ElementTree as ET
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import common  # noqa: E402
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 BASE_URL = "http://openapi.price.go.kr/openApiImpl/ProductPriceInfoService"
 
@@ -114,7 +117,7 @@ def main():
                          help="상품명에 포함될 키워드 (여러 번 지정 가능, 예: --keyword 두부 --keyword 만두)")
     parser.add_argument("--category", default="가공식품", help="price-insight.html에 기록할 카테고리 (기본: 가공식품)")
     parser.add_argument("--max-items", type=int, default=15, help="키워드당 최대 상품 수 (API 호출량 제한용)")
-    parser.add_argument("--out", default="data/pricegokr_latest.json", help="출력 JSON 파일 경로")
+    parser.add_argument("--out", default=os.path.join(ROOT, "data", "pricegokr_latest.json"), help="출력 JSON 파일 경로")
     args = parser.parse_args()
 
     service_key = os.environ.get("PRICEGOKR_SERVICE_KEY")
