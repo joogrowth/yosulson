@@ -31,10 +31,10 @@ LOWER BODY, hip to feet
 Upper thighs are soft and long, lightly touching at the top, then tapering. Thigh length is as long as the calf. Knees are small. Calves are slim and straight. Ankles are narrow and the ankle bone shows. Jean hems end at the ankle bone. Feet are small. Shoe soles are thin, so the leg line is not shortened.
 
 SIDE SILHOUETTE, from side.jpg
-Low straight nose, lips slightly ahead of the chin, chin rounded back. Bust forward, waist inward, hip and seat backward. The fullest point of the hip flows into the top of the thigh. Legs stay long and mostly straight.
+Low straight nose, lips slightly ahead of the chin, chin rounded back. Bust forward, waist inward, hip and seat backward. The fullest point of the hip meets the top of the thigh. Legs stay long and mostly straight.
 
-BACK SILHOUETTE, from back.jpg
-Narrow back, shoulder blades not prominent. A strip of lower-back skin between the crop top and the jeans. Waist narrow, then the pelvis flares immediately. Seat is round, with a clear left and right side, widest at the pocket line. Thighs continue long behind the seat. Knees stay close. Calves and ankles stay slim.
+BACK SILHOUETTE, from back.jpg. This seat shape is locked.
+Narrow back, shoulder blades not prominent. A strip of lower-back skin between the crop top and the jeans. The waist is the narrowest point, then the pelvis flares immediately to the left and right. The seat is round and divided into a left and a right side. The widest point is the back-pocket line. Below the seat the curve continues into the back of the thigh, with no horizontal gap. Do not raise two separate spheres, do not cut a shelf under the seat, and do not taper the seat to a narrow point. Keep this width. Do not enlarge it. Thighs continue long behind the seat. Knees stay close. Calves and ankles stay slim.
 
 PROPORTION
 Vertical 3:4. Head near the top edge, shoes near the bottom edge. Hip-to-floor is longer than shoulder-to-hip. The lower body is longer than the upper body. Shoulders narrow, bust forward, waist smallest, hips wider than the shoulders.
@@ -51,7 +51,7 @@ The twelve points that must survive every image:
 6 flat soft stomach and small navel
 7 hips wider than the waist
 8 side view: bust forward, waist in, seat back
-9 back view: narrow back, immediate hip flare, round divided seat
+9 back view: narrow back, immediate hip flare, round seat widest at the back pockets and continuing into the thigh
 10 long soft upper thighs, slim knees, slim calves, narrow ankles
 11 hip-to-floor longer than shoulder-to-hip, jean hem at the ankle
 12 fitted ribbed neckline and high-rise skinny jeans so those points stay visible
@@ -114,7 +114,7 @@ Keep the face and outfit. Lengthen the lower body. Hip-to-floor longer than shou
 허리와 골반:
 
 ```text
-Keep the face and the long legs. Make the waist the narrowest and shortest part, stomach flat, hips wider than the waist. From the side, bust forward, waist in, seat back. From the back, the pelvis flares immediately under the waist and the seat is round and divided.
+Keep the face and the long legs. Make the waist the narrowest and shortest part, stomach flat, hips wider than the waist. From the side, bust forward, waist in, seat back, and the fullest point of the seat meets the upper thigh. From the back, the pelvis flares immediately under the waist. The seat is round and divided, widest at the back pockets, then continues into the thigh. Do not enlarge it, do not lift it into two spheres, do not add a gap under it, and do not taper it to a point.
 ```
 
 가슴과 어깨:
