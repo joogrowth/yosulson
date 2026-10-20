@@ -16,8 +16,8 @@ ChatGPT, 또는 다른 이미지 AI에 넣을 때 순서다.
 ```text
 The attached photos are the canon for one fictional woman named 만유지. front.jpg, side.jpg, and back.jpg are the BODY only. Their faces are an older face. Ignore those faces. face-front.jpg and face-side.jpg are the new front and side plates. face-set-cafe.jpg is the front original for the eyes, nose, and lips. face-set-alley.jpg is the near-profile original. face-set-bob.jpg and face-set-bun.jpg are the skull originals. Do not use face.jpg, cafe-white-approved.jpg, face-fit-front.jpg, face-fit-side.jpg, face-fit-source.jpg, or standard-sheet.jpg for the face. Do not average her into a generic pretty woman and do not return to the older narrower sleepy eyes, the fitting-room face, or the chestnut high ponytail. A new outfit or a new place is allowed. Her face, skull, and these body points are not. The face photos are not the bust reference. Keep the bust at a 70B that stays inside the shoulder width. The slicked hair in face-front.jpg and face-side.jpg only reveals the skull. It is not the required hairstyle.
 
-FACE, from face-front.jpg, face-set-cafe.jpg, face-side.jpg, and face-set-alley.jpg
-Oval face, a little longer than wide. Soft cheeks, narrow jaw, short round chin. Medium-narrow forehead, rounded hairline. Dark brown eyebrows, medium thickness, soft natural arch, not straight and not sharply raised. Large dark-brown eyes that are clearly open, distinct double eyelids, rounded almond shape, outer corners only a little lifted, visible aegyo-sal, thin eyeliner, long natural lashes, large irises. On a front view both eyes match face-set-cafe.jpg and face-front.jpg. On a three-quarter or side view the iris stays visible, and the eye stays open. Small nose with a straight bridge, round small tip, small nostrils, short philtrum. Take the bridge from face-set-alley.jpg. Full lips, lower lip slightly fuller than the upper, muted peach pink, mouth closed or only slightly parted, no teeth. Fair smooth skin, light blush, eyeliner and lip color, no freckles. Small ears.
+FACE, from the user's photos first: face-set-cafe.jpg, face-set-alley.jpg, face-set-bob.jpg, and face-set-bun.jpg. face-front.jpg and face-side.jpg are reconstructions and must not override those photos.
+Soft short face with full cheeks and a short round chin. Not a long narrow face. Thin dark brows, soft arch. Large round dark-brown eyes, thin soft double eyelids, large glossy irises, aegyo-sal, thin eyeliner. Do not narrow the eyes into a long almond. Small short low nose, tiny round tip, small nostrils, short philtrum. Do not lengthen or raise the nose. Full glossy peach-pink lips, lower lip slightly fuller, mouth closed or barely parted, no teeth. Fair dewy skin, light blush. On a three-quarter view the iris stays visible. face-side.jpg is three-quarter, not a pure 90-degree profile.
 
 SKULL, inferred from face-set-bob.jpg, face-set-bun.jpg, and face-side.jpg
 There is no bare-head photo. The skull is a narrow egg, a little longer front to back than side to side. The crown is low and smoothly rounded, not flat and not peaked. One gentle arc runs from above the ear to the crown. The temples are narrow and do not bulge. The widest part of the skull is just above the ears and is only slightly wider than the cheekbones. The forehead is not wide. In profile the forehead slopes gently back from the brow. The occiput is low and short, rounding down into the neck. It is not cut flat and it does not project backward as a ball. A low bun sits at the base of that occiput, just above the neck. The face narrows from this skull toward the chin.
@@ -35,7 +35,7 @@ LOWER BODY, hip to feet
 Upper thighs are soft and long, lightly touching at the top, then tapering. Thigh length is as long as the calf. Knees are small. Calves are slim and straight. Ankles are narrow and the ankle bone shows. Jean hems end at the ankle bone. Feet are small. Shoe soles are thin, so the leg line is not shortened.
 
 SIDE SILHOUETTE, from side.jpg
-Straight nose with the bridge from face-set-alley.jpg, small tip, lips slightly ahead of the chin, chin rounded back. Low rounded crown and a low short occiput, matching face-side.jpg. Bust forward, waist inward, hip and seat backward. The fullest point of the hip meets the top of the thigh. Legs stay long and mostly straight.
+Short low nose with a tiny round tip, full glossy lips slightly ahead of a short round chin. Low rounded crown and a low short occiput. The face matches the user's photos, not a long sculpted profile. Bust forward, waist inward, hip and seat backward. The fullest point of the hip meets the top of the thigh. Legs stay long and mostly straight.
 
 BACK SILHOUETTE, from back.jpg. This seat shape is locked.
 Narrow back, shoulder blades not prominent. A strip of lower-back skin between the crop top and the jeans. The waist is the narrowest point, then the pelvis flares immediately to the left and right. The seat is round and divided into a left and a right side. The widest point is the back-pocket line. Below the seat the curve continues into the back of the thigh, with no horizontal gap. Do not raise two separate spheres, do not cut a shelf under the seat, and do not taper the seat to a narrow point. Keep this width. Do not enlarge it. Thighs continue long behind the seat. Knees stay close. Calves and ankles stay slim.
@@ -47,7 +47,7 @@ CLOTHING THAT SHOWS THESE POINTS
 Fitted ribbed top. Square neck or wide scoop, open enough to show the inner collarbone and the upper bust. Hem above the navel. High-rise skinny jeans, button under the navel, hem at the ankle, fabric following the thigh and seat. Thin soles.
 
 The twelve points that must survive every image:
-1 long oval face, large open dark eyes, clear double eyelid, rounded almond, aegyo-sal, small straight nose, full pink lips
+1 soft short face, full cheeks, large round dark eyes, thin double eyelid, aegyo-sal, small short low nose, full glossy pink lips
 2 narrow egg-shaped skull, low rounded crown, narrow temples, low short occiput. Hair color and style follow the shot
 3 small head, long neck, narrow shoulders, visible collarbones
 4 high forward bust inside the shoulder width
@@ -88,7 +88,7 @@ Full-body back view, 3:4. Narrow back, short waist, pelvis flaring just below th
 ### 얼굴
 
 ```text
-Waist-up portrait, 3:4, face matched to face-front.jpg and face-set-cafe.jpg. Slightly long oval face, large open dark-brown eyes, clear double eyelids, rounded almond, aegyo-sal, thin eyeliner, soft dark brows, small straight nose, full pink lips, fair skin with makeup. Narrow egg-shaped skull, low rounded crown. Dark brown hair worn so the face stays visible. Long neck, both collarbones, bust inside the shoulder width. Black top. Even light.
+Waist-up portrait, 3:4. Match the user's face photos first. Soft short face, full cheeks, large round dark-brown eyes, thin double eyelids, aegyo-sal, small short low nose, full glossy pink lips, fair dewy skin. Dark brown hair with loose strands around the face. Long neck, bust inside the shoulder width. Black top. Even light.
 ```
 
 ### 옷만 바꾸기
@@ -106,7 +106,7 @@ Keep all twelve body points and the same face. Change only the clothes and the p
 얼굴:
 
 ```text
-Keep the body, pose, outfit, and frame. Replace only the face and skull with face-front.jpg, face-side.jpg, face-set-cafe.jpg, and face-set-alley.jpg: slightly long oval face, large open dark-brown eyes, clear double eyelids, rounded almond, aegyo-sal, small straight nose, full pink lower lip, narrow egg skull, low rounded crown, low short occiput. Keep the hairstyle of the shot.
+Keep the body, pose, outfit, and frame. Replace only the face using the user's photos first: soft short face, full cheeks, large round dark-brown eyes, thin double eyelids, aegyo-sal, small short low nose, full glossy pink lips. Keep the hairstyle of the shot. Do not narrow the eyes or lengthen the nose.
 ```
 
 다리:
@@ -130,5 +130,5 @@ Keep the face and the legs. Narrow rounded shoulders, visible collarbones, bust 
 눈:
 
 ```text
-Keep everything else. Match the eyes to face-front.jpg and face-set-cafe.jpg: large, open, dark brown, clear double eyelid, rounded almond, aegyo-sal, thin eyeliner, large iris. Keep them open at a three-quarter angle.
+Keep everything else. Match the eyes to the user's front photos: large, round, dark brown, thin double eyelid, aegyo-sal, glossy iris. Do not narrow them.
 ```
