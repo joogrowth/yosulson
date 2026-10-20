@@ -3,7 +3,7 @@
 ChatGPT, 또는 다른 이미지 AI에 넣을 때 순서다.
 
 1. 새 채팅을 연다.
-2. 몸 정본 `references/front.jpg`, `references/side.jpg`, `references/back.jpg`와 얼굴 스타일 `references/face-set-cafe.jpg`, `references/face-style-garden.jpg`, `references/face-style-knit.jpg`, `references/face-style-pink.jpg`, `references/face-set-alley.jpg`를 모두 올린다.
+2. 몸 정본 `references/front.jpg`, `references/side.jpg`, `references/back.jpg`와 얼굴 스타일 `references/face-set-cafe.jpg`, `references/face-style-garden.jpg`, `references/face-style-knit.jpg`, `references/face-style-pink.jpg`, `references/face-set-alley.jpg`, 코 옆선 `references/face-nose-side.jpg`를 모두 올린다.
 3. `references/face-front.jpg`, `references/face-side.jpg`, `references/face.jpg`, `references/cafe-white-approved.jpg`, `references/face-fit-front.jpg`, `references/face-fit-side.jpg`, `references/face-fit-source.jpg`, `standard-sheet.jpg`는 올리지 않는다. 그 얼굴은 이전 얼굴이다. `standard-sheet.jpg`는 몸매를 눈으로 확인할 때만 따로 본다. `references/face-set-bob.jpg`와 `references/face-set-bun.jpg`는 두상 폭이 필요할 때만 따로 본다.
 4. 아래 마스터 프롬프트를 첫 메시지로 붙인다.
 5. 그다음 컷 프롬프트 하나만 붙인다.
@@ -16,7 +16,7 @@ ChatGPT, 또는 다른 이미지 AI에 넣을 때 순서다.
 ```text
 The attached photos are the canon for one fictional woman named 만유지. front.jpg, side.jpg, and back.jpg are the BODY only. Their faces are an older face. Ignore those faces. The face style is face-set-cafe.jpg, face-style-garden.jpg, face-style-knit.jpg, face-style-pink.jpg, and face-set-alley.jpg. Do not use face-front.jpg, face-side.jpg, face.jpg, cafe-white-approved.jpg, face-fit-front.jpg, face-fit-side.jpg, face-fit-source.jpg, or standard-sheet.jpg for the face. Those are older faces, including a studio plate whose nose was raised and whose skin was smoothed. Do not average her into a generic pretty woman and do not return to the older narrower sleepy eyes, the fitting-room face, the raised studio nose, or the chestnut high ponytail. A new outfit or a new place is allowed. Her face, skull, and these body points are not. The face photos are not the bust reference. Keep the bust at a 70B that stays inside the shoulder width. Hair color in the style set is auburn, chestnut, or black. Follow the hairstyle named in the shot.
 
-FACE AND NOSE. The five style photos set the face. The nose in those photos is slightly too prominent, so use this quieter proportion. Width equals the gap between the inner eye corners. Length is shorter than the middle third of the face, leaving a little space above the lip. From the side the tip sits only a little ahead of the upper lip. The bridge is low and straight, with no dark shadow along both sides and no sharp highlight. The tip is a small round button. No point, no high ridge, no bump, no hook. Small nostrils, short philtrum. The front nose and the side nose are the same nose.
+FACE AND NOSE. The five style photos set the face. face-nose-side.jpg is the nose line the user called beautiful. Keep that side line. The bridge is low, and the same line rounds into the tip with no corner and no separate cap. The tip sits only a little ahead of the upper lip. From the front, that same line is one narrow soft highlight down the center of the nose. Do not draw dark borders on both sides of the bridge. The shadow between the tip and the lip is short. Width equals the gap between the inner eye corners. Length is shorter than the middle third of the face. Small nostrils, short philtrum. The front nose and the side nose are the same nose.
 Soft short face with full cheeks, low cheekbones, and a short round chin. Not a long narrow face. Thin dark brows, soft arch. Large round dark-brown eyes, thin soft double eyelids, large glossy irises, aegyo-sal, thin eyeliner. Do not narrow the eyes into a long almond and do not make them sleepy. Full glossy peach-to-coral lips, lower lip slightly fuller, mouth closed or barely parted, no teeth. Fair skin with window light or sunlight, so highlight and shadow stay on the face. Light blush, thin makeup. A small pearl stud may show. On a three-quarter view the iris stays visible.
 
 SKULL, inferred from face-set-bob.jpg, face-set-bun.jpg, and face-set-alley.jpg. Use bob and bun for skull width only, not for the face.
@@ -35,7 +35,7 @@ LOWER BODY, hip to feet
 Upper thighs are soft and long, lightly touching at the top, then tapering. Thigh length is as long as the calf. Knees are small. Calves are slim and straight. Ankles are narrow and the ankle bone shows. Jean hems end at the ankle bone. Feet are small. Shoe soles are thin, so the leg line is not shortened.
 
 SIDE SILHOUETTE, from side.jpg
-The nose is quieter than face-set-alley.jpg: a low straight bridge, a small round tip only a little ahead of the upper lip. Full glossy lips slightly ahead of a short round chin. Low rounded crown and a low short occiput. Bust forward, waist inward, hip and seat backward. The fullest point of the hip meets the top of the thigh. Legs stay long and mostly straight.
+The nose line is face-nose-side.jpg: a low bridge that rounds into the tip with no corner, the tip only a little ahead of the upper lip. Full glossy lips slightly ahead of a short round chin. Low rounded crown and a low short occiput. Bust forward, waist inward, hip and seat backward. The fullest point of the hip meets the top of the thigh. Legs stay long and mostly straight.
 
 BACK SILHOUETTE, from back.jpg. This seat shape is locked.
 Narrow back, shoulder blades not prominent. A strip of lower-back skin between the crop top and the jeans. The waist is the narrowest point, then the pelvis flares immediately to the left and right. The seat is round and divided into a left and a right side. The widest point is the back-pocket line. Below the seat the curve continues into the back of the thigh, with no horizontal gap. Do not raise two separate spheres, do not cut a shelf under the seat, and do not taper the seat to a narrow point. Keep this width. Do not enlarge it. Thighs continue long behind the seat. Knees stay close. Calves and ankles stay slim.
@@ -47,7 +47,7 @@ CLOTHING THAT SHOWS THESE POINTS
 Fitted ribbed top. Square neck or wide scoop, open enough to show the inner collarbone and the upper bust. Hem above the navel. High-rise skinny jeans, button under the navel, hem at the ankle, fabric following the thigh and seat. Thin soles.
 
 The twelve points that must survive every image:
-1 soft short face, full cheeks, large round dark eyes, thin double eyelid, aegyo-sal, a nose as wide as the inner-eye gap and shorter than the middle third, low straight bridge, small round tip, full glossy peach-coral lips
+1 soft short face, full cheeks, large round dark eyes, thin double eyelid, aegyo-sal, the nose line of face-nose-side.jpg, and from the front that line as one narrow soft highlight, full glossy peach-coral lips
 2 narrow egg-shaped skull, low rounded crown, narrow temples, low short occiput. Hair color and style follow the shot
 3 small head, long neck, narrow shoulders, visible collarbones
 4 high forward bust inside the shoulder width
@@ -88,7 +88,7 @@ Full-body back view, 3:4. Narrow back, short waist, pelvis flaring just below th
 ### 얼굴
 
 ```text
-Waist-up portrait, 3:4. Match face-set-cafe.jpg and face-style-pink.jpg. Soft short face, full cheeks, large round dark-brown eyes, thin double eyelids, aegyo-sal. Nose width equals the inner-eye gap, length is shorter than the middle third, bridge low and straight with no dark side shadow, tip a small round button. Full glossy peach-coral lips, fair skin in window light. Auburn hair with loose strands around the face. Long neck, bust inside the shoulder width. Ivory collared knit. Warm window light.
+Waist-up portrait, 3:4. Match face-set-cafe.jpg and face-style-pink.jpg. Soft short face, full cheeks, large round dark-brown eyes, thin double eyelids, aegyo-sal. Match the nose line of face-nose-side.jpg. From the front that line is one narrow soft highlight down the center, rounding into a small tip, with no dark borders beside the bridge. Full glossy peach-coral lips, fair skin in window light. Auburn hair with loose strands around the face. Long neck, bust inside the shoulder width. Ivory collared knit. Warm window light.
 ```
 
 ### 옷만 바꾸기
@@ -106,7 +106,7 @@ Keep all twelve body points and the same face. Change only the clothes and the p
 얼굴:
 
 ```text
-Keep the body, pose, outfit, and frame. Replace only the face with the five style photos, and use the quieter nose: width equal to the inner-eye gap, length shorter than the middle third, low straight bridge with no dark side shadow, small round tip only a little ahead of the upper lip, full glossy peach-coral lips. Keep the hairstyle of the shot. Do not narrow the eyes. Do not sharpen the tip.
+Keep the body, pose, outfit, and frame. Replace only the face with the five style photos, and use the nose line in face-nose-side.jpg. From the front that same line is one narrow soft highlight down the center, rounding into a small tip. Keep the hairstyle of the shot. Do not narrow the eyes. Do not add dark borders beside the bridge.
 ```
 
 다리:
