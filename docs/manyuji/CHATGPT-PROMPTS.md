@@ -56,7 +56,7 @@ The twelve points that must survive every image:
 11 hip-to-floor longer than shoulder-to-hip, jean hem at the ankle
 12 fitted ribbed neckline and high-rise skinny jeans so those points stay visible
 
-Photorealistic. One woman. No text, no logo, no watermark. Keep this lock for the whole chat.
+Photorealistic, sharp, and clean, at the finish of best-standard.jpg. One woman. No text, no logo, no watermark. Do not add grain or blur to fake a photograph. Keep this lock for the whole chat.
 ```
 
 ## 컷 프롬프트
