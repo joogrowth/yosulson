@@ -3,23 +3,24 @@
 ChatGPT, 또는 다른 이미지 AI에 넣을 때 순서다.
 
 1. 새 채팅을 연다.
-2. `references/front.jpg`, `references/side.jpg`, `references/back.jpg`, `references/face.jpg`를 모두 올린다. `standard-sheet.jpg`도 같이 올린다.
-3. 아래 마스터 프롬프트를 첫 메시지로 붙인다.
-4. 그다음 컷 프롬프트 하나만 붙인다.
-5. 얼굴이나 비율이 달라지면, 그 결과에 교정 프롬프트를 답장으로 붙인다. 새로 그리지 말고 틀린 부위를 문장으로 지정한다.
+2. 몸 정본 `references/front.jpg`, `references/side.jpg`, `references/back.jpg`와 얼굴 정본 `references/face-front.jpg`, `references/face-side.jpg`, `references/face-source.jpg`를 모두 올린다.
+3. `references/face.jpg`, `references/cafe-white-approved.jpg`, `standard-sheet.jpg`는 올리지 않는다. 그 세 장의 얼굴은 이전 얼굴이다. `standard-sheet.jpg`는 몸매를 눈으로 확인할 때만 따로 본다.
+4. 아래 마스터 프롬프트를 첫 메시지로 붙인다.
+5. 그다음 컷 프롬프트 하나만 붙인다.
+6. 얼굴이나 비율이 달라지면, 그 결과에 교정 프롬프트를 답장으로 붙인다. 새로 그리지 말고 틀린 부위를 문장으로 지정한다.
 
 비율은 세로 3:4다.
 
 ## 마스터 프롬프트
 
 ```text
-The attached photos are the only canon for one fictional woman named 만유지. front.jpg is the front body, side.jpg is the side body, back.jpg is the back body, and face.jpg is the face. Match every region below. Do not average her into a generic pretty woman. A new outfit or a new place is allowed. Her face and these body points are not.
+The attached photos are the canon for one fictional woman named 만유지. front.jpg, side.jpg, and back.jpg are the BODY only. Their faces are the previous face. Ignore those faces. face-front.jpg, face-side.jpg, and face-source.jpg are the only FACE. face-source.jpg is the three-quarter original the user chose. Match the nose bridge to that photo. face-front.jpg and face-side.jpg are the front and side reconstructions of the same woman. Do not use face.jpg, cafe-white-approved.jpg, or standard-sheet.jpg for the face. Do not average her into a generic pretty woman and do not return to the previous narrower, sleepier eyes, lower nose, or chestnut high ponytail. A new outfit or a new place is allowed. Her face and these body points are not. The face photos are not the bust reference. Keep the bust at a 70B that stays inside the shoulder width.
 
-FACE, from face.jpg
-Oval face, a little longer than wide. Soft cheeks, narrow jaw, short round chin. Medium forehead with loose strands at both temples. Dark chestnut eyebrows, medium thickness, soft arch, not straight and not sharply raised. Large dark-brown eyes, double eyelids, slightly rounded almond shape, outer corners only a little lifted, visible aegyo-sal under the eyes, thin eyeliner, long natural lashes, large irises. Small low nose, straight bridge, round tip, small nostrils, short philtrum. Full lips, lower lip slightly fuller than the upper, muted pink, mouth closed in a faint smile, no teeth. Fair smooth skin, light blush only on the apples of the cheeks, no freckles. Small ears with a tiny stud.
+FACE, from face-front.jpg, face-side.jpg, and face-source.jpg
+Oval face, a little longer than wide. Soft cheeks, narrow jaw, short round chin. Medium forehead with a few thin strands at the temples. Dark brown eyebrows, medium thickness, soft natural arch, not straight and not sharply raised. Large dark-brown eyes that are clearly open, distinct double eyelids, rounded almond shape, outer corners only a little lifted, visible aegyo-sal, thin eyeliner, long natural lashes, large irises. On a front view both eyes match face-front.jpg in size and eyelid. On a three-quarter or side view the iris stays visible, and the eye stays open. Small nose with a straight bridge that is not flat or low, round small tip, small nostrils, short philtrum. Take the bridge height from face-source.jpg. Full lips, lower lip slightly fuller than the upper, muted peach pink, mouth closed or only slightly parted, no teeth. Fair smooth skin, light blush, eyeliner and lip color, no freckles. Small ears with a tiny stud.
 
 HAIR
-Chestnut brown with lighter brown strands. Default is a high ponytail with volume at the crown, long face-framing pieces on both cheeks, and a loose wavy tail that reaches the waist. Worn down, the hair passes the mid-back.
+Dark brown, close to black, with a warm brown sheen in the light. Default is a low ponytail, neat crown, thin strands at the forehead and beside the ears, tail falling down the back. Match the color and the low ponytail in the three face photos.
 
 UPPER BODY, crown to underbust
 Small head, about one eighth of her height. Long slim neck. Both collarbones visible. Narrow rounded shoulders, not broad, not square, no thick trapezius. Slim long arms, thin wrists, small hands. Bust is high, full, and rounded forward. From the front it stays inside the shoulder width. From the side it projects clearly from the ribcage. Under the bust the torso narrows at once.
@@ -31,7 +32,7 @@ LOWER BODY, hip to feet
 Upper thighs are soft and long, lightly touching at the top, then tapering. Thigh length is as long as the calf. Knees are small. Calves are slim and straight. Ankles are narrow and the ankle bone shows. Jean hems end at the ankle bone. Feet are small. Shoe soles are thin, so the leg line is not shortened.
 
 SIDE SILHOUETTE, from side.jpg
-Low straight nose, lips slightly ahead of the chin, chin rounded back. Bust forward, waist inward, hip and seat backward. The fullest point of the hip meets the top of the thigh. Legs stay long and mostly straight.
+Straight nose with the bridge from face-source.jpg, small tip, lips slightly ahead of the chin, chin rounded back. The profile matches face-side.jpg. Bust forward, waist inward, hip and seat backward. The fullest point of the hip meets the top of the thigh. Legs stay long and mostly straight.
 
 BACK SILHOUETTE, from back.jpg. This seat shape is locked.
 Narrow back, shoulder blades not prominent. A strip of lower-back skin between the crop top and the jeans. The waist is the narrowest point, then the pelvis flares immediately to the left and right. The seat is round and divided into a left and a right side. The widest point is the back-pocket line. Below the seat the curve continues into the back of the thigh, with no horizontal gap. Do not raise two separate spheres, do not cut a shelf under the seat, and do not taper the seat to a narrow point. Keep this width. Do not enlarge it. Thighs continue long behind the seat. Knees stay close. Calves and ankles stay slim.
@@ -43,8 +44,8 @@ CLOTHING THAT SHOWS THESE POINTS
 Fitted ribbed top. Square neck or wide scoop, open enough to show the inner collarbone and the upper bust. Hem above the navel. High-rise skinny jeans, button under the navel, hem at the ankle, fabric following the thigh and seat. Thin soles.
 
 The twelve points that must survive every image:
-1 large dark eyes with aegyo-sal, small low nose, full pink lips
-2 chestnut high ponytail with face-framing strands, unless the shot says the hair is down
+1 long oval face, large open dark eyes, clear double eyelid, rounded almond, aegyo-sal, small straight nose, full pink lips
+2 dark brown low ponytail with thin face-framing strands, unless the shot says the hair is down
 3 small head, long neck, narrow shoulders, visible collarbones
 4 high forward bust inside the shoulder width
 5 short narrow waist directly under the bust
@@ -56,7 +57,7 @@ The twelve points that must survive every image:
 11 hip-to-floor longer than shoulder-to-hip, jean hem at the ankle
 12 fitted ribbed neckline and high-rise skinny jeans so those points stay visible
 
-Photorealistic, sharp, and clean, at the finish of best-standard.jpg. One woman. No text, no logo, no watermark. Do not add grain or blur to fake a photograph. Keep this lock for the whole chat.
+Photorealistic, sharp, and clean. best-standard.jpg is the sharpness reference only. Do not copy its face or its chestnut ponytail. One woman. No text, no logo, no watermark. Do not add grain or blur to fake a photograph. Keep this lock for the whole chat.
 ```
 
 ## 컷 프롬프트
@@ -84,7 +85,7 @@ Full-body back view, 3:4. Narrow back, short waist, pelvis flaring just below th
 ### 얼굴
 
 ```text
-Waist-up portrait, 3:4, face matched to face.jpg. Oval face, large dark-brown eyes, aegyo-sal, thin eyeliner, soft arched brows, small low nose, full pink lips, fair skin. Chestnut high ponytail, loose strands on both cheeks. Long neck, both collarbones, high bust. Dusty-rose ribbed long-sleeve square-neck crop top. Soft cafe window light.
+Waist-up portrait, 3:4, face matched to face-front.jpg and face-source.jpg. Slightly long oval face, large open dark-brown eyes, clear double eyelids, rounded almond, aegyo-sal, thin eyeliner, soft dark brows, small straight nose, full pink lips, fair skin with makeup. Dark brown low ponytail, thin strands at the temples. Long neck, both collarbones, bust inside the shoulder width. Black long-sleeve square-neck top. Warm wood wall, even light.
 ```
 
 ### 옷만 바꾸기
@@ -102,7 +103,7 @@ Keep all twelve body points and the same face. Change only the clothes and the p
 얼굴:
 
 ```text
-Keep the body, pose, outfit, and frame. Replace only the face with face.jpg: oval face, large dark-brown eyes with aegyo-sal, soft arched brows, small low nose, full pink lower lip, chestnut high ponytail with cheek strands.
+Keep the body, pose, outfit, and frame. Replace only the face and hair with face-front.jpg, face-side.jpg, and face-source.jpg: slightly long oval face, large open dark-brown eyes, clear double eyelids, rounded almond, aegyo-sal, small straight nose with the bridge from face-source.jpg, full pink lower lip, dark brown low ponytail with thin temple strands.
 ```
 
 다리:
@@ -126,5 +127,5 @@ Keep the face and the legs. Narrow rounded shoulders, visible collarbones, bust 
 눈:
 
 ```text
-Keep everything else. Match the eyes to face.jpg: large, dark brown, double eyelid, slightly rounded almond, aegyo-sal, thin eyeliner. Do not shrink them and do not make them narrow.
+Keep everything else. Match the eyes to face-front.jpg and face-source.jpg: large, open, dark brown, clear double eyelid, rounded almond, aegyo-sal, thin eyeliner, large iris. Keep them open at a three-quarter angle.
 ```
