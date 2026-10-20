@@ -127,7 +127,7 @@
 2026-10-20, 사용자가 같은 얼굴의 사진 세트를 만유지 얼굴로 다시 확정했다. 정면과 옆면은 그 세트로 새로 만들었다.
 
 - `references/face-front.jpg` — 정면 재구성. 둥근 눈, 윤기 있는 입, 코는 예전 만유지와 짧은 코의 중간 길이·중간 평수.
-- `references/face-side.jpg` — 비스듬한 옆 재구성. 완전한 90도 옆면은 아니다.
+- `references/face-side.jpg` — `face-front.jpg`와 같은 얼굴의 비스듬한 옆. 눈, 코 길이, 코 평수, 입술이 정면과 같다. 완전한 90도 옆면은 아니다.
 - `references/face-set-cafe.jpg` — 정면 원본. 눈, 코, 입.
 - `references/face-set-bob.jpg` — 단발 원본. 두상의 옆 폭과 정수리.
 - `references/face-set-bun.jpg` — 낮은 번 원본. 후두의 높이.
