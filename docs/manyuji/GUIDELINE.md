@@ -15,13 +15,16 @@
 | 코 옆선 | `references/face-nose-side.jpg` | 확정 코선. 콧등에서 코끝까지의 곡선 |
 | 확정 얼굴 정면 | `references/face-long-front.jpg` | 2026-10-21 확정. 긴머리, 꽃집. 눈, 코, 입 |
 | 확정 얼굴 옆 | `references/face-long-side.jpg` | 2026-10-21 확정. 긴머리, 온실. 코선과 옆얼굴 |
+| 확정 전신 앞 | `references/body-white-front.jpg` | 2026-10-21 확정. 흰 타이트 티, 스키니진 |
+| 확정 전신 옆 | `references/body-white-side.jpg` | 2026-10-21 확정. 같은 옷, 긴머리 |
+| 확정 전신 뒤 | `references/body-white-back.jpg` | 2026-10-21 확정. 같은 옷, 엉덩이 선 |
 | 눈웃음 | `references/face-eye-smile-quarter.jpg` | 비스듬한 각도. 표정만 참고한다. 얼굴 느낌의 정본은 아니다 |
 | 두상 참고 | `references/face-set-bob.jpg` | 단발. 정수리와 옆 폭. 얼굴 인상에는 쓰지 않는다 |
 | 두상 참고 | `references/face-set-bun.jpg` | 낮은 번. 후두가 목에 붙는 높이. 얼굴 인상에는 쓰지 않는다 |
 
 `references/face-front.jpg`, `references/face-side.jpg`, `references/face.jpg`, `references/cafe-white-approved.jpg`, `references/face-fit-front.jpg`, `references/face-fit-side.jpg`, `references/face-fit-source.jpg`, `standard-sheet.jpg`의 얼굴은 이전 얼굴이다. 얼굴에는 쓰지 않는다. `standard-sheet.jpg`는 몸매를 한눈에 볼 때만 쓴다. `face-set-bob.jpg`와 `face-set-bun.jpg`는 두상 폭만 본다.
 
-다른 AI에 넣을 때는 몸 세 장, 얼굴 스타일 다섯 장, 코 옆선 `references/face-nose-side.jpg`, 이 문서를 같이 넣는다. `references/face-eye-smile-above.jpg`는 얼굴이 더 둥글고 매끈해서 얼굴 기준에 넣지 않는다. 얼굴 사진만 넣으면 체형이 바뀌고, 몸 사진의 얼굴을 따르면 이전 얼굴로 돌아간다. 얼굴 사진은 얼굴만 본다. 가슴 크기는 그 사진이 아니라 70B 규칙을 따른다.
+다른 AI에 넣을 때는 몸 세 장, 흰 티 전신 세 장, 얼굴 스타일 다섯 장, 긴머리 정면·옆, 코 옆선 `references/face-nose-side.jpg`, 이 문서를 같이 넣는다. `references/face-eye-smile-above.jpg`는 얼굴이 더 둥글고 매끈해서 얼굴 기준에 넣지 않는다. 얼굴 사진만 넣으면 체형이 바뀌고, 몸 사진의 얼굴을 따르면 이전 얼굴로 돌아간다. 얼굴 사진은 얼굴만 본다. 가슴 크기는 그 사진이 아니라 70B 규칙을 따른다.
 
 ## 전체 비율
 
@@ -117,6 +120,14 @@
 상의는 몸에 붙는 골지다. 넥라인은 스퀘어넥이나 넓은 스쿱으로, 쇄골 안쪽과 가슴 위쪽이 보인다. 소매는 반팔, 민소매, 긴팔 모두 가능하다. 기장은 배꼽 위다. 넣어서 입을 때도 허리선이 보여야 한다.
 
 바지는 하이웨스트 스키니진이다. 단추는 배꼽 아래, 밑단은 복숭아뼈다. 연청, 중간 블루, 진청이 정본에 있다. 허벅지와 엉덩이에 천이 붙어서 위 10번의 다리 모양이 보여야 한다.
+
+2026-10-21, 사용자가 흰 타이트 티와 스키니진의 정면·옆·뒤를 모두 고정했다.
+
+- `references/body-white-front.jpg` — 정면. 긴머리, 흰 반팔 타이트 티, 중간 블루 하이웨스트 스키니진, 흰 스니커즈.
+- `references/body-white-side.jpg` — 옆. 같은 옷, 긴머리. 가슴은 앞, 허리는 안, 엉덩이는 뒤.
+- `references/body-white-back.jpg` — 뒤. 같은 옷. 좁은 등, 짧은 허리, 뒷주머니에서 넓은 엉덩이.
+
+이 세 장의 몸 비율은 `front.jpg`, `side.jpg`, `back.jpg`와 같다. 가슴은 70B이고 어깨 안에 있다. 허리는 짧다. 골반은 허리보다 넓다. 다리는 길고 밑창은 얇다.
 
 확정된 네 벌은 이렇다.
 
