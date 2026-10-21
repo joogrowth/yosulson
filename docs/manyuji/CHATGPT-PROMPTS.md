@@ -4,19 +4,21 @@
 
 ## 올리는 사진
 
-채팅에 뜬 그림은 파일이 아니라서 챗지피티에 올릴 수 없다. 아래 주소에서 받은 jpg 7장만 올린다. 공개 저장소 주소다.
+챗지피티는 주소만 붙여서는 사진을 열지 못한다. 채팅에 보인 그림도 파일이 아니다. zip을 받아 풀고, 그 jpg 7장을 챗지피티 입력창의 첨부 버튼으로 올린다.
 
-| 파일 | 주소 |
+zip: https://raw.githubusercontent.com/joogrowth/yosulson/cursor/minyuji-image-guide-c4c8/docs/manyuji/manyuji-chatgpt-7.zip
+
+| 파일 | 역할 |
 | --- | --- |
-| 확정 얼굴 정면 | https://raw.githubusercontent.com/joogrowth/yosulson/cursor/minyuji-image-guide-c4c8/docs/manyuji/references/face-long-front.jpg |
-| 확정 얼굴 옆 | https://raw.githubusercontent.com/joogrowth/yosulson/cursor/minyuji-image-guide-c4c8/docs/manyuji/references/face-long-side.jpg |
-| 코선과 얼굴 느낌 | https://raw.githubusercontent.com/joogrowth/yosulson/cursor/minyuji-image-guide-c4c8/docs/manyuji/references/face-nose-side.jpg |
-| 확정 전신 정면 | https://raw.githubusercontent.com/joogrowth/yosulson/cursor/minyuji-image-guide-c4c8/docs/manyuji/references/body-white-front.jpg |
-| 확정 전신 옆 | https://raw.githubusercontent.com/joogrowth/yosulson/cursor/minyuji-image-guide-c4c8/docs/manyuji/references/body-white-side.jpg |
-| 확정 전신 뒤 | https://raw.githubusercontent.com/joogrowth/yosulson/cursor/minyuji-image-guide-c4c8/docs/manyuji/references/body-white-back.jpg |
-| 엉덩이 모양만 | https://raw.githubusercontent.com/joogrowth/yosulson/cursor/minyuji-image-guide-c4c8/docs/manyuji/references/back.jpg |
+| `face-long-front.jpg` | 확정 얼굴 정면. 긴 적갈색 머리 |
+| `face-long-side.jpg` | 확정 얼굴 옆. 코선 |
+| `face-nose-side.jpg` | 코선과 얼굴 느낌 |
+| `body-white-front.jpg` | 확정 전신 정면 |
+| `body-white-side.jpg` | 확정 전신 옆 |
+| `body-white-back.jpg` | 확정 전신 뒤 |
+| `back.jpg` | 엉덩이 모양만. 이 장의 얼굴은 쓰지 않는다 |
 
-각 주소를 열어 저장한 뒤, 챗지피티 새 채팅에 그 7장을 첨부한다. 파일 이름을 메시지에 같이 적는다. `back.jpg`의 얼굴은 쓰지 않는다.
+한 메시지에 한 장면만 시킨다. 정면, 옆, 뒤를 한 번에 시키지 않는다. 얼굴이 다르면 그 이미지에 교정 프롬프트를 답장으로 붙인다.
 
 올리지 않는다.
 
