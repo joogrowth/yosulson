@@ -23,7 +23,7 @@ SKULL, inferred from face-set-bob.jpg, face-set-bun.jpg, and face-set-alley.jpg.
 There is no bare-head photo. The skull is a narrow egg, a little longer front to back than side to side. The crown is low and smoothly rounded, not flat and not peaked. One gentle arc runs from above the ear to the crown. The temples are narrow and do not bulge. The widest part of the skull is just above the ears and is only slightly wider than the cheekbones. The forehead is not wide. In profile the forehead slopes gently back from the brow. The occiput is low and short, rounding down into the neck. It is not cut flat and it does not project backward as a ball. A low bun sits at the base of that occiput, just above the neck. The face narrows from this skull toward the chin.
 
 HAIR
-Hair color and style follow the shot. The style photos use auburn, chestnut, and black, with a low ponytail, a half-up, or loose hair. If the shot names none, use auburn and keep the face visible. The skull shape stays the same under every hairstyle.
+Default hair is long loose auburn past the shoulders, confirmed in face-long-front.jpg and face-long-side.jpg. No bun unless the shot asks for one. If the shot names a different style, follow that shot. The skull shape stays the same.
 
 UPPER BODY, crown to underbust
 Small head, about one eighth of her height. Long slim neck. Both collarbones visible. Narrow rounded shoulders, not broad, not square, no thick trapezius. Slim long arms, thin wrists, small hands. Bust is high, full, and rounded forward. From the front it stays inside the shoulder width. From the side it projects clearly from the ribcage. Under the bust the torso narrows at once.
