@@ -1,15 +1,28 @@
 # 만유지 외형 기준
 
-이름은 **만유지**다. 얼굴의 정본은 2026-10-22에 사용자가 확정한 `references/face-absolute.jpg` 한 장이다. 왼쪽이 정면이고 오른쪽이 옆면이다. 장소, 자세, 옷, 머리 스타일이 바뀌어도 얼굴은 이 장이다. 다른 얼굴 사진과 다르면 이 장이 이긴다.
+이름은 **만유지**다. 2026-10-22, 사용자가 아래 네 장을 만유지라고 확정했다. 다른 도구에서 만들 때도 이 네 장과 이 문서의 제작 문장만 넣는다. 아래 기록과 이 네 장이 다르면 이 네 장이 이긴다.
 
-몸매 정본은 앞·옆·뒤 세 장이다. 그전에 고른 얼굴 스타일 다섯 장은 느낌 참고다. `face-front.jpg`와 `face-side.jpg`는 얼굴 정본이 아니다.
+| 파일 | 역할 |
+| --- | --- |
+| `references/face-absolute.jpg` | 얼굴 정본. 왼쪽 정면, 오른쪽 옆면. 낮은 포니, 진주 스터드. |
+| `references/locked-front.jpg` | 확정 전신 정면. 세로 3:4. 아이보리 골지 반팔 스퀘어넥, 연청 스키니진, 흰 스니커즈. |
+| `references/locked-side.jpg` | 확정 전신 옆. 세로 3:4. 블랙 골지 민소매 스퀘어넥, 중간 블루 스키니진, 흰 스니커즈. |
+| `references/locked-back.jpg` | 확정 전신 뒤. 세로 3:4. 세이지 반팔 크롭, 진청 스키니진. 엉덩이 모양은 이 장이다. |
+
+기본 머리는 이 네 장의 낮은 포니다. 가운데 가르마, 얼굴 옆 잔머리, 밝은 밤색, 묶음은 목뒤에 있다. 높은 포니나 풀어 내린 긴머리는 기본이 아니다. 컷에서 머리를 따로 지정할 때만 바꾼다. 머리를 바꿔도 얼굴은 `face-absolute.jpg`다.
+
+전신은 세로 3:4다. 정수리가 위쪽에 붙고 신발이 아래쪽에 붙는다. 키는 7.5등신이다. 가슴은 70B다.
+
+얼굴의 정본은 `references/face-absolute.jpg`다. 왼쪽이 정면이고 오른쪽이 옆면이다. 장소, 자세, 옷이 바뀌어도 얼굴은 이 장이다. 다른 얼굴 사진과 다르면 이 장이 이긴다.
+
+몸매 정본은 `locked-front.jpg`, `locked-side.jpg`, `locked-back.jpg`다. 아래 표의 이전 장은 기록이다. 제작에는 넣지 않는다. `face-front.jpg`와 `face-side.jpg`는 얼굴 정본이 아니다.
 
 | 방향 | 파일 | 이 사진으로 맞추는 부위 |
 | --- | --- | --- |
 | 얼굴 정본 | `references/face-absolute.jpg` | 2026-10-22 확정. 정면과 옆면이 한 장에 있다. 이후 모든 생성의 얼굴은 이 장만 쓴다. |
-| 앞 | `references/front.jpg` | 위·중간·아래 비율, 다리 길이. 이 장의 얼굴은 이전 얼굴이다. |
-| 옆 | `references/side.jpg` | 가슴의 돌출, 허리의 들어감, 엉덩이와 허벅지. 이 장의 얼굴은 이전 얼굴이다. |
-| 뒤 | `references/back.jpg` | 등, 허리, 골반, 엉덩이, 다리 뒤 |
+| 앞 | `references/locked-front.jpg` | 2026-10-22 확정 전신. 비율, 다리 길이, 낮은 포니. |
+| 옆 | `references/locked-side.jpg` | 2026-10-22 확정 전신. 가슴의 돌출, 허리의 들어감, 엉덩이. |
+| 뒤 | `references/locked-back.jpg` | 2026-10-22 확정 전신. 등, 허리, 골반, 엉덩이, 다리 뒤. |
 | 얼굴 스타일 | `references/face-set-cafe.jpg` | 정면. 창가 빛, 눈, 코, 입 |
 | 얼굴 스타일 | `references/face-style-garden.jpg` | 낮은 포니, 진주, 부드러운 광대 |
 | 얼굴 스타일 | `references/face-style-knit.jpg` | 가까운 얼굴. 눈, 코, 입술 |
@@ -25,11 +38,11 @@
 | 두상 참고 | `references/face-set-bob.jpg` | 단발. 정수리와 옆 폭. 얼굴 인상에는 쓰지 않는다 |
 | 두상 참고 | `references/face-set-bun.jpg` | 낮은 번. 후두가 목에 붙는 높이. 얼굴 인상에는 쓰지 않는다 |
 
-`references/face-front.jpg`, `references/face-side.jpg`, `references/face.jpg`, `references/cafe-white-approved.jpg`, `references/face-fit-front.jpg`, `references/face-fit-side.jpg`, `references/face-fit-source.jpg`, `standard-sheet.jpg`의 얼굴은 이전 얼굴이다. 얼굴에는 쓰지 않는다. `standard-sheet.jpg`는 몸매를 한눈에 볼 때만 쓴다. `face-set-bob.jpg`와 `face-set-bun.jpg`는 두상 폭만 본다.
+`references/face-front.jpg`, `references/face-side.jpg`, `references/face.jpg`, `references/cafe-white-approved.jpg`, `references/face-fit-front.jpg`, `references/face-fit-side.jpg`, `references/face-fit-source.jpg`의 얼굴은 이전 얼굴이다. 얼굴에는 쓰지 않는다. `standard-sheet.jpg`는 확정 사진을 모아 둔 표다. `coord-sheet.jpg`의 정면은 2026-10-22에 사용자가 만유지라고 올린 사진이다. 파일은 `references/this-front.jpg`다. 흰 골지 반팔 스퀘어넥, 연청 하이웨스트 스키니진, 흰 스니커즈, 밝은 방이다. 옆은 `references/this-side.jpg`, 뒤는 `references/this-back.jpg`다. 옥상 긴팔 컷은 이 비율이 아니다. 얼굴, 상반신, 전신을 각각 앞·옆·뒤로 뒀다. 이미지 AI에는 표를 올리지 않고 원본 네 장을 올린다. `face-set-bob.jpg`와 `face-set-bun.jpg`는 두상 폭만 본다.
 
-다른 AI에 넣을 때는 몸 세 장, 흰 티 전신 세 장, 얼굴 스타일 다섯 장, 긴머리 정면·옆, 코 옆선 `references/face-nose-side.jpg`, 이 문서를 같이 넣는다. `references/face-eye-smile-above.jpg`는 얼굴이 더 둥글고 매끈해서 얼굴 기준에 넣지 않는다. 얼굴 사진만 넣으면 체형이 바뀌고, 몸 사진의 얼굴을 따르면 이전 얼굴로 돌아간다. 얼굴 사진은 얼굴만 본다. 가슴 크기는 그 사진이 아니라 70B 규칙을 따른다.
+다른 AI에 넣을 때는 `face-absolute.jpg`, `locked-front.jpg`, `locked-side.jpg`, `locked-back.jpg` 네 장만 넣는다. 이전 얼굴이나 흰 티 전신을 같이 넣으면 얼굴이 돌아간다. `references/face-eye-smile-above.jpg`는 얼굴이 더 둥글고 매끈해서 얼굴 기준에 넣지 않는다. 가슴 크기는 얼굴 사진이 아니라 70B 규칙을 따른다.
 
-장면을 붙일 때 그 사진의 얼굴은 만유지가 아니다. 배경, 자세, 화면 속 크기만 본다. 얼굴은 `face-absolute.jpg`만 쓴다. 몸매는 `body-white-front.jpg`, `body-white-side.jpg`, `body-white-back.jpg`만 쓴다. 장면 속 여성을 그대로 두면 만유지가 아니다.
+장면을 붙일 때 그 사진의 얼굴은 만유지가 아니다. 배경, 자세, 화면 속 크기만 본다. 얼굴은 `face-absolute.jpg`만 쓴다. 몸매는 `locked-front.jpg`, `locked-side.jpg`, `locked-back.jpg`만 쓴다. 장면 속 여성을 그대로 두면 만유지가 아니다.
 
 ## 전체 비율
 
@@ -65,7 +78,7 @@
 
 ### 위: 머리끝에서 가슴 아래
 
-머리카락의 기본은 긴머리다. 2026-10-21에 사용자가 꽃집 정면과 온실 옆면을 확정했다. 어깨 아래로 내려오는 긴 적갈색이고, 묶음머리가 아니다. 파일은 `face-long-front.jpg`, `face-long-side.jpg`다. 컷에서 다른 머리를 지정하면 그 스타일을 따른다. 어떤 머리에서도 두상은 같다.
+머리카락의 기본은 낮은 포니다. 2026-10-22에 사용자가 `face-absolute.jpg`와 `locked-front.jpg`, `locked-side.jpg`, `locked-back.jpg`를 확정했다. 가운데 가르마, 얼굴 옆 잔머리, 밝은 밤색, 묶음은 목뒤다. `face-long-front.jpg`와 `face-long-side.jpg`의 풀어 내린 긴머리는 이전 머리라 기본으로 쓰지 않는다. 컷에서 다른 머리를 지정하면 그 스타일을 따른다. 어떤 머리에서도 얼굴은 `face-absolute.jpg`다.
 
 목은 가늘고 길다. 정면에서 쇄골이 양쪽 모두 보인다. 어깨는 좁고 끝이 아래로 둥글다. 승모근이 넓거나 각진 어깨가 아니다. 팔은 가늘고 길며, 팔꿈치는 곧고, 손목은 얇다. 손은 작고 손가락이 길다.
 
@@ -106,7 +119,7 @@
 다른 AI가 만유지를 그릴 때 아래 열두 곳이 사진과 같아야 한다. 하나라도 빠지면 같은 사람이 아니다.
 
 1. 부드럽고 짧은 얼굴, 볼살, 크고 둥근 갈색 눈, 얇은 쌍꺼풀, 애교살. 코선은 `face-nose-side.jpg`의 옆선이고, 정면에서는 그 선이 가는 밝은 줄로만 보인다. 윤기 있는 도톰한 살구·코랄 입술.
-2. 좁은 달걀형 두상. 정수리는 낮고 둥글고, 옆은 좁고, 후두는 낮고 짧다. 머리 색과 스타일은 컷을 따른다.
+2. 기본 머리는 밝은 밤색의 낮은 포니다. 가운데 가르마와 얼굴 옆 잔머리가 있다. 두상은 좁은 달걀이고, 정수리는 낮고 둥글다.
 3. 작은 머리, 긴 목, 좁고 둥근 어깨, 보이는 쇄골.
 4. 높고 앞쪽으로 둥근 가슴. 사이즈는 70B. 어깨 너비를 넘지 않는다.
 5. 밑가슴에서 바로 좁아지는 짧은 허리.
@@ -126,7 +139,7 @@
 
 바지는 하이웨스트 스키니진이다. 단추는 배꼽 아래, 밑단은 복숭아뼈다. 연청, 중간 블루, 진청이 정본에 있다. 허벅지와 엉덩이에 천이 붙어서 위 10번의 다리 모양이 보여야 한다.
 
-2026-10-21, 사용자가 흰 타이트 티와 스키니진의 정면·옆·뒤를 모두 고정했다.
+2026-10-22 확정 전신이 이 네 벌보다 우선한다. 앞은 `locked-front.jpg`, 옆은 `locked-side.jpg`, 뒤는 `locked-back.jpg`다. 2026-10-21의 흰 타이트 티 세 장은 이전 몸 참고다. 그 장의 얼굴과 풀어 내린 머리는 쓰지 않는다.
 
 - `references/body-white-front.jpg` — 정면. 긴머리, 흰 반팔 타이트 티, 중간 블루 하이웨스트 스키니진, 흰 스니커즈.
 - `references/body-white-side.jpg` — 옆. 같은 옷, 긴머리. 가슴은 앞, 허리는 안, 엉덩이는 뒤.
@@ -145,7 +158,7 @@
 
 ## 확정된 절대 기준
 
-2026-10-22, 사용자가 `references/face-absolute.jpg`를 만유지 얼굴이라고 확정했다. 왼쪽 정면과 오른쪽 옆면이 한 장에 있다. 어디서 어떤 자세로 그려도 이 얼굴이다.
+2026-10-22, 사용자가 `references/face-absolute.jpg`를 만유지 얼굴이라고 확정했다. 같은 날 `locked-front.jpg`, `locked-side.jpg`, `locked-back.jpg` 전신 세 장도 만유지라고 확정했다. 왼쪽 정면과 오른쪽 옆면이 얼굴 한 장에 있다. 어디서 어떤 자세로 그려도 이 얼굴이고, 기본 머리는 그 장의 낮은 포니다.
 
 이 장의 얼굴은 이렇다. 짧고 부드럽다. 볼살이 있고 광대는 낮고 턱은 짧고 둥글다. 눈은 크고 둥근 짙은 갈색이다. 쌍꺼풀은 얇고 눈 아래에 애교살이 있다. 코는 낮고, 콧등 한가운데에 가는 밝은 줄이 있으며, 코끝은 각 없이 작게 둥글다. 옆면에서 콧등은 코끝으로 각 없이 이어지고, 코끝은 윗입술보다 조금만 앞에 있다. 입술은 윤기 있는 살구·코랄이고 살짝 벌어져 있으며 이는 보이지 않는다. 귀는 작고 진주 스터드가 있다. 이 장의 머리는 가운데 가르마에 얼굴 옆 잔머리가 있고, 나머지는 낮은 포니다. 머리 스타일을 바꿔도 얼굴은 이 장이다.
 
@@ -183,7 +196,7 @@
 
 ## 고정된 엉덩이
 
-엉덩이 모양은 `references/back.jpg`로 고정한다. 크기를 따로 키우거나 줄이지 않는다. 이 사진의 너비와 돌출이 기준이다.
+엉덩이 모양은 `references/locked-back.jpg`로 고정한다. `references/back.jpg`는 같은 모양의 이전 장이고, 그 장의 얼굴은 쓰지 않는다. 크기를 따로 키우거나 줄이지 않는다. 확정 전신 뒤 사진의 너비와 돌출이 기준이다.
 
 - 허리가 뒤에서 가장 좁고, 그 바로 아래에서 골반이 좌우로 퍼진다.
 - 엉덩이는 둥글고 좌우가 나뉜다. 가장 넓은 곳은 뒷주머니 높이다.
