@@ -38,7 +38,7 @@
 | 두상 참고 | `references/face-set-bob.jpg` | 단발. 정수리와 옆 폭. 얼굴 인상에는 쓰지 않는다 |
 | 두상 참고 | `references/face-set-bun.jpg` | 낮은 번. 후두가 목에 붙는 높이. 얼굴 인상에는 쓰지 않는다 |
 
-`references/face-front.jpg`, `references/face-side.jpg`, `references/face.jpg`, `references/cafe-white-approved.jpg`, `references/face-fit-front.jpg`, `references/face-fit-side.jpg`, `references/face-fit-source.jpg`의 얼굴은 이전 얼굴이다. 얼굴에는 쓰지 않는다. `standard-sheet.jpg`는 확정 사진을 모아 둔 표다. `coord-sheet.jpg`는 새로 만든 코디다. 흰색 골지 긴팔, 청바지, 서울 옥상이다. 가슴은 70B로 줄였고, 전신은 걷지 않고 서서 맞췄다. 정면은 정수리에서 발끝까지 약 7.5등신이다. 얼굴, 상반신, 전신을 각각 앞·옆·뒤로 뒀다. 이미지 AI에는 표를 올리지 않고 원본 네 장을 올린다. `face-set-bob.jpg`와 `face-set-bun.jpg`는 두상 폭만 본다.
+`references/face-front.jpg`, `references/face-side.jpg`, `references/face.jpg`, `references/cafe-white-approved.jpg`, `references/face-fit-front.jpg`, `references/face-fit-side.jpg`, `references/face-fit-source.jpg`의 얼굴은 이전 얼굴이다. 얼굴에는 쓰지 않는다. `standard-sheet.jpg`는 확정 사진을 모아 둔 표다. `coord-sheet.jpg`의 정면은 2026-10-22에 사용자가 만유지라고 올린 사진이다. 파일은 `references/this-front.jpg`다. 흰 골지 반팔 스퀘어넥, 연청 하이웨스트 스키니진, 흰 스니커즈, 밝은 방이다. 옆은 `references/this-side.jpg`, 뒤는 `references/this-back.jpg`다. 옥상 긴팔 컷은 이 비율이 아니다. 얼굴, 상반신, 전신을 각각 앞·옆·뒤로 뒀다. 이미지 AI에는 표를 올리지 않고 원본 네 장을 올린다. `face-set-bob.jpg`와 `face-set-bun.jpg`는 두상 폭만 본다.
 
 다른 AI에 넣을 때는 `face-absolute.jpg`, `locked-front.jpg`, `locked-side.jpg`, `locked-back.jpg` 네 장만 넣는다. 이전 얼굴이나 흰 티 전신을 같이 넣으면 얼굴이 돌아간다. `references/face-eye-smile-above.jpg`는 얼굴이 더 둥글고 매끈해서 얼굴 기준에 넣지 않는다. 가슴 크기는 얼굴 사진이 아니라 70B 규칙을 따른다.
 
