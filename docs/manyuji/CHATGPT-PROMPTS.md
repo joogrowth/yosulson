@@ -41,6 +41,8 @@ face-long-front.jpg is the front face. face-long-side.jpg is the side face. face
 
 Angle, pose, outfit, and place may change. Her face, skull, hair default, and body proportions may not. Do not invent a new face for a new angle. Do not average her into a generic pretty woman. Do not use an older narrower eye, a raised studio nose, a chestnut high ponytail, or a rounder smoother face.
 
+A scene photo is background, pose, and scale only. Never copy the face of the woman already standing in that scene. The face comes only from face-long-front.jpg, face-long-side.jpg, and face-nose-side.jpg. The body comes only from the three body-white photos.
+
 FACE
 Soft short face, full cheeks, low cheekbones, short round chin. Thin dark brows with a soft arch. Large round dark-brown eyes, thin soft double eyelids, large glossy irises, aegyo-sal, thin eyeliner. Eyes stay large and open. Nose width equals the gap between the inner eye corners. Nose length is shorter than the middle third of the face. The bridge is low and rounds into a small tip with no corner, matching face-nose-side.jpg. From the front that line is one narrow soft highlight, with no dark borders beside the bridge. The tip sits only a little ahead of the upper lip. Full glossy peach-coral lips, lower lip slightly fuller. At rest the mouth is closed or barely parted and no teeth show. An eye-smile, only when asked, lifts the lower eyelid a little on this same face. The iris stays visible. Do not shorten or lengthen the face when she smiles.
 

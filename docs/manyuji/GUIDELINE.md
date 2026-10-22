@@ -26,6 +26,8 @@
 
 다른 AI에 넣을 때는 몸 세 장, 흰 티 전신 세 장, 얼굴 스타일 다섯 장, 긴머리 정면·옆, 코 옆선 `references/face-nose-side.jpg`, 이 문서를 같이 넣는다. `references/face-eye-smile-above.jpg`는 얼굴이 더 둥글고 매끈해서 얼굴 기준에 넣지 않는다. 얼굴 사진만 넣으면 체형이 바뀌고, 몸 사진의 얼굴을 따르면 이전 얼굴로 돌아간다. 얼굴 사진은 얼굴만 본다. 가슴 크기는 그 사진이 아니라 70B 규칙을 따른다.
 
+장면을 붙일 때 그 사진의 얼굴은 만유지가 아니다. 배경, 자세, 화면 속 크기만 본다. 얼굴은 `face-long-front.jpg`, `face-long-side.jpg`, `face-nose-side.jpg`, `face-set-alley.jpg`, `face-style-knit.jpg`만 쓴다. 몸매는 `body-white-front.jpg`, `body-white-side.jpg`, `body-white-back.jpg`만 쓴다. 장면 속 여성을 그대로 두면 만유지가 아니다. 2026-10-22, 사용자가 골목 꽃 얼굴 `face-set-alley.jpg`와 회색 니트 얼굴 `face-style-knit.jpg`를 다시 만유지 얼굴이라고 확인했다.
+
 ## 전체 비율
 
 전신은 세로 3:4다. 정수리가 위쪽에 붙고 신발이 아래쪽에 붙는다. 위아래 빈 공간이 크면 다리가 짧아 보인다.
