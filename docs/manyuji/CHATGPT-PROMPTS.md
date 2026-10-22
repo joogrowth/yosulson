@@ -1,18 +1,16 @@
 # 만유지 ChatGPT 공유
 
-이름은 **만유지**다. 2026-10-21에 고정한 얼굴과 전신만 쓴다.
+이름은 **만유지**다. 얼굴은 2026-10-22에 확정한 `references/face-absolute.jpg`만 쓴다. 왼쪽이 정면, 오른쪽이 옆면이다. 전신은 2026-10-21에 고정한 흰 티 세 장이다.
 
 ## 올리는 사진
 
-챗지피티는 주소만 붙여서는 사진을 열지 못한다. 채팅에 보인 그림도 파일이 아니다. zip을 받아 풀고, 그 jpg 7장을 챗지피티 입력창의 첨부 버튼으로 올린다.
+챗지피티는 주소만 붙여서는 사진을 열지 못한다. 채팅에 보인 그림도 파일이 아니다. zip을 받아 풀고, 그 jpg 5장을 챗지피티 입력창의 첨부 버튼으로 올린다.
 
 zip: https://raw.githubusercontent.com/joogrowth/yosulson/cursor/minyuji-image-guide-c4c8/docs/manyuji/manyuji-chatgpt-7.zip
 
 | 파일 | 역할 |
 | --- | --- |
-| `face-long-front.jpg` | 확정 얼굴 정면. 긴 적갈색 머리 |
-| `face-long-side.jpg` | 확정 얼굴 옆. 코선 |
-| `face-nose-side.jpg` | 코선과 얼굴 느낌 |
+| `face-absolute.jpg` | 얼굴 정본. 왼쪽 정면, 오른쪽 옆면. |
 | `body-white-front.jpg` | 확정 전신 정면 |
 | `body-white-side.jpg` | 확정 전신 옆 |
 | `body-white-back.jpg` | 확정 전신 뒤 |
@@ -22,6 +20,7 @@ zip: https://raw.githubusercontent.com/joogrowth/yosulson/cursor/minyuji-image-g
 
 올리지 않는다.
 
+- `face-long-front.jpg`, `face-long-side.jpg`, `face-nose-side.jpg` — 이전 얼굴. 정본과 겹치면 넣지 않는다.
 - `face-front.jpg`, `face-side.jpg`, `face.jpg`, `cafe-white-approved.jpg`
 - `face-fit-front.jpg`, `face-fit-side.jpg`, `face-fit-source.jpg`
 - `face-eye-smile-above.jpg` — 더 둥글고 매끈한 다른 얼굴
@@ -35,13 +34,13 @@ zip: https://raw.githubusercontent.com/joogrowth/yosulson/cursor/minyuji-image-g
 ## 마스터 프롬프트
 
 ```text
-The attached photos are the locked canon for one fictional woman named 만유지. The user confirmed her on 2026-10-21. This lock is absolute.
+The attached photos are the locked canon for one fictional woman named 만유지. On 2026-10-22 the user locked her face to face-absolute.jpg. The left half is the front. The right half is the side. This face wins over every older face photo.
 
-face-long-front.jpg is the front face. face-long-side.jpg is the side face. face-nose-side.jpg is the nose line and the face feeling. body-white-front.jpg, body-white-side.jpg, and body-white-back.jpg are the locked full body in a tight white short-sleeve tee, medium-blue high-rise skinny jeans, and white thin-soled sneakers, with long loose auburn hair. back.jpg is the seat shape only. Ignore the face in back.jpg.
+body-white-front.jpg, body-white-side.jpg, and body-white-back.jpg are the locked full body in a tight white short-sleeve tee, medium-blue high-rise skinny jeans, and white thin-soled sneakers. back.jpg is the seat shape only. Ignore the face in back.jpg.
 
 Angle, pose, outfit, and place may change. Her face, skull, hair default, and body proportions may not. Do not invent a new face for a new angle. Do not average her into a generic pretty woman. Do not use an older narrower eye, a raised studio nose, a chestnut high ponytail, or a rounder smoother face.
 
-A scene photo is background, pose, and scale only. Never copy the face of the woman already standing in that scene. The face comes only from face-long-front.jpg, face-long-side.jpg, and face-nose-side.jpg. The body comes only from the three body-white photos.
+A scene photo is background, pose, and scale only. Never copy the face of the woman already standing in that scene. The face comes only from face-absolute.jpg. The body comes only from the three body-white photos.
 
 FACE
 Soft short face, full cheeks, low cheekbones, short round chin. Thin dark brows with a soft arch. Large round dark-brown eyes, thin soft double eyelids, large glossy irises, aegyo-sal, thin eyeliner. Eyes stay large and open. Nose width equals the gap between the inner eye corners. Nose length is shorter than the middle third of the face. The bridge is low and rounds into a small tip with no corner, matching face-nose-side.jpg. From the front that line is one narrow soft highlight, with no dark borders beside the bridge. The tip sits only a little ahead of the upper lip. Full glossy peach-coral lips, lower lip slightly fuller. At rest the mouth is closed or barely parted and no teeth show. An eye-smile, only when asked, lifts the lower eyelid a little on this same face. The iris stays visible. Do not shorten or lengthen the face when she smiles.
