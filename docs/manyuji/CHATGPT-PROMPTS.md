@@ -25,7 +25,8 @@ zip: https://raw.githubusercontent.com/joogrowth/yosulson/cursor/manyuji-face-ca
 - `face-long-front.jpg`, `face-long-side.jpg`, `face-nose-side.jpg`
 - `front.jpg`, `side.jpg`, `back.jpg`, `face.jpg`, `cafe-white-approved.jpg`
 - `face-fit-front.jpg`, `face-fit-side.jpg`, `face-fit-source.jpg`
-- `face-eye-smile-above.jpg`, `standard-sheet.jpg`
+- `face-eye-smile-above.jpg`
+- `standard-sheet.jpg` — 사람이 보는 기준표다. 올리면 표 자체가 그림이 된다
 
 사진을 올린 뒤 아래 마스터 프롬프트를 첫 메시지로 붙인다. 그다음 컷 프롬프트 하나만 붙인다. 비율은 세로 3:4다.
 
