@@ -16,8 +16,9 @@
 | `references/feel-selfie.jpg` | 야외. 웃어도 눈은 크고 둥글다. |
 | `references/feel-walk.jpg` | 뒤와 옆. 허리와 엉덩이 옆선. |
 | `references/feel-window.jpg` | 비스듬한 얼굴. 돌아도 눈이 좁아지지 않고 코가 높아지지 않는다. |
+| `references/feel-bed.jpg` | 침대에 누운 컷. 흰 골지 나시, 열린 회색 후드. 얼굴은 보는 사람 기준 오른쪽으로 45도. |
 
-여섯 장과 `face-absolute.jpg`의 생김새가 다르면 생김새는 `face-absolute.jpg`가 이긴다. 여섯 장은 빛, 각도, 표정에서 그 얼굴이 무너지지 않는지 확인한다.
+여섯 장과 `face-absolute.jpg`의 생김새가 다르면 생김새는 `face-absolute.jpg`가 이긴다. 여섯 장은 빛, 각도, 표정에서 그 얼굴이 무너지지 않는지 확인한다. `feel-bed.jpg`도 얼굴은 `face-absolute.jpg`와 같아야 한다.
 
 몸 비율은 `references/this-front.jpg`, `references/this-side.jpg`, `references/this-back.jpg`다. 머리는 작고 다리는 길다. 새로 만든 컷의 얼굴 크기는 이 전신의 머리 크기다. 얼굴을 몸보다 키우지 않는다. 가슴은 70B이고 좁은 어깨 안에 있다. 옆선이 보이게 돌려도 가슴을 둥글게 키우지 않는다. `locked-front.jpg`, `locked-side.jpg`, `locked-back.jpg`의 옷은 이전 코디다. 비율이 `this-*`와 다르면 `this-*`가 이긴다.
 
