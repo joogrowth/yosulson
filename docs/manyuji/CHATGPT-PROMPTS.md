@@ -20,6 +20,7 @@ zip: https://raw.githubusercontent.com/joogrowth/yosulson/cursor/manyuji-face-ca
 zip 안에 같이 들어 있으나, 기본 네 장과 함께 올리지 않는다.
 
 - `feel-cafe.jpg`, `feel-braid.jpg`, `feel-cream.jpg`, `feel-selfie.jpg`, `feel-walk.jpg`, `feel-window.jpg` — 같은 얼굴이 실제 사진에서 유지되는 느낌. 눈이 둥글고 얼굴이 짧은지 확인할 때 한 장만 더 올린다.
+- `feel-bed.jpg` — 침대에 누운 컷. 보는 사람 기준 오른쪽으로 45도. 얼굴은 `face-absolute.jpg`와 같아야 한다.
 - `feel-set.jpg` — 여섯 장을 모아 둔 표. 올리면 콜라주가 된다.
 - `street-pink-wide.jpg` — 연분홍 긴팔과 흰 와이드 팬츠 컷을 다시 만들 때만 옷과 장소로 올린다. 그 사진의 얼굴과 가슴은 베끼지 않는다.
 
