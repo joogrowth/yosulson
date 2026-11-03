@@ -1,0 +1,7 @@
+{
+  "name": "yosulson",
+  "private": true,
+  "scripts": {
+    "test": "node --test quote.test.js"
+  }
+}
