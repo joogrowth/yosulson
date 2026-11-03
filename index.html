@@ -407,8 +407,7 @@ input:disabled{opacity:.4;cursor:not-allowed}
 
   // 복사
   q('copy-btn').addEventListener('click', function(){
-    var text=copyLines.join('
-');
+    var text=copyLines.join('\n');
     var btn=this;
     function done(){ btn.textContent='복사됨'; setTimeout(function(){ btn.textContent='텍스트 복사'; },2000); }
     if(navigator.clipboard && navigator.clipboard.writeText){
