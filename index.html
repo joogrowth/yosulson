@@ -153,6 +153,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 0 10px;
 }
 .quote-col { position: sticky; top: 12px; }
+.payroll-wide { grid-column: 1 / -1; }
 @media (max-width: 900px) { .quote-col { position: static; } }
 #quote {
   margin: 0;
@@ -312,28 +313,26 @@ details summary { cursor: pointer; font-weight: 800; }
       <pre id="quote">메모를 반영하면 문단이 여기 쌓입니다.</pre>
       <button id="copy" type="button" disabled>카톡·캘린더에 복사</button>
     </section>
-    <section class="card">
-      <details>
-        <summary>사내 정산</summary>
-        <div class="grid" style="margin-top:12px">
-          <div>
-            <label for="payWage">실제 적용 시급</label>
-            <select id="payWage"></select>
-          </div>
-          <div>
-            <label for="basePay">이미 반영된 기본급</label>
-            <input id="basePay" inputmode="numeric" placeholder="0">
-          </div>
-        </div>
-        <p class="hint">인건비는 분으로 계산합니다. 2.43시간처럼 소수로 바꾸지 않아야 엑셀 급여와 1원까지 맞습니다. 출발이 출근이고 복귀가 퇴근이면, 출퇴근 기본급에 이미 들어간 금액을 여기서 뺍니다.</p>
-        <p id="reconcile" class="hint"></p>
-        <pre class="settle" id="settle"></pre>
-        <button id="copy-settle" type="button" disabled>정산 내역 복사</button>
-      </details>
-    </section>
   </aside>
+  <section class="card payroll-wide" id="payroll-card">
+    <h2>급여명세서</h2>
+    <p class="lead">출근부터 퇴근까지 시급은 전부 지급합니다. 배송 견적과 비교하는 돈은 배송 출발부터 복귀까지입니다.</p>
+    <div class="grid">
+      <div><label for="clockIn">출근</label><input id="clockIn" autocomplete="off" placeholder="08:00"></div>
+      <div><label for="workDepart">배송 출발</label><input id="workDepart" autocomplete="off" placeholder="10:00"></div>
+      <div><label for="workReturn">배송 복귀</label><input id="workReturn" autocomplete="off" placeholder="12:30"></div>
+      <div><label for="clockOut">퇴근</label><input id="clockOut" autocomplete="off" placeholder="14:00"></div>
+      <div><label for="payWage">지급 시급</label><select id="payWage"></select></div>
+    </div>
+    <p class="hint">차량 운영비, 유류비, 통행료, 주차비는 견적에 넣은 왕복 실비를 가져옵니다. 매장에서 일한 시간은 배송비에 넣지 않습니다.</p>
+    <div class="totals" id="payroll-summary" hidden></div>
+    <div id="payroll-warn"></div>
+    <pre class="settle" id="payroll-text">출근, 배송 출발, 배송 복귀, 퇴근을 넣으면 명세서가 만들어집니다.</pre>
+    <button id="copy-payroll" type="button" disabled>급여명세서 복사</button>
+  </section>
 </main>
 <script src="quote.js"></script>
+<script src="payroll.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

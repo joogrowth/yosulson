@@ -844,7 +844,7 @@
     var service = band + extraSum + percent;
     var pure = vehicle + fuel + toll;
     var withService = pure + service;
-    var pay = gross - basePay;
+    var pay = gross;
     return {
       gross: gross,
       basePay: basePay,
@@ -961,7 +961,6 @@
       '적용 시급: ' + formatWon(settlement.wage),
       '계산: ROUND(' + formatNumber(settlement.wage) + ' × ' + settlement.minutes + ' ÷ 60) = ' + formatWon(settlement.gross),
       '운송 인건비: ' + formatWon(settlement.gross),
-      '기본급 차감: ' + formatWon(settlement.basePay),
       '실제 운송급여: ' + formatWon(settlement.pay),
       '차량 운영비: ' + formatWon(settlement.vehicle),
       '유류비: ' + formatWon(settlement.fuel),

@@ -288,7 +288,7 @@ test('ten percent and on-site minutes are added explicitly', function () {
   assert.match(quote.text, /구간할증/);
 });
 
-test('payroll deduction keeps the customer quote and the paid wage apart', function () {
+test('minute pay is not reduced by store wages', function () {
   const quote = q.buildQuote({
     type: '배송',
     person: '기사',
@@ -304,9 +304,8 @@ test('payroll deduction keeps the customer quote and the paid wage apart', funct
   });
   assert.equal(quote.minutes, 146);
   assert.equal(quote.settlement.gross, 31633);
-  assert.equal(quote.settlement.pay, 29423);
-  assert.equal(quote.rows[0].total - quote.settlement.total, 2210);
-  assert.match(quote.settlement.text, /ROUND\(13,000 × 146 ÷ 60\) = 31,633원/);
+  assert.equal(quote.settlement.pay, 31633);
+  assert.equal(quote.settlement.text.includes('차감'), false);
 });
 
 test('loose wording for money, clocks, and duration', function () {

@@ -10,9 +10,10 @@
   var state = blankState();
 
   var textFields = ['type', 'person', 'event', 'date', 'phone', 'place', 'items', 'depart', 'arrive', 'eventTime'];
-  var numFields = ['goMin', 'backMin', 'shopMin', 'km', 'fuel', 'toll', 'parking', 'basePay'];
+  var numFields = ['goMin', 'backMin', 'shopMin', 'km', 'fuel', 'toll', 'parking'];
+  var punchFields = ['clockIn', 'workDepart', 'workReturn', 'clockOut'];
 
-  textFields.concat(numFields).forEach(function (id) {
+  textFields.concat(numFields).concat(punchFields).forEach(function (id) {
     document.getElementById(id).addEventListener('input', function (e) {
       state[id] = e.target.value;
       if (id === 'km' || id === 'toll') state.autoNote = '';
@@ -133,8 +134,8 @@
   document.getElementById('copy').addEventListener('click', function () {
     copyText(document.getElementById('quote').textContent, this, '카톡·캘린더에 복사');
   });
-  document.getElementById('copy-settle').addEventListener('click', function () {
-    copyText(document.getElementById('settle').textContent, this, '정산 내역 복사');
+  document.getElementById('copy-payroll').addEventListener('click', function () {
+    copyText(document.getElementById('payroll-text').textContent, this, '급여명세서 복사');
   });
 
   var themeBtn = document.getElementById('theme');
@@ -156,7 +157,8 @@
       km: '', fuel: '', toll: '', parking: '',
       includeBand: false, percentMode: 'none',
       wages: [11000, 12000, 13000],
-      extras: [], payWage: 13000, basePay: '',
+      extras: [], payWage: 13000,
+      clockIn: '', workDepart: '', workReturn: '', clockOut: '',
       warnings: [], autoNote: '', kmRange: null
     };
   }
@@ -230,7 +232,7 @@
   }
 
   function writeState() {
-    textFields.concat(numFields).forEach(function (id) { setValue(id, state[id]); });
+    textFields.concat(numFields).concat(punchFields).forEach(function (id) { setValue(id, state[id]); });
     document.getElementById('percent').value = state.percentMode;
     document.getElementById('payWage').value = String(state.payWage);
   }
@@ -452,7 +454,7 @@
       missingTitle.hidden = true;
       totals.hidden = true;
       copy.disabled = true;
-      renderSettlement(null);
+      renderPayroll(result);
       return;
     }
     quote.textContent = result.text;
@@ -479,32 +481,73 @@
       });
     }
     copy.disabled = !result.ready;
-    renderSettlement(result);
+    renderPayroll(result);
   }
 
-  function renderSettlement(result) {
-    var pre = document.getElementById('settle');
-    var button = document.getElementById('copy-settle');
-    var reconcile = document.getElementById('reconcile');
-    if (!result || !result.ready || !result.settlement) {
-      pre.textContent = '';
-      reconcile.textContent = '';
+  function renderPayroll(result) {
+    var pre = document.getElementById('payroll-text');
+    var button = document.getElementById('copy-payroll');
+    var summary = document.getElementById('payroll-summary');
+    var warn = document.getElementById('payroll-warn');
+    warn.innerHTML = '';
+    if (!window.YosulPayroll) {
+      pre.textContent = '급여 계산 파일을 불러오지 못했습니다.';
       button.disabled = true;
       return;
     }
-    pre.textContent = result.settlement.text;
-    button.disabled = false;
-    var customer = null;
-    result.rows.forEach(function (row) {
-      if (row.wage === Number(state.payWage)) customer = row;
-    });
-    if (customer && result.settlement.basePay > 0) {
-      reconcile.textContent = '고객 견적 ' + Q.formatWon(customer.total) + '에서 이미 급여에 들어간 ' + Q.formatWon(result.settlement.basePay) + '을 빼면, 이번에 더 지급할 운송급여는 ' + Q.formatWon(result.settlement.pay) + '입니다.';
-    } else if (customer) {
-      reconcile.textContent = '기본급 차감이 없으면 이 시급의 고객 견적 ' + Q.formatWon(customer.total) + '과 총 정산이 같습니다.';
-    } else {
-      reconcile.textContent = '';
+    var limit = null;
+    if (result && result.ready) {
+      result.rows.forEach(function (row) {
+        if (row.wage === Number(state.payWage)) limit = row.total;
+      });
     }
+    var fuel = state.fuel === '' ? 0 : Number(state.fuel);
+    var toll = state.toll === '' ? 0 : Number(state.toll);
+    var slip = window.YosulPayroll.buildPayroll({
+      person: state.person,
+      dateLabel: state.date ? Q.formatDateLabel(state.date) : '',
+      clockIn: state.clockIn,
+      depart: state.workDepart,
+      returnAt: state.workReturn,
+      clockOut: state.clockOut,
+      wage: state.payWage,
+      roundKm: Number(state.km) > 0 ? Number(state.km) * 2 : 0,
+      fuelRound: Number.isFinite(fuel) ? Q.ceil100(fuel * 2) : 0,
+      tollRound: Number.isFinite(toll) ? toll * 2 : 0,
+      parking: state.parking,
+      quoteLimit: limit
+    });
+    slip.warnings.forEach(function (warning) {
+      var p = document.createElement('p');
+      p.className = 'warn';
+      p.textContent = warning;
+      warn.appendChild(p);
+    });
+    if (!slip.ready) {
+      summary.hidden = true;
+      pre.textContent = slip.missing.length
+        ? '필요합니다: ' + slip.missing.join(', ')
+        : '시각 순서를 확인해 주세요.';
+      button.disabled = true;
+      return;
+    }
+    pre.textContent = slip.text;
+    button.disabled = false;
+    summary.hidden = false;
+    summary.innerHTML = '';
+    [
+      ['과세 급여', slip.taxable],
+      ['차량 실비', slip.expenses],
+      ['최종 지급액', slip.finalPay],
+      ['배송 원가', slip.deliveryCost]
+    ].forEach(function (pair) {
+      var line = document.createElement('div');
+      var name = document.createElement('span');
+      name.textContent = pair[0];
+      line.appendChild(name);
+      line.appendChild(document.createTextNode(Q.formatWon(pair[1])));
+      summary.appendChild(line);
+    });
   }
 
   function copyText(text, button, label) {
