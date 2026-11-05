@@ -411,10 +411,10 @@
       "arrive": "11:20 ~ 11:30",
       "eventTime": "",
       "km": 43,
-      "fuel": 8000,
-      "toll": 3700,
+      "fuel": 7000,
+      "toll": 0,
       "goMin": 70,
-      "backMin": 70,
+      "backMin": 60,
       "shopMin": null,
       "includeBand": false,
       "percentMode": "none",
@@ -429,22 +429,44 @@
         "행사 시각은 없음.",
         "장소 표기는 메모 그대로 국사방사선비상진료센터.",
         "구간할증은 이 메모에 없음.",
+        "편도 연료비는 8,000원에서 1,000원을 뺀 7,000원.",
+        "복귀소요시간은 70분에서 10분을 줄인 60분.",
+        "통행료 3,700원은 빼서 0원.",
         "구간 수고비는 넣지 않음. 왕복 86km면 11,000원.",
         "도시락 23개라 인원 적재비는 넣지 않음."
       ],
-      "revisions": [],
+      "revisions": [
+        {
+          "field": "fuel",
+          "from": 8000,
+          "to": 7000,
+          "note": "편도 연료비 1,000원 차감"
+        },
+        {
+          "field": "backMin",
+          "from": 70,
+          "to": 60,
+          "note": "복귀소요시간 10분 단축"
+        },
+        {
+          "field": "toll",
+          "from": 3700,
+          "to": 0,
+          "note": "통행료 제외"
+        }
+      ],
       "quoted": {
         "wages": [11000, 12000, 13000],
-        "minutes": 140,
+        "minutes": 130,
         "roundKm": 86,
         "vehicle": 19092,
-        "fuelRound": 16000,
-        "tollRound": 7400,
-        "labor": [25667, 28000, 30333],
+        "fuelRound": 14000,
+        "tollRound": 0,
+        "labor": [23833, 26000, 28167],
         "surcharge": 0,
-        "totals": [68159, 70492, 72825],
+        "totals": [56925, 59092, 61259],
         "bandIfIncluded": 11000,
-        "totalsWithBand": [79159, 81492, 83825]
+        "totalsWithBand": [67925, 70092, 72259]
       }
     }
   ]

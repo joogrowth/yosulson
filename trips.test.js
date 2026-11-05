@@ -210,6 +210,10 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.equal(nowon.date, jung.date);
   assert.notEqual(nowon.place, jung.place);
   assert.equal(nowon.percentMode, 'none');
+  assert.equal(nowon.fuel, 7000);
+  assert.equal(nowon.backMin, 60);
+  assert.equal(nowon.toll, 0);
+  assert.equal(nowon.revisions.length, 3);
   const nowonQuote = q.buildQuote({
     type: nowon.type,
     person: nowon.person,
@@ -230,7 +234,9 @@ test('confirmed trips stay tied to the quote that was given', function () {
   });
   assert.equal(nowonQuote.ready, true);
   assert.equal(nowonQuote.vehicle, 19092);
-  assert.equal(nowonQuote.tollRound, 7400);
+  assert.equal(nowonQuote.tollRound, 0);
+  assert.equal(nowonQuote.fuelRound, 14000);
+  assert.equal(nowonQuote.minutes, 130);
   assert.deepEqual(nowonQuote.rows.map(function (row) { return row.total; }), nowon.quoted.totals);
   assert.equal(q.bandFee(nowon.quoted.roundKm), 11000);
   assert.doesNotMatch(nowonQuote.text, /구간할증/);
