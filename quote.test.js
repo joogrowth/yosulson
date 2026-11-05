@@ -399,3 +399,33 @@ test('a Seoul National consultation keeps the hall, the landline, and the surcha
   assert.equal(quote.suggestions[0].note, '6층 605호 기물/세팅 운반');
   assert.match(quote.text, /02 880 6113/);
 });
+
+test('a Yonsei lunch delivery keeps an 8,000 won surcharge once', function () {
+  const parsed = q.parseMemo([
+    '[배송] 구원회 / 서포트도시락',
+    '26.11.08(일)',
+    '출발 : 11:40',
+    '도착 : 12:30',
+    '연세대 백주년 기념 콘서트 홀',
+    '박물관 앞쪽에서 수령 요청',
+    '메니저 : 010 7600 6954',
+    '*서포트 도시락 6인',
+    '편도거리 20km',
+    '연료비 4,000원',
+    '도착소요시간 50분',
+    '복귀소요시간 50분',
+    '구간할증 8,000원'
+  ].join('\n'));
+  assert.equal(parsed.phone, '010 7600 6954');
+  assert.equal(parsed.percentMode, 'none');
+  assert.equal(parsed.extras[0].amount, 8000);
+  assert.equal(q.formatDateLabel(parsed.date), '26.11.08(일)');
+  const quote = q.buildQuote(parsed);
+  assert.equal(quote.minutes, 100);
+  assert.equal(quote.vehicle, 8880);
+  assert.equal(quote.fuelRound, 8000);
+  assert.equal(quote.band, 0);
+  assert.equal(q.bandFee(quote.roundKm), 8000);
+  assert.deepEqual(quote.rows.map(function (row) { return row.labor; }), [18333, 20000, 21667]);
+  assert.deepEqual(quote.rows.map(function (row) { return row.total; }), [43213, 44880, 46547]);
+});

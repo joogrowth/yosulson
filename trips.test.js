@@ -8,7 +8,7 @@ const q = require('./quote.js');
 const ledger = JSON.parse(fs.readFileSync('./data/trips.json', 'utf8'));
 
 test('confirmed trips stay tied to the quote that was given', function () {
-  assert.equal(ledger.trips.length, 3);
+  assert.equal(ledger.trips.length, 4);
   const trip = ledger.trips.find(function (row) { return row.id === '20261114-avril-imyeonjeong'; });
   assert.equal(trip.id, '20261114-avril-imyeonjeong');
   assert.equal(trip.place, '광명 아브릴모마 2부');
@@ -100,4 +100,31 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.equal(q.matchVenue({ place: snu.place }).id, snu.venueId);
   assert.equal(q.formatDateLabel(snu.date), '27.01.06(수)');
   assert.equal(q.formatPhone(snu.phone), '02 880 6113');
+
+  const yonsei = ledger.trips.find(function (row) { return row.id === '20261108-yonsei-gu'; });
+  const yonseiQuote = q.buildQuote({
+    type: yonsei.type,
+    person: yonsei.person,
+    event: yonsei.event,
+    date: yonsei.date,
+    phone: yonsei.phone,
+    depart: yonsei.depart,
+    arrive: yonsei.arrive,
+    place: yonsei.place,
+    items: yonsei.items,
+    km: yonsei.km,
+    fuel: yonsei.fuel,
+    toll: yonsei.toll,
+    goMin: yonsei.goMin,
+    backMin: yonsei.backMin,
+    includeBand: yonsei.includeBand,
+    percentMode: yonsei.percentMode,
+    extras: yonsei.extras
+  });
+  assert.equal(yonseiQuote.ready, true);
+  assert.equal(yonseiQuote.band, 0);
+  assert.deepEqual(yonseiQuote.rows.map(function (row) { return row.total; }), yonsei.quoted.totals);
+  assert.equal(q.bandFee(yonsei.quoted.roundKm), yonsei.quoted.bandRegulation);
+  assert.equal(yonsei.quoted.bandAlreadyInSurcharge, true);
+  assert.equal(q.formatDateLabel(yonsei.date), '26.11.08(일)');
 });

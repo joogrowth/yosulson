@@ -167,6 +167,59 @@
         "totalsWithBand": [66651, 68984, 71317],
         "loadingSuggestion": 10000
       }
+    },
+    {
+      "id": "20261108-yonsei-gu",
+      "collectedOn": "2026-11-05",
+      "status": "confirmed",
+      "type": "배송",
+      "person": "구원회",
+      "event": "서포트도시락",
+      "date": "2026-11-08",
+      "weekday": "일",
+      "place": "연세대 백주년 기념 콘서트 홀",
+      "venueId": null,
+      "items": "서포트 도시락 6인",
+      "headcount": 6,
+      "phone": "010 7600 6954",
+      "phoneRole": "매니저",
+      "depart": "11:40",
+      "arrive": "12:30",
+      "eventTime": "",
+      "km": 20,
+      "fuel": 4000,
+      "toll": 0,
+      "goMin": 50,
+      "backMin": 50,
+      "shopMin": null,
+      "includeBand": false,
+      "percentMode": "none",
+      "parking": null,
+      "extras": [
+        { "label": "구간할증", "amount": 8000 }
+      ],
+      "notes": [
+        "통행료는 없어서 0원.",
+        "출발 11:40에 50분을 더하면 도착 12:30.",
+        "수령 위치는 박물관 앞쪽. 도착 전 전화하면 마중 나오심.",
+        "010 7600 6954는 매니저 번호. 메모에는 메니저로 적혀 있음.",
+        "구간할증 8,000원. 왕복 40km 구간 수고비도 8,000원이라 한 번만 넣음.",
+        "6인이라 적재이동비는 넣지 않음."
+      ],
+      "revisions": [],
+      "quoted": {
+        "wages": [11000, 12000, 13000],
+        "minutes": 100,
+        "roundKm": 40,
+        "vehicle": 8880,
+        "fuelRound": 8000,
+        "tollRound": 0,
+        "labor": [18333, 20000, 21667],
+        "surcharge": 8000,
+        "totals": [43213, 44880, 46547],
+        "bandRegulation": 8000,
+        "bandAlreadyInSurcharge": true
+      }
     }
   ]
 }
