@@ -8,7 +8,7 @@ const q = require('./quote.js');
 const ledger = JSON.parse(fs.readFileSync('./data/trips.json', 'utf8'));
 
 test('confirmed trips stay tied to the quote that was given', function () {
-  assert.equal(ledger.trips.length, 7);
+  assert.equal(ledger.trips.length, 8);
   const trip = ledger.trips.find(function (row) { return row.id === '20261114-avril-imyeonjeong'; });
   assert.equal(trip.id, '20261114-avril-imyeonjeong');
   assert.equal(trip.place, '광명 아브릴모마 2부');
@@ -205,4 +205,33 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.deepEqual(jungQuote.rows.map(function (row) { return row.total; }), jung.quoted.totals);
   assert.equal(q.formatDateLabel(jung.date), '26.11.16(월)');
   assert.match(jungQuote.text, /보건원/);
+
+  const nowon = ledger.trips.find(function (row) { return row.id === '20261116-nowon-park'; });
+  assert.equal(nowon.date, jung.date);
+  assert.notEqual(nowon.place, jung.place);
+  assert.equal(nowon.percentMode, 'none');
+  const nowonQuote = q.buildQuote({
+    type: nowon.type,
+    person: nowon.person,
+    event: nowon.event,
+    date: nowon.date,
+    phone: nowon.phone,
+    depart: nowon.depart,
+    arrive: nowon.arrive,
+    place: nowon.place,
+    items: nowon.items,
+    km: nowon.km,
+    fuel: nowon.fuel,
+    toll: nowon.toll,
+    goMin: nowon.goMin,
+    backMin: nowon.backMin,
+    includeBand: nowon.includeBand,
+    percentMode: nowon.percentMode
+  });
+  assert.equal(nowonQuote.ready, true);
+  assert.equal(nowonQuote.vehicle, 19092);
+  assert.equal(nowonQuote.tollRound, 7400);
+  assert.deepEqual(nowonQuote.rows.map(function (row) { return row.total; }), nowon.quoted.totals);
+  assert.equal(q.bandFee(nowon.quoted.roundKm), 11000);
+  assert.doesNotMatch(nowonQuote.text, /구간할증/);
 });

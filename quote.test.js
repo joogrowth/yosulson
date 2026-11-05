@@ -526,3 +526,34 @@ test('a Jung-gu health center delivery keeps the institute name and the surcharg
   assert.equal(quote.band, 0);
   assert.deepEqual(quote.rows.map(function (row) { return row.total; }), [49547, 51880, 54213]);
 });
+
+test('the Nowon medical institute is a second drop, not a replacement', function () {
+  const parsed = q.parseMemo([
+    '[상담배송] 박한솔 / 한국원자력안전재단',
+    '26.11.16',
+    '출발 : 10:10',
+    '도착 : 11:20-11:30',
+    '한국원자력의학원',
+    '서울 노원구 노원로 75(공릉동 215-4)',
+    '국사방사선비상진료센터',
+    '박한솔 010 9399 2681',
+    '*대학생 도시락 23개 및 다과답례품 23개',
+    '편도거리 43km',
+    '통행료 3,700원',
+    '연료비 8,000원',
+    '도착소요시간 1시간 10분',
+    '복귀소요시간 1시간 10분'
+  ].join('\n'));
+  assert.equal(parsed.place, '한국원자력의학원 서울 노원구 노원로 75(공릉동 215-4) 국사방사선비상진료센터');
+  assert.equal(parsed.depart, '10:10');
+  assert.equal(parsed.km, 43);
+  assert.equal(parsed.fuel, 8000);
+  assert.equal(parsed.toll, 3700);
+  assert.equal(parsed.percentMode, 'none');
+  const quote = q.buildQuote(parsed);
+  assert.equal(quote.vehicle, 19092);
+  assert.equal(quote.fuelRound, 16000);
+  assert.equal(quote.tollRound, 7400);
+  assert.equal(quote.band, 0);
+  assert.deepEqual(quote.rows.map(function (row) { return row.total; }), [68159, 70492, 72825]);
+});
