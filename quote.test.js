@@ -338,6 +338,12 @@ test('a sangam delivery keeps the building line and the 5,000 won surcharge', fu
   assert.match(quote.text, /중앙일보빌딩 21층 다목적홀/);
   assert.match(quote.text, /•구간할증 5,000원/);
   assert.match(quote.text, /010 7535 8381/);
+  const withHandling = q.parseMemo('상하차 수고비 5,000원 추가');
+  assert.equal(withHandling.extras[0].label, '상하차 수고비');
+  assert.equal(withHandling.extras[0].amount, 5000);
+  const added = q.buildQuote(Object.assign({}, parsed, { extras: withHandling.extras }));
+  assert.deepEqual(added.rows.map(function (row) { return row.total; }), [29884, 30884, 31884]);
+  assert.match(added.text, /•상하차 수고비 5,000원/);
 });
 
 test('loose wording for money, clocks, and duration', function () {

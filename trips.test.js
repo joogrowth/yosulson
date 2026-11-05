@@ -66,7 +66,8 @@ test('confirmed trips stay tied to the quote that was given', function () {
     goMin: sangam.goMin,
     backMin: sangam.backMin,
     includeBand: sangam.includeBand,
-    percentMode: sangam.percentMode
+    percentMode: sangam.percentMode,
+    extras: sangam.extras
   });
   assert.equal(sangamQuote.ready, true);
   assert.deepEqual(sangamQuote.rows.map(function (row) { return row.total; }), sangam.quoted.totals);

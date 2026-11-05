@@ -527,6 +527,7 @@
     { label: '수고비', kind: 'band' },
     { label: '구간추가할증', kind: 'percent' },
     { label: '구간할증', kind: 'percent' },
+    { label: '상하차수고비', kind: 'extra', name: '상하차 수고비' },
     { label: '적재이동비', kind: 'extra', name: '적재이동비' },
     { label: '적재수고비', kind: 'extra', name: '적재이동비' },
     { label: '적대이동비', kind: 'extra', name: '적재이동비' },
