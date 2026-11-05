@@ -54,6 +54,55 @@
         "bandIfIncluded": 10000,
         "totalsWithBand": [66519, 68852, 71185]
       }
+    },
+    {
+      "id": "20261117-sangam-shin",
+      "collectedOn": "2026-11-05",
+      "status": "confirmed",
+      "type": "배송",
+      "person": "신서연",
+      "event": "디지털에볼루션",
+      "date": "2026-11-17",
+      "weekday": "화",
+      "place": "서울특별시 마포구 상암산로 48-6 중앙일보빌딩 21층 다목적홀",
+      "venueId": null,
+      "items": "샌드박스 40개",
+      "headcount": null,
+      "phone": "010 7535 8381",
+      "depart": "12:50",
+      "arrive": "13:15 ~ 13:30",
+      "eventTime": "",
+      "km": 11,
+      "fuel": 2000,
+      "toll": 0,
+      "goMin": 30,
+      "backMin": 30,
+      "shopMin": null,
+      "includeBand": false,
+      "percentMode": "fixed5000",
+      "parking": null,
+      "notes": [
+        "통행료는 없어서 0원.",
+        "도착 시각은 13:15~13:30이고, 소요 시간은 30분으로 확정.",
+        "출발 12:50에 30분을 더하면 13:20.",
+        "구간추가할증 5,000원.",
+        "구간 수고비는 넣지 않음. 왕복 22km면 8,000원.",
+        "21층 하역비는 별도 금액이 없음.",
+        "샌드박스 40개는 인원 수가 아님."
+      ],
+      "revisions": [],
+      "quoted": {
+        "wages": [11000, 12000, 13000],
+        "minutes": 60,
+        "roundKm": 22,
+        "vehicle": 4884,
+        "fuelRound": 4000,
+        "tollRound": 0,
+        "labor": [11000, 12000, 13000],
+        "totals": [24884, 25884, 26884],
+        "bandIfIncluded": 8000,
+        "totalsWithBand": [32884, 33884, 34884]
+      }
     }
   ]
 }

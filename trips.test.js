@@ -8,8 +8,8 @@ const q = require('./quote.js');
 const ledger = JSON.parse(fs.readFileSync('./data/trips.json', 'utf8'));
 
 test('confirmed trips stay tied to the quote that was given', function () {
-  assert.equal(ledger.trips.length, 1);
-  const trip = ledger.trips[0];
+  assert.equal(ledger.trips.length, 2);
+  const trip = ledger.trips.find(function (row) { return row.id === '20261114-avril-imyeonjeong'; });
   assert.equal(trip.id, '20261114-avril-imyeonjeong');
   assert.equal(trip.place, '광명 아브릴모마 2부');
   assert.equal(trip.km, 33);
@@ -48,4 +48,28 @@ test('confirmed trips stay tied to the quote that was given', function () {
   const venue = q.matchVenue({ place: trip.place, event: trip.event });
   assert.equal(venue.id, trip.venueId);
   assert.ok(trip.km > venue.km[1]);
+
+  const sangam = ledger.trips.find(function (row) { return row.id === '20261117-sangam-shin'; });
+  const sangamQuote = q.buildQuote({
+    type: sangam.type,
+    person: sangam.person,
+    event: sangam.event,
+    date: sangam.date,
+    depart: sangam.depart,
+    arrive: sangam.arrive,
+    place: sangam.place,
+    items: sangam.items,
+    phone: sangam.phone,
+    km: sangam.km,
+    fuel: sangam.fuel,
+    toll: sangam.toll,
+    goMin: sangam.goMin,
+    backMin: sangam.backMin,
+    includeBand: sangam.includeBand,
+    percentMode: sangam.percentMode
+  });
+  assert.equal(sangamQuote.ready, true);
+  assert.deepEqual(sangamQuote.rows.map(function (row) { return row.total; }), sangam.quoted.totals);
+  assert.equal(q.bandFee(sangam.quoted.roundKm), sangam.quoted.bandIfIncluded);
+  assert.equal(q.formatDateLabel(sangam.date), '26.11.17(화)');
 });

@@ -308,6 +308,38 @@ test('minute pay is not reduced by store wages', function () {
   assert.equal(quote.settlement.text.includes('차감'), false);
 });
 
+test('a sangam delivery keeps the building line and the 5,000 won surcharge', function () {
+  const parsed = q.parseMemo([
+    '[배송] 신서연 / 디지털에볼루션',
+    '26.11.17(화)',
+    '출발 : 12:50',
+    '도착 : 13:15-13:30',
+    '서울특별시 마포구 상암산로 48-6',
+    '중앙일보빌딩 21층 다목적홀',
+    '편도거리 11km',
+    '연료비 2,000원',
+    '도착소요시간 30분',
+    '복귀소요시간 30분',
+    '구간추가할증 5,000원',
+    '신서연 010 7535 8381',
+    '*샌드박스 40개'
+  ].join('\n'));
+  assert.equal(parsed.place, '서울특별시 마포구 상암산로 48-6 중앙일보빌딩 21층 다목적홀');
+  assert.equal(parsed.arrive, '13:15 ~ 13:30');
+  assert.equal(parsed.phone, '010 7535 8381');
+  assert.equal(parsed.percentMode, 'fixed5000');
+  assert.equal(parsed.items, '샌드박스 40개');
+  const quote = q.buildQuote(parsed);
+  assert.equal(quote.minutes, 60);
+  assert.equal(quote.vehicle, 4884);
+  assert.equal(quote.fuelRound, 4000);
+  assert.equal(quote.band, 0);
+  assert.deepEqual(quote.rows.map(function (row) { return row.total; }), [24884, 25884, 26884]);
+  assert.match(quote.text, /중앙일보빌딩 21층 다목적홀/);
+  assert.match(quote.text, /•구간할증 5,000원/);
+  assert.match(quote.text, /010 7535 8381/);
+});
+
 test('loose wording for money, clocks, and duration', function () {
   const parsed = q.parseMemo([
     '연료비 6천원',

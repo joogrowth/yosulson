@@ -525,6 +525,7 @@
     { label: '구간수고비', kind: 'band' },
     { label: '기본수고비', kind: 'band' },
     { label: '수고비', kind: 'band' },
+    { label: '구간추가할증', kind: 'percent' },
     { label: '구간할증', kind: 'percent' },
     { label: '적재이동비', kind: 'extra', name: '적재이동비' },
     { label: '적재수고비', kind: 'extra', name: '적재이동비' },
@@ -764,8 +765,8 @@
         addItem(parsed, line);
         continue;
       }
-      if (!parsed.place && looksLikePlace(line)) {
-        parsed.place = line;
+      if (looksLikePlace(line)) {
+        parsed.place = parsed.place ? parsed.place + ' ' + line : line;
         continue;
       }
       if (!parsed.items && /\d+\s*(?:인|명)/.test(line)) {
