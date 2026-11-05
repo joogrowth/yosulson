@@ -364,4 +364,38 @@ test('loose wording for money, clocks, and duration', function () {
   assert.equal(q.parseMoney('1만 2천'), 12000);
   assert.equal(q.parseDuration('1.5시간'), 90);
   assert.equal(q.formatPhone('010-4933-3518'), '010 4933 3518');
+  assert.equal(q.formatPhone('02 880 6113'), '02 880 6113');
+});
+
+test('a Seoul National consultation keeps the hall, the landline, and the surcharge', function () {
+  const parsed = q.parseMemo([
+    '[상담출장] 김현진 / 서울대불어 / 메일',
+    '27.01.06(수)',
+    '출발 : 12:50',
+    '도착 : 14:00',
+    '행사시작 : 16:00',
+    '서울대학교 보름홀',
+    '서울대 인문대학 8동 605호 보름홀',
+    '02 880 6113',
+    '* 출장 식사 60인분',
+    '* 와인잔 60개 / 와인 25개',
+    '편도거리 36km',
+    '연료비 5,000원',
+    '도착소요시간 1시간 10분',
+    '복귀소요시간 1시간 10분',
+    '구간할증 5,000원'
+  ].join('\n'));
+  assert.equal(parsed.phone, '02 880 6113');
+  assert.equal(parsed.place, '서울대학교 보름홀 서울대 인문대학 8동 605호 보름홀');
+  assert.equal(parsed.percentMode, 'fixed5000');
+  assert.equal(q.formatDateLabel(parsed.date), '27.01.06(수)');
+  const quote = q.buildQuote(parsed);
+  assert.equal(quote.vehicle, 15984);
+  assert.equal(quote.fuelRound, 10000);
+  assert.equal(quote.minutes, 140);
+  assert.equal(quote.band, 0);
+  assert.deepEqual(quote.rows.map(function (row) { return row.total; }), [56651, 58984, 61317]);
+  assert.equal(quote.suggestions[0].amount, 10000);
+  assert.equal(quote.suggestions[0].note, '6층 605호 기물/세팅 운반');
+  assert.match(quote.text, /02 880 6113/);
 });

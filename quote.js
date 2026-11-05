@@ -68,6 +68,8 @@
 
   function formatPhone(raw) {
     var digits = String(raw || '').replace(/\D/g, '');
+    if (digits.length === 9 && digits.indexOf('02') === 0) return '02 ' + digits.slice(2, 5) + ' ' + digits.slice(5);
+    if (digits.length === 10 && digits.indexOf('02') === 0) return '02 ' + digits.slice(2, 6) + ' ' + digits.slice(6);
     if (digits.length === 11) return digits.slice(0, 3) + ' ' + digits.slice(3, 7) + ' ' + digits.slice(7);
     if (digits.length === 10) return digits.slice(0, 3) + ' ' + digits.slice(3, 6) + ' ' + digits.slice(6);
     return String(raw || '').trim();
@@ -470,7 +472,7 @@
     return clocks[0] + ' ~ ' + clocks[1];
   }
 
-  var PHONE_RE = /01[016789][-\s.]?\d{3,4}[-\s.]?\d{4}/;
+  var PHONE_RE = /01[016789][-\s.]?\d{3,4}[-\s.]?\d{4}|0(?:2[-\s.]?\d{3,4}|[3-6]\d[-\s.]?\d{3,4}|70[-\s.]?\d{3,4})[-\s.]?\d{4}/;
 
   function extractPhone(line) {
     var m = String(line || '').match(PHONE_RE);
@@ -578,7 +580,7 @@
   function looksLikePlace(line) {
     if (line.length < 4) return false;
     if (/원|분|km|시급|합계/i.test(line)) return false;
-    return /[가-힣]/.test(line) && /(?:로|길|\d+동|\d+호|[가-힣]+구|[가-힣]+시|[가-힣]+군|읍|면|리|\d+층|호텔|관|센터|빌딩|타워|캠퍼스)/.test(line);
+    return /[가-힣]/.test(line) && /(?:로|길|\d+동|\d+호|[가-힣]+구|[가-힣]+시|[가-힣]+군|읍|면|리|\d+층|호텔|관|홀|대학교|센터|빌딩|타워|캠퍼스)/.test(line);
   }
 
   function emptyParsed() {
