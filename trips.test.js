@@ -212,8 +212,8 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.equal(nowon.percentMode, 'none');
   assert.equal(nowon.fuel, 7000);
   assert.equal(nowon.backMin, 60);
-  assert.equal(nowon.toll, 0);
-  assert.equal(nowon.revisions.length, 3);
+  assert.equal(nowon.toll, 2600);
+  assert.equal(nowon.revisions.length, 4);
   const nowonQuote = q.buildQuote({
     type: nowon.type,
     person: nowon.person,
@@ -234,7 +234,7 @@ test('confirmed trips stay tied to the quote that was given', function () {
   });
   assert.equal(nowonQuote.ready, true);
   assert.equal(nowonQuote.vehicle, 19092);
-  assert.equal(nowonQuote.tollRound, 0);
+  assert.equal(nowonQuote.tollRound, 5200);
   assert.equal(nowonQuote.fuelRound, 14000);
   assert.equal(nowonQuote.minutes, 130);
   assert.deepEqual(nowonQuote.rows.map(function (row) { return row.total; }), nowon.quoted.totals);
