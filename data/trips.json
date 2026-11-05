@@ -193,20 +193,33 @@
       "backMin": 50,
       "shopMin": null,
       "includeBand": false,
-      "percentMode": "none",
-      "parking": null,
-      "extras": [
-        { "label": "구간할증", "amount": 8000 }
-      ],
+      "percentMode": "fixed5000",
+      "parking": 3000,
+      "extras": [],
       "notes": [
         "통행료는 없어서 0원.",
         "출발 11:40에 50분을 더하면 도착 12:30.",
         "수령 위치는 박물관 앞쪽. 도착 전 전화하면 마중 나오심.",
         "010 7600 6954는 매니저 번호. 메모에는 메니저로 적혀 있음.",
-        "구간할증 8,000원. 왕복 40km 구간 수고비도 8,000원이라 한 번만 넣음.",
+        "구간할증은 8,000원에서 5,000원으로 수정.",
+        "왕복 40km 구간 수고비 8,000원은 합계에 넣지 않음.",
+        "주차비 3,000원은 별도.",
         "6인이라 적재이동비는 넣지 않음."
       ],
-      "revisions": [],
+      "revisions": [
+        {
+          "field": "surcharge",
+          "from": 8000,
+          "to": 5000,
+          "note": "구간할증을 8,000원에서 5,000원으로 수정"
+        },
+        {
+          "field": "parking",
+          "from": 0,
+          "to": 3000,
+          "note": "주차비 3,000원. 합계에는 넣지 않음"
+        }
+      ],
       "quoted": {
         "wages": [11000, 12000, 13000],
         "minutes": 100,
@@ -215,10 +228,11 @@
         "fuelRound": 8000,
         "tollRound": 0,
         "labor": [18333, 20000, 21667],
-        "surcharge": 8000,
-        "totals": [43213, 44880, 46547],
+        "surcharge": 5000,
+        "parking": 3000,
+        "totals": [40213, 41880, 43547],
         "bandRegulation": 8000,
-        "bandAlreadyInSurcharge": true
+        "bandAlreadyInSurcharge": false
       }
     }
   ]

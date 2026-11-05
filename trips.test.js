@@ -119,12 +119,15 @@ test('confirmed trips stay tied to the quote that was given', function () {
     backMin: yonsei.backMin,
     includeBand: yonsei.includeBand,
     percentMode: yonsei.percentMode,
-    extras: yonsei.extras
+    extras: yonsei.extras,
+    parking: yonsei.parking
   });
   assert.equal(yonseiQuote.ready, true);
   assert.equal(yonseiQuote.band, 0);
   assert.deepEqual(yonseiQuote.rows.map(function (row) { return row.total; }), yonsei.quoted.totals);
   assert.equal(q.bandFee(yonsei.quoted.roundKm), yonsei.quoted.bandRegulation);
-  assert.equal(yonsei.quoted.bandAlreadyInSurcharge, true);
+  assert.equal(yonsei.quoted.bandAlreadyInSurcharge, false);
+  assert.match(yonseiQuote.text, /주차비 3,000원 \(별도\)/);
+  assert.equal(yonseiQuote.rows[0].total, 40213);
   assert.equal(q.formatDateLabel(yonsei.date), '26.11.08(일)');
 });
