@@ -557,3 +557,42 @@ test('the Nowon medical institute is a second drop, not a replacement', function
   assert.equal(quote.band, 0);
   assert.deepEqual(quote.rows.map(function (row) { return row.total; }), [68159, 70492, 72825]);
 });
+
+test('an Airbnb half trip keeps the building and prices the measured specs', function () {
+  const parsed = q.parseMemo([
+    '[반출장] 강슬 / 에어비앤비',
+    '26.11.10(화)',
+    '출발 : 08:40',
+    '도착 : 10:00',
+    '행사시작 : 12:00',
+    '서울 용산구 이태원로 127-3',
+    '모디빌딩 3층 (에어비앤비)',
+    '담당자 : 강슬 오피스 매니저',
+    '010 9920 2879',
+    '품목 : 반출장 점심 20인분',
+    '우선 에어비앤비는 고정배송비로 40,000원으로 책정해놓고 있어.',
+    '하지만 제원은 일관적으로 해줘. 알겠지?',
+    '편도거리 22km',
+    '연료비 3,700원',
+    '도착소요시간 1시간 20분',
+    '복귀소요시간 1시간'
+  ].join('\n'));
+  assert.equal(parsed.place, '서울 용산구 이태원로 127-3 모디빌딩 3층 (에어비앤비)');
+  assert.equal(parsed.phone, '010 9920 2879');
+  assert.equal(parsed.eventTime, '12:00');
+  assert.equal(parsed.goMin, 80);
+  assert.equal(parsed.backMin, 60);
+  assert.equal(parsed.km, 22);
+  assert.equal(parsed.fuel, 3700);
+  assert.equal(parsed.toll, null);
+  assert.equal(q.headcount(parsed.items), 20);
+  assert.equal(q.formatDateLabel(parsed.date), '26.11.10(화)');
+  const quote = q.buildQuote(parsed);
+  assert.equal(quote.minutes, 140);
+  assert.equal(quote.vehicle, 9768);
+  assert.equal(quote.fuelRound, 7400);
+  assert.equal(quote.tollRound, 0);
+  assert.equal(quote.band, 0);
+  assert.deepEqual(quote.rows.map(function (row) { return row.total; }), [42835, 45168, 47501]);
+  assert.doesNotMatch(quote.text, /40,000원/);
+});

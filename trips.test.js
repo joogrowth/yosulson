@@ -8,7 +8,7 @@ const q = require('./quote.js');
 const ledger = JSON.parse(fs.readFileSync('./data/trips.json', 'utf8'));
 
 test('confirmed trips stay tied to the quote that was given', function () {
-  assert.equal(ledger.trips.length, 8);
+  assert.equal(ledger.trips.length, 9);
   const trip = ledger.trips.find(function (row) { return row.id === '20261114-avril-imyeonjeong'; });
   assert.equal(trip.id, '20261114-avril-imyeonjeong');
   assert.equal(trip.place, '광명 아브릴모마 2부');
@@ -240,4 +240,32 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.deepEqual(nowonQuote.rows.map(function (row) { return row.total; }), nowon.quoted.totals);
   assert.equal(q.bandFee(nowon.quoted.roundKm), 11000);
   assert.doesNotMatch(nowonQuote.text, /구간할증/);
+
+  const airbnb = ledger.trips.find(function (row) { return row.id === '20261110-itaewon-kang'; });
+  assert.equal(airbnb.fixedDeliveryFee, 40000);
+  assert.equal(q.formatDateLabel(airbnb.date), '26.11.10(화)');
+  const airbnbQuote = q.buildQuote({
+    type: airbnb.type,
+    person: airbnb.person,
+    event: airbnb.event,
+    date: airbnb.date,
+    phone: airbnb.phone,
+    depart: airbnb.depart,
+    arrive: airbnb.arrive,
+    eventTime: airbnb.eventTime,
+    place: airbnb.place,
+    items: airbnb.items,
+    km: airbnb.km,
+    fuel: airbnb.fuel,
+    toll: airbnb.toll,
+    goMin: airbnb.goMin,
+    backMin: airbnb.backMin,
+    includeBand: airbnb.includeBand,
+    percentMode: airbnb.percentMode
+  });
+  assert.equal(airbnbQuote.ready, true);
+  assert.equal(airbnbQuote.vehicle, 9768);
+  assert.equal(airbnbQuote.minutes, 140);
+  assert.deepEqual(airbnbQuote.rows.map(function (row) { return row.total; }), airbnb.quoted.totals);
+  assert.ok(airbnb.quoted.totals[0] > airbnb.fixedDeliveryFee);
 });

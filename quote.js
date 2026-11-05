@@ -597,6 +597,7 @@
 
   function looksLikePlace(line) {
     if (line.length < 4) return false;
+    if (/[.?!。？！]/.test(line)) return false;
     if (/분|km|시급|합계/i.test(line)) return false;
     if (/\d[\d,]*\s*원/.test(line)) return false;
     return /[가-힣]/.test(line) && /(?:로|길|\d+동|\d+호|[가-힣]+구|[가-힣]+시|[가-힣]+군|읍|면|리|\d+층|호텔|관|홀|대학교|센터|빌딩|타워|캠퍼스|원(?![가-힣]))/.test(line);
