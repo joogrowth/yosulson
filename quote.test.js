@@ -233,9 +233,17 @@ test('fixed venues and conditional surcharges', function () {
   assert.equal(snu.km, null);
   assert.equal(snu.toll, 0);
 
-  const gwang = q.matchVenue({ place: '광명 아브릴모마' });
-  assert.equal(gwang.tollOptional, true);
-  assert.notEqual(q.applyVenueDefaults({ place: '광명 아브릴모마' }).toll, 2800);
+  const gwang = q.matchVenue({ place: '광명 아브릴 모마' });
+  assert.equal(gwang.id, 'gwangmyeong');
+  assert.equal(gwang.tollOptional, undefined);
+  const gwangFilled = q.applyVenueDefaults({ place: '광명 아브릴모마' });
+  assert.equal(gwangFilled.km, 33);
+  assert.equal(gwangFilled.fuel, 5300);
+  assert.equal(gwangFilled.toll, 2800);
+  const gwangKeep = q.applyVenueDefaults({ place: '광명 아브릴모마', km: 30, fuel: 4000, toll: 0 });
+  assert.equal(gwangKeep.km, 30);
+  assert.equal(gwangKeep.fuel, 4000);
+  assert.equal(gwangKeep.toll, 0);
 
   const quote = q.buildQuote({
     type: '배송',
@@ -458,4 +466,34 @@ test('a Deogyang division outing uses the confirmed toll and leaves the band out
   assert.equal(quote.band, 0);
   assert.equal(q.bandFee(quote.roundKm), 9000);
   assert.deepEqual(quote.rows.map(function (row) { return row.total; }), [41587, 42920, 44253]);
+});
+
+test('an Avril morning party reuses the recorded distance, fuel, and toll', function () {
+  const parsed = q.applyVenueDefaults(q.parseMemo([
+    '[상담출장] 정화 / 아브릴모마 1부',
+    '26.11.29(일)',
+    '출발 : 8:30',
+    '도착 : 9:30',
+    '행사시작 : 11:30',
+    '광명 아브릴 모마',
+    '* 돌잔치 출장 22명',
+    '도착소요시간 1시간',
+    '복귀소요시간 1시간 10분'
+  ].join('\n')));
+  assert.equal(parsed.depart, '08:30');
+  assert.equal(parsed.km, 33);
+  assert.equal(parsed.fuel, 5300);
+  assert.equal(parsed.toll, 2800);
+  assert.equal(parsed.goMin, 60);
+  assert.equal(parsed.backMin, 70);
+  assert.equal(parsed.place, '광명 아브릴 모마');
+  assert.equal(q.formatDateLabel(parsed.date), '26.11.29(일)');
+  const quote = q.buildQuote(parsed);
+  assert.equal(quote.minutes, 130);
+  assert.equal(quote.vehicle, 14652);
+  assert.equal(quote.fuelRound, 10600);
+  assert.equal(quote.tollRound, 5600);
+  assert.equal(quote.band, 0);
+  assert.deepEqual(quote.rows.map(function (row) { return row.total; }), [54685, 56852, 59019]);
+  assert.match(quote.warnings.join('\n'), /지난 실측/);
 });

@@ -223,11 +223,12 @@
     {
       id: 'gwangmyeong',
       name: '광명 아브릴모마',
-      keys: ['아브릴모마', '아브릴', '광명'],
-      km: [28, 32],
+      keys: ['아브릴 모마', '아브릴모마', '아브릴', '광명'],
+      km: 33,
+      kmUsual: [28, 32],
+      fuel: 5300,
       toll: 2800,
-      tollOptional: true,
-      tollNote: '톨게이트를 안 타면 0원'
+      tollNote: '2026-11-14 실측. 톨게이트를 안 타면 0원'
     },
     {
       id: 'banyan',
@@ -338,9 +339,26 @@
     var next = Object.assign({}, input);
     if (!venue) return next;
     var kmEmpty = next.km == null || next.km === '';
+    var fuelEmpty = next.fuel == null || next.fuel === '';
     var tollEmpty = next.toll == null || next.toll === '';
-    if (kmEmpty && typeof venue.km === 'number') next.km = venue.km;
-    if (tollEmpty && typeof venue.toll === 'number' && !venue.tollOptional) next.toll = venue.toll;
+    var filled = [];
+    if (kmEmpty && typeof venue.km === 'number') {
+      next.km = venue.km;
+      filled.push('편도 ' + venue.km + 'km');
+    }
+    if (fuelEmpty && typeof venue.fuel === 'number') {
+      next.fuel = venue.fuel;
+      filled.push('연료비 ' + formatWon(venue.fuel));
+    }
+    if (tollEmpty && typeof venue.toll === 'number' && !venue.tollOptional) {
+      next.toll = venue.toll;
+      filled.push('통행료 ' + formatWon(venue.toll));
+    }
+    if (filled.length) {
+      next.warnings = (next.warnings || []).concat(
+        venue.name + ' 지난 실측을 넣었습니다. ' + filled.join(', ') + '.'
+      );
+    }
     return next;
   }
 
@@ -768,7 +786,7 @@
         addItem(parsed, line);
         continue;
       }
-      if (looksLikePlace(line)) {
+      if (looksLikePlace(line) || matchVenue({ place: line, event: '' })) {
         parsed.place = parsed.place ? parsed.place + ' ' + line : line;
         continue;
       }

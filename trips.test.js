@@ -8,7 +8,7 @@ const q = require('./quote.js');
 const ledger = JSON.parse(fs.readFileSync('./data/trips.json', 'utf8'));
 
 test('confirmed trips stay tied to the quote that was given', function () {
-  assert.equal(ledger.trips.length, 5);
+  assert.equal(ledger.trips.length, 6);
   const trip = ledger.trips.find(function (row) { return row.id === '20261114-avril-imyeonjeong'; });
   assert.equal(trip.id, '20261114-avril-imyeonjeong');
   assert.equal(trip.place, '광명 아브릴모마 2부');
@@ -47,7 +47,7 @@ test('confirmed trips stay tied to the quote that was given', function () {
 
   const venue = q.matchVenue({ place: trip.place, event: trip.event });
   assert.equal(venue.id, trip.venueId);
-  assert.ok(trip.km > venue.km[1]);
+  assert.ok(trip.km > venue.kmUsual[1]);
 
   const sangam = ledger.trips.find(function (row) { return row.id === '20261117-sangam-shin'; });
   const sangamQuote = q.buildQuote({
@@ -155,4 +155,30 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.deepEqual(divisionQuote.rows.map(function (row) { return row.total; }), division.quoted.totals);
   assert.equal(q.bandFee(division.quoted.roundKm), division.quoted.bandIfIncluded);
   assert.equal(q.formatDateLabel(division.date), '26.11.17(화)');
+
+  const morning = ledger.trips.find(function (row) { return row.id === '20261129-avril-jeong'; });
+  const earlier = ledger.trips.find(function (row) { return row.id === morning.inheritedFrom; });
+  assert.equal(morning.km, earlier.km);
+  assert.equal(morning.fuel, earlier.fuel);
+  assert.equal(morning.toll, earlier.toll);
+  assert.notEqual(morning.goMin, earlier.goMin);
+  const morningQuote = q.buildQuote({
+    type: morning.type,
+    person: morning.person,
+    event: morning.event,
+    date: morning.date,
+    depart: morning.depart,
+    arrive: morning.arrive,
+    eventTime: morning.eventTime,
+    place: morning.place,
+    items: morning.items,
+    km: morning.km,
+    fuel: morning.fuel,
+    toll: morning.toll,
+    goMin: morning.goMin,
+    backMin: morning.backMin,
+    includeBand: morning.includeBand
+  });
+  assert.deepEqual(morningQuote.rows.map(function (row) { return row.total; }), morning.quoted.totals);
+  assert.equal(q.formatDateLabel(morning.date), '26.11.29(일)');
 });
