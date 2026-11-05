@@ -429,3 +429,33 @@ test('a Yonsei lunch delivery keeps an 8,000 won surcharge once', function () {
   assert.deepEqual(quote.rows.map(function (row) { return row.labor; }), [18333, 20000, 21667]);
   assert.deepEqual(quote.rows.map(function (row) { return row.total; }), [43213, 44880, 46547]);
 });
+
+test('a Deogyang division outing uses the confirmed toll and leaves the band out', function () {
+  const parsed = q.parseMemo([
+    '[출장] 윤용덕 / 군부대',
+    '26.11.17(화)',
+    '출발 : 11:20',
+    '도착 : 12:00',
+    '행사시작 : 14:00',
+    '덕양구 56사단 (주소확인중)',
+    '010 9105 8508',
+    '*출장케이터링 50인분',
+    '편도거리 30km',
+    '연료비 5,000원',
+    '통행료 1,800원',
+    '도착소요시간 40분',
+    '복귀소요시간 40분'
+  ].join('\n'));
+  assert.equal(parsed.toll, 1800);
+  assert.equal(parsed.phone, '010 9105 8508');
+  assert.equal(q.formatDateLabel(parsed.date), '26.11.17(화)');
+  assert.equal(q.matchVenue(parsed), null);
+  const quote = q.buildQuote(parsed);
+  assert.equal(quote.minutes, 80);
+  assert.equal(quote.vehicle, 13320);
+  assert.equal(quote.tollRound, 3600);
+  assert.equal(quote.fuelRound, 10000);
+  assert.equal(quote.band, 0);
+  assert.equal(q.bandFee(quote.roundKm), 9000);
+  assert.deepEqual(quote.rows.map(function (row) { return row.total; }), [41587, 42920, 44253]);
+});

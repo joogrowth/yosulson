@@ -8,7 +8,7 @@ const q = require('./quote.js');
 const ledger = JSON.parse(fs.readFileSync('./data/trips.json', 'utf8'));
 
 test('confirmed trips stay tied to the quote that was given', function () {
-  assert.equal(ledger.trips.length, 4);
+  assert.equal(ledger.trips.length, 5);
   const trip = ledger.trips.find(function (row) { return row.id === '20261114-avril-imyeonjeong'; });
   assert.equal(trip.id, '20261114-avril-imyeonjeong');
   assert.equal(trip.place, '광명 아브릴모마 2부');
@@ -130,4 +130,29 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.match(yonseiQuote.text, /주차비 3,000원 \(별도\)/);
   assert.equal(yonseiQuote.rows[0].total, 40213);
   assert.equal(q.formatDateLabel(yonsei.date), '26.11.08(일)');
+
+  const division = ledger.trips.find(function (row) { return row.id === '20261117-deogyang-yun'; });
+  const divisionQuote = q.buildQuote({
+    type: division.type,
+    person: division.person,
+    event: division.event,
+    date: division.date,
+    phone: division.phone,
+    depart: division.depart,
+    arrive: division.arrive,
+    eventTime: division.eventTime,
+    place: division.place,
+    items: division.items,
+    km: division.km,
+    fuel: division.fuel,
+    toll: division.toll,
+    goMin: division.goMin,
+    backMin: division.backMin,
+    includeBand: division.includeBand
+  });
+  assert.equal(divisionQuote.ready, true);
+  assert.equal(q.matchVenue({ place: division.place, event: division.event }), null);
+  assert.deepEqual(divisionQuote.rows.map(function (row) { return row.total; }), division.quoted.totals);
+  assert.equal(q.bandFee(division.quoted.roundKm), division.quoted.bandIfIncluded);
+  assert.equal(q.formatDateLabel(division.date), '26.11.17(화)');
 });
