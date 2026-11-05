@@ -8,7 +8,7 @@ const q = require('./quote.js');
 const ledger = JSON.parse(fs.readFileSync('./data/trips.json', 'utf8'));
 
 test('confirmed trips stay tied to the quote that was given', function () {
-  assert.equal(ledger.trips.length, 6);
+  assert.equal(ledger.trips.length, 7);
   const trip = ledger.trips.find(function (row) { return row.id === '20261114-avril-imyeonjeong'; });
   assert.equal(trip.id, '20261114-avril-imyeonjeong');
   assert.equal(trip.place, '광명 아브릴모마 2부');
@@ -181,4 +181,28 @@ test('confirmed trips stay tied to the quote that was given', function () {
   });
   assert.deepEqual(morningQuote.rows.map(function (row) { return row.total; }), morning.quoted.totals);
   assert.equal(q.formatDateLabel(morning.date), '26.11.29(일)');
+
+  const jung = ledger.trips.find(function (row) { return row.id === '20261116-seosomun-park'; });
+  const jungQuote = q.buildQuote({
+    type: jung.type,
+    person: jung.person,
+    event: jung.event,
+    date: jung.date,
+    phone: jung.phone,
+    depart: jung.depart,
+    arrive: jung.arrive,
+    place: jung.place,
+    items: jung.items,
+    km: jung.km,
+    fuel: jung.fuel,
+    toll: jung.toll,
+    goMin: jung.goMin,
+    backMin: jung.backMin,
+    includeBand: jung.includeBand,
+    percentMode: jung.percentMode
+  });
+  assert.equal(jungQuote.ready, true);
+  assert.deepEqual(jungQuote.rows.map(function (row) { return row.total; }), jung.quoted.totals);
+  assert.equal(q.formatDateLabel(jung.date), '26.11.16(월)');
+  assert.match(jungQuote.text, /보건원/);
 });

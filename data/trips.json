@@ -338,6 +338,59 @@
         "bandIfIncluded": 10000,
         "totalsWithBand": [64685, 66852, 69019]
       }
+    },
+    {
+      "id": "20261116-seosomun-park",
+      "collectedOn": "2026-11-05",
+      "status": "confirmed",
+      "type": "상담배송",
+      "person": "박한솔",
+      "event": "한국원자력안전재단",
+      "date": "2026-11-16",
+      "weekday": "월",
+      "place": "한국수력원자력 방사선 보건원 서울 중구 서소문로 38 센트럴타워 2층 비전홀",
+      "venueId": null,
+      "items": "대학생 도시락 23개 및 다과답례품 23개",
+      "headcount": null,
+      "phone": "010 9399 2681",
+      "depart": "10:20",
+      "arrive": "11:20 ~ 11:30",
+      "eventTime": "",
+      "km": 20,
+      "fuel": 5000,
+      "toll": 0,
+      "goMin": 70,
+      "backMin": 70,
+      "shopMin": null,
+      "includeBand": false,
+      "percentMode": "fixed5000",
+      "parking": null,
+      "extras": [],
+      "notes": [
+        "통행료는 없어서 0원.",
+        "메모에는 요일이 없었고, 2026-11-16은 월요일.",
+        "출발 10:20에 70분을 더하면 11:30. 도착 범위 11:20~11:30의 끝.",
+        "행사 시각은 없음.",
+        "행사명은 한국원자력안전재단, 장소는 한국수력원자력 방사선보건원.",
+        "구간할증 5,000원.",
+        "구간 수고비는 넣지 않음. 왕복 40km면 8,000원.",
+        "도시락 23개라 인원 적재비는 넣지 않음.",
+        "2층 하역비는 별도 금액이 없음."
+      ],
+      "revisions": [],
+      "quoted": {
+        "wages": [11000, 12000, 13000],
+        "minutes": 140,
+        "roundKm": 40,
+        "vehicle": 8880,
+        "fuelRound": 10000,
+        "tollRound": 0,
+        "labor": [25667, 28000, 30333],
+        "surcharge": 5000,
+        "totals": [49547, 51880, 54213],
+        "bandIfIncluded": 8000,
+        "totalsWithBand": [57547, 59880, 62213]
+      }
     }
   ]
 }

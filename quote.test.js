@@ -497,3 +497,32 @@ test('an Avril morning party reuses the recorded distance, fuel, and toll', func
   assert.deepEqual(quote.rows.map(function (row) { return row.total; }), [54685, 56852, 59019]);
   assert.match(quote.warnings.join('\n'), /지난 실측/);
 });
+
+test('a Jung-gu health center delivery keeps the institute name and the surcharge', function () {
+  const parsed = q.parseMemo([
+    '[상담배송] 박한솔 / 한국원자력안전재단',
+    '26.11.16',
+    '출발 : 10:20',
+    '도착 : 11:20-11:30',
+    '한국수력원자력 방사선 보건원',
+    '서울 중구 서소문로 38 센트럴타워 2층 비전홀',
+    '박한솔 010 9399 2681',
+    '*대학생 도시락 23개 및 다과답례품 23개',
+    '편도거리 20km',
+    '연료비 5,000원',
+    '도착소요시간 1시간 10분',
+    '복귀소요시간 1시간 10분',
+    '구간할증 5,000원'
+  ].join('\n'));
+  assert.equal(parsed.place, '한국수력원자력 방사선 보건원 서울 중구 서소문로 38 센트럴타워 2층 비전홀');
+  assert.equal(parsed.phone, '010 9399 2681');
+  assert.equal(parsed.percentMode, 'fixed5000');
+  assert.equal(q.formatDateLabel(parsed.date), '26.11.16(월)');
+  const quote = q.buildQuote(parsed);
+  assert.equal(quote.minutes, 140);
+  assert.equal(quote.vehicle, 8880);
+  assert.equal(quote.fuelRound, 10000);
+  assert.equal(quote.tollRound, 0);
+  assert.equal(quote.band, 0);
+  assert.deepEqual(quote.rows.map(function (row) { return row.total; }), [49547, 51880, 54213]);
+});
