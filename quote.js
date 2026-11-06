@@ -68,6 +68,8 @@
 
   function formatPhone(raw) {
     var digits = String(raw || '').replace(/\D/g, '');
+    if (digits.length === 9 && digits.indexOf('02') === 0) return '02 ' + digits.slice(2, 5) + ' ' + digits.slice(5);
+    if (digits.length === 10 && digits.indexOf('02') === 0) return '02 ' + digits.slice(2, 6) + ' ' + digits.slice(6);
     if (digits.length === 11) return digits.slice(0, 3) + ' ' + digits.slice(3, 7) + ' ' + digits.slice(7);
     if (digits.length === 10) return digits.slice(0, 3) + ' ' + digits.slice(3, 6) + ' ' + digits.slice(6);
     return String(raw || '').trim();
@@ -221,11 +223,12 @@
     {
       id: 'gwangmyeong',
       name: '광명 아브릴모마',
-      keys: ['아브릴모마', '아브릴', '광명'],
-      km: [28, 32],
+      keys: ['아브릴 모마', '아브릴모마', '아브릴', '광명'],
+      km: 33,
+      kmUsual: [28, 32],
+      fuel: 5300,
       toll: 2800,
-      tollOptional: true,
-      tollNote: '톨게이트를 안 타면 0원'
+      tollNote: '2026-11-14 실측. 톨게이트를 안 타면 0원'
     },
     {
       id: 'banyan',
@@ -336,9 +339,26 @@
     var next = Object.assign({}, input);
     if (!venue) return next;
     var kmEmpty = next.km == null || next.km === '';
+    var fuelEmpty = next.fuel == null || next.fuel === '';
     var tollEmpty = next.toll == null || next.toll === '';
-    if (kmEmpty && typeof venue.km === 'number') next.km = venue.km;
-    if (tollEmpty && typeof venue.toll === 'number' && !venue.tollOptional) next.toll = venue.toll;
+    var filled = [];
+    if (kmEmpty && typeof venue.km === 'number') {
+      next.km = venue.km;
+      filled.push('편도 ' + venue.km + 'km');
+    }
+    if (fuelEmpty && typeof venue.fuel === 'number') {
+      next.fuel = venue.fuel;
+      filled.push('연료비 ' + formatWon(venue.fuel));
+    }
+    if (tollEmpty && typeof venue.toll === 'number' && !venue.tollOptional) {
+      next.toll = venue.toll;
+      filled.push('통행료 ' + formatWon(venue.toll));
+    }
+    if (filled.length) {
+      next.warnings = (next.warnings || []).concat(
+        venue.name + ' 지난 실측을 넣었습니다. ' + filled.join(', ') + '.'
+      );
+    }
     return next;
   }
 
@@ -470,7 +490,7 @@
     return clocks[0] + ' ~ ' + clocks[1];
   }
 
-  var PHONE_RE = /01[016789][-\s.]?\d{3,4}[-\s.]?\d{4}/;
+  var PHONE_RE = /01[016789][-\s.]?\d{3,4}[-\s.]?\d{4}|0(?:2[-\s.]?\d{3,4}|[3-6]\d[-\s.]?\d{3,4}|70[-\s.]?\d{3,4})[-\s.]?\d{4}/;
 
   function extractPhone(line) {
     var m = String(line || '').match(PHONE_RE);
@@ -525,7 +545,9 @@
     { label: '구간수고비', kind: 'band' },
     { label: '기본수고비', kind: 'band' },
     { label: '수고비', kind: 'band' },
+    { label: '구간추가할증', kind: 'percent' },
     { label: '구간할증', kind: 'percent' },
+    { label: '상하차수고비', kind: 'extra', name: '상하차 수고비' },
     { label: '적재이동비', kind: 'extra', name: '적재이동비' },
     { label: '적재수고비', kind: 'extra', name: '적재이동비' },
     { label: '적대이동비', kind: 'extra', name: '적재이동비' },
@@ -573,10 +595,16 @@
     return false;
   }
 
+  function looksLikeInstruction(line) {
+    return /(?:해줘|해주세요|뽑아|참고|기입|계산해|알겠지)/.test(line);
+  }
+
   function looksLikePlace(line) {
     if (line.length < 4) return false;
-    if (/원|분|km|시급|합계/i.test(line)) return false;
-    return /[가-힣]/.test(line) && /(?:로|길|\d+동|\d+호|[가-힣]+구|[가-힣]+시|[가-힣]+군|읍|면|리|\d+층|호텔|관|센터|빌딩|타워|캠퍼스)/.test(line);
+    if (/[.?!。？！]/.test(line)) return false;
+    if (/분|km|시급|합계/i.test(line)) return false;
+    if (/\d[\d,]*\s*원/.test(line)) return false;
+    return /[가-힣]/.test(line) && /(?:로|길|\d+동|\d+호|[가-힣]+구|[가-힣]+시|[가-힣]+군|읍|면|리|\d+층|호텔|관|홀|대학교|센터|빌딩|타워|캠퍼스|원(?![가-힣]))/.test(line);
   }
 
   function emptyParsed() {
@@ -764,8 +792,8 @@
         addItem(parsed, line);
         continue;
       }
-      if (!parsed.place && looksLikePlace(line)) {
-        parsed.place = line;
+      if (!looksLikeInstruction(line) && (looksLikePlace(line) || matchVenue({ place: line, event: '' }))) {
+        parsed.place = parsed.place ? parsed.place + ' ' + line : line;
         continue;
       }
       if (!parsed.items && /\d+\s*(?:인|명)/.test(line)) {
