@@ -595,6 +595,10 @@
     return false;
   }
 
+  function looksLikeInstruction(line) {
+    return /(?:해줘|해주세요|뽑아|참고|기입|계산해|알겠지)/.test(line);
+  }
+
   function looksLikePlace(line) {
     if (line.length < 4) return false;
     if (/[.?!。？！]/.test(line)) return false;
@@ -788,7 +792,7 @@
         addItem(parsed, line);
         continue;
       }
-      if (looksLikePlace(line) || matchVenue({ place: line, event: '' })) {
+      if (!looksLikeInstruction(line) && (looksLikePlace(line) || matchVenue({ place: line, event: '' }))) {
         parsed.place = parsed.place ? parsed.place + ' ' + line : line;
         continue;
       }

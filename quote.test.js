@@ -596,3 +596,32 @@ test('an Airbnb half trip keeps the building and prices the measured specs', fun
   assert.deepEqual(quote.rows.map(function (row) { return row.total; }), [42835, 45168, 47501]);
   assert.doesNotMatch(quote.text, /40,000원/);
 });
+
+test('a later Avril party reuses the measured distance, fuel, and toll', function () {
+  const parsed = q.applyVenueDefaults(q.parseMemo([
+    '[출장] 양지혜 / 아브릴모마',
+    '27.03.07(일)',
+    '출발 : 8:30',
+    '도착 : 9:30',
+    '행사시작 : 11:30',
+    '광명 아브릴모마 1부',
+    '*돌잔치 출장 25명',
+    '아브릴모마 제원 참고해서 견적 뽑아줘'
+  ].join('\n')));
+  assert.equal(parsed.place, '광명 아브릴모마 1부');
+  assert.equal(parsed.depart, '08:30');
+  assert.equal(parsed.arrive, '09:30');
+  assert.equal(parsed.eventTime, '11:30');
+  assert.equal(parsed.km, 33);
+  assert.equal(parsed.fuel, 5300);
+  assert.equal(parsed.toll, 2800);
+  assert.equal(parsed.goMin, null);
+  assert.equal(q.formatDateLabel(parsed.date), '27.03.07(일)');
+  assert.match(parsed.warnings.join('\n'), /지난 실측/);
+  const quote = q.buildQuote(Object.assign({}, parsed, { goMin: 60, backMin: 70 }));
+  assert.equal(quote.minutes, 130);
+  assert.equal(quote.vehicle, 14652);
+  assert.equal(quote.fuelRound, 10600);
+  assert.equal(quote.tollRound, 5600);
+  assert.deepEqual(quote.rows.map(function (row) { return row.total; }), [54685, 56852, 59019]);
+});

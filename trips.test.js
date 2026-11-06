@@ -8,7 +8,7 @@ const q = require('./quote.js');
 const ledger = JSON.parse(fs.readFileSync('./data/trips.json', 'utf8'));
 
 test('confirmed trips stay tied to the quote that was given', function () {
-  assert.equal(ledger.trips.length, 9);
+  assert.equal(ledger.trips.length, 10);
   const trip = ledger.trips.find(function (row) { return row.id === '20261114-avril-imyeonjeong'; });
   assert.equal(trip.id, '20261114-avril-imyeonjeong');
   assert.equal(trip.place, '광명 아브릴모마 2부');
@@ -268,4 +268,30 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.equal(airbnbQuote.minutes, 140);
   assert.deepEqual(airbnbQuote.rows.map(function (row) { return row.total; }), airbnb.quoted.totals);
   assert.ok(airbnb.quoted.totals[0] > airbnb.fixedDeliveryFee);
+
+  const yang = ledger.trips.find(function (row) { return row.id === '20270307-avril-yang'; });
+  assert.equal(yang.inheritedFrom, '20261114-avril-imyeonjeong');
+  assert.deepEqual(yang.inheritedFields, ['km', 'fuel', 'toll']);
+  assert.equal(yang.goMin, 60);
+  assert.equal(yang.backMin, 70);
+  const yangQuote = q.buildQuote({
+    type: yang.type,
+    person: yang.person,
+    event: yang.event,
+    date: yang.date,
+    depart: yang.depart,
+    arrive: yang.arrive,
+    eventTime: yang.eventTime,
+    place: yang.place,
+    items: yang.items,
+    km: yang.km,
+    fuel: yang.fuel,
+    toll: yang.toll,
+    goMin: yang.goMin,
+    backMin: yang.backMin,
+    includeBand: yang.includeBand
+  });
+  assert.equal(yangQuote.ready, true);
+  assert.deepEqual(yangQuote.rows.map(function (row) { return row.total; }), yang.quoted.totals);
+  assert.equal(q.formatDateLabel(yang.date), '27.03.07(일)');
 });
