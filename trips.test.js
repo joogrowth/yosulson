@@ -320,6 +320,8 @@ test('confirmed trips stay tied to the quote that was given', function () {
   });
   assert.equal(sejongQuote.ready, true);
   assert.equal(sejongQuote.vehicle, 15096);
+  assert.equal(sejong.percentMode, 'none');
+  assert.equal(sejong.extras.length, 0);
   assert.deepEqual(sejongQuote.rows.map(function (row) { return row.total; }), sejong.quoted.totals);
-  assert.match(sejongQuote.text, /주말할증/);
+  assert.doesNotMatch(sejongQuote.text, /주말할증|구간할증/);
 });
