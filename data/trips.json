@@ -587,6 +587,66 @@
         "bandIfIncluded": 10000,
         "totalsWithBand": [64685, 66852, 69019]
       }
+    },
+    {
+      "id": "20261114-sejong-kim",
+      "collectedOn": "2026-11-09",
+      "status": "confirmed",
+      "type": "배송",
+      "person": "김규연",
+      "event": "백성현 서포트",
+      "date": "2026-11-14",
+      "weekday": "토",
+      "place": "더베이크 1층 로비 서울종로구 세종대로 175 (세종문화회관 예술동 건물)",
+      "venueId": null,
+      "items": "서토프 도시락 12개",
+      "headcount": null,
+      "phone": "010 9525 4832",
+      "contacts": [
+        { "name": "한지영", "phone": "010 9525 4832" },
+        { "name": "김나래", "phone": "010 5723 1988" }
+      ],
+      "depart": "14:50",
+      "arrive": "15:40 ~ 16:00",
+      "eventTime": "",
+      "km": 34,
+      "fuel": 6000,
+      "toll": 0,
+      "goMin": 70,
+      "backMin": 70,
+      "shopMin": null,
+      "includeBand": false,
+      "percentMode": "fixed5000",
+      "parking": null,
+      "extras": [
+        { "label": "주말할증", "amount": 5000, "note": "", "noteAuto": false }
+      ],
+      "notes": [
+        "같은 날 임연정 아브릴모마 2부와 다른 배송.",
+        "출발 14:50에 70분을 더하면 16:00. 도착 범위 15:40~16:00의 끝.",
+        "통행료는 없어서 0원.",
+        "구간할증 5,000원, 주말할증 5,000원.",
+        "구간 수고비는 넣지 않음. 왕복 68km면 10,000원.",
+        "품목은 메모 그대로 서토프 도시락 12개.",
+        "12개라 적재이동비는 넣지 않음.",
+        "1층 로비 하역비는 별도 금액이 없음.",
+        "담당자는 김규연. 연락처는 한지영, 김나래."
+      ],
+      "revisions": [],
+      "quoted": {
+        "wages": [11000, 12000, 13000],
+        "minutes": 140,
+        "roundKm": 68,
+        "vehicle": 15096,
+        "fuelRound": 12000,
+        "tollRound": 0,
+        "labor": [25667, 28000, 30333],
+        "surcharge": 5000,
+        "weekendSurcharge": 5000,
+        "totals": [62763, 65096, 67429],
+        "bandIfIncluded": 10000,
+        "totalsWithBand": [72763, 75096, 77429]
+      }
     }
   ]
 }

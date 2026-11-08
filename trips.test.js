@@ -8,7 +8,7 @@ const q = require('./quote.js');
 const ledger = JSON.parse(fs.readFileSync('./data/trips.json', 'utf8'));
 
 test('confirmed trips stay tied to the quote that was given', function () {
-  assert.equal(ledger.trips.length, 10);
+  assert.equal(ledger.trips.length, 11);
   const trip = ledger.trips.find(function (row) { return row.id === '20261114-avril-imyeonjeong'; });
   assert.equal(trip.id, '20261114-avril-imyeonjeong');
   assert.equal(trip.place, '광명 아브릴모마 2부');
@@ -294,4 +294,32 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.equal(yangQuote.ready, true);
   assert.deepEqual(yangQuote.rows.map(function (row) { return row.total; }), yang.quoted.totals);
   assert.equal(q.formatDateLabel(yang.date), '27.03.07(일)');
+
+  const sejong = ledger.trips.find(function (row) { return row.id === '20261114-sejong-kim'; });
+  assert.equal(sejong.contacts.length, 2);
+  assert.equal(q.formatDateLabel(sejong.date), '26.11.14(토)');
+  const sejongQuote = q.buildQuote({
+    type: sejong.type,
+    person: sejong.person,
+    event: sejong.event,
+    date: sejong.date,
+    phone: sejong.phone,
+    contacts: sejong.contacts,
+    depart: sejong.depart,
+    arrive: sejong.arrive,
+    place: sejong.place,
+    items: sejong.items,
+    km: sejong.km,
+    fuel: sejong.fuel,
+    toll: sejong.toll,
+    goMin: sejong.goMin,
+    backMin: sejong.backMin,
+    includeBand: sejong.includeBand,
+    percentMode: sejong.percentMode,
+    extras: sejong.extras
+  });
+  assert.equal(sejongQuote.ready, true);
+  assert.equal(sejongQuote.vehicle, 15096);
+  assert.deepEqual(sejongQuote.rows.map(function (row) { return row.total; }), sejong.quoted.totals);
+  assert.match(sejongQuote.text, /주말할증/);
 });

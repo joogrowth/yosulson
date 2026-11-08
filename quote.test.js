@@ -625,3 +625,45 @@ test('a later Avril party reuses the measured distance, fuel, and toll', functio
   assert.equal(quote.tollRound, 5600);
   assert.deepEqual(quote.rows.map(function (row) { return row.total; }), [54685, 56852, 59019]);
 });
+
+test('a Sejong Saturday delivery keeps both contacts and both surcharges', function () {
+  const parsed = q.parseMemo([
+    '[배송] 김규연 / 백성현 서포트',
+    '26.11.14(토)',
+    '출발 : 14:50',
+    '도착 : 15:40-16:00',
+    '더베이크 1층 로비',
+    '서울종로구 세종대로 175',
+    '(세종문화회관 예술동 건물)',
+    '한지영 010 9525 4832',
+    '김나래 010 5723 1988',
+    '*서토프 도시락 12개',
+    '편도거리 34km',
+    '연료비 6,000원',
+    '구간할증 5,000원',
+    '주말할증 5,000원',
+    '도착소요시간 1시간 10분',
+    '복귀소요시간 1시간 10분'
+  ].join('\n'));
+  assert.equal(parsed.place, '더베이크 1층 로비 서울종로구 세종대로 175 (세종문화회관 예술동 건물)');
+  assert.equal(parsed.person, '김규연');
+  assert.deepEqual(parsed.contacts, [
+    { name: '한지영', phone: '010 9525 4832' },
+    { name: '김나래', phone: '010 5723 1988' }
+  ]);
+  assert.equal(parsed.percentMode, 'fixed5000');
+  assert.equal(parsed.extras[0].label, '주말할증');
+  assert.equal(parsed.extras[0].amount, 5000);
+  assert.equal(q.formatDateLabel(parsed.date), '26.11.14(토)');
+  const quote = q.buildQuote(parsed);
+  assert.equal(quote.minutes, 140);
+  assert.equal(quote.vehicle, 15096);
+  assert.equal(quote.fuelRound, 12000);
+  assert.equal(quote.tollRound, 0);
+  assert.equal(quote.band, 0);
+  assert.deepEqual(quote.rows.map(function (row) { return row.total; }), [62763, 65096, 67429]);
+  assert.match(quote.text, /한지영/);
+  assert.match(quote.text, /김나래/);
+  assert.match(quote.text, /주말할증 5,000원/);
+  assert.match(quote.text, /구간할증 5,000원/);
+});

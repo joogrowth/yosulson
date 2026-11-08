@@ -547,6 +547,8 @@
     { label: '수고비', kind: 'band' },
     { label: '구간추가할증', kind: 'percent' },
     { label: '구간할증', kind: 'percent' },
+    { label: '주말할증', kind: 'extra', name: '주말할증' },
+    { label: '휴일할증', kind: 'extra', name: '휴일할증' },
     { label: '상하차수고비', kind: 'extra', name: '상하차 수고비' },
     { label: '적재이동비', kind: 'extra', name: '적재이동비' },
     { label: '적재수고비', kind: 'extra', name: '적재이동비' },
@@ -590,7 +592,11 @@
     var c = compact(line);
     if (/^(총소요시간|합계|인건비|차량운영비)/.test(c)) return true;
     if (/^[•ㆍ]/.test(line.trim()) && /^(유류비|통행료)/.test(c)) return true;
-    if (/^\(/.test(line.trim())) return true;
+    if (/^\(/.test(line.trim())) {
+      var inner = line.trim().replace(/^\(+/, '').replace(/\)+$/, '').trim();
+      if (looksLikePlace(inner) || /건물|회관|빌딩|타워|홀|로비/.test(inner)) return false;
+      return true;
+    }
     if (/^[-–—_=]{4,}$/.test(line.trim())) return true;
     return false;
   }
@@ -614,6 +620,7 @@
       event: '',
       date: '',
       phone: '',
+      contacts: [],
       place: '',
       items: '',
       depart: '',
@@ -633,6 +640,23 @@
       extras: [],
       warnings: []
     };
+  }
+
+  function addContact(parsed, name, phone) {
+    phone = String(phone || '').trim();
+    name = String(name || '').replace(phone, '').replace(/[()（）]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!name) {
+      if (phone && !parsed.phone) parsed.phone = phone;
+      return;
+    }
+    if (!phone) return;
+    parsed.contacts = parsed.contacts || [];
+    var key = name + '|' + phone;
+    for (var i = 0; i < parsed.contacts.length; i++) {
+      if (parsed.contacts[i].name + '|' + parsed.contacts[i].phone === key) return;
+    }
+    parsed.contacts.push({ name: name, phone: phone });
+    if (phone && !parsed.phone) parsed.phone = phone;
   }
 
   function addItem(parsed, text) {
@@ -801,7 +825,10 @@
         continue;
       }
       var phone = extractPhone(line);
-      if (phone && !parsed.phone) parsed.phone = phone;
+      if (phone) {
+        addContact(parsed, line, phone);
+        continue;
+      }
     }
     if (isShopping(parsed.type)) parsed.includeBand = false;
     return parsed;
@@ -911,10 +938,24 @@
       lines.push('');
       lines.push('장소: ' + input.place);
     }
-    if (input.person) {
+    var contacts = input.contacts || [];
+    var namedContacts = contacts.filter(function (c) { return c.name; });
+    if (input.person || namedContacts.length) {
       lines.push('');
-      var phone = input.phone ? formatPhone(input.phone) : '';
-      lines.push('담당자: ' + input.person + (phone ? ' (' + phone + ')' : ' (연락처 확인중)'));
+      if (input.person) {
+        var phone = input.phone ? formatPhone(input.phone) : '';
+        var phoneIsNamed = namedContacts.some(function (c) { return c.phone && formatPhone(c.phone) === phone; });
+        if (phone && !phoneIsNamed) lines.push('담당자: ' + input.person + ' (' + phone + ')');
+        else if (namedContacts.length) lines.push('담당자: ' + input.person);
+        else lines.push('담당자: ' + input.person + ' (연락처 확인중)');
+      }
+      if (namedContacts.length) {
+        var bits = namedContacts.map(function (c) {
+          var p = c.phone ? formatPhone(c.phone) : '';
+          return p ? c.name + ' (' + p + ')' : c.name;
+        });
+        lines.push('연락처: ' + bits.join(', '));
+      }
     }
     if (input.items) {
       lines.push('');
