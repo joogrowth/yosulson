@@ -8,7 +8,7 @@ const q = require('./quote.js');
 const ledger = JSON.parse(fs.readFileSync('./data/trips.json', 'utf8'));
 
 test('confirmed trips stay tied to the quote that was given', function () {
-  assert.equal(ledger.trips.length, 13);
+  assert.equal(ledger.trips.length, 14);
   const trip = ledger.trips.find(function (row) { return row.id === '20261114-avril-imyeonjeong'; });
   assert.equal(trip.id, '20261114-avril-imyeonjeong');
   assert.equal(trip.place, '광명 아브릴모마 2부');
@@ -329,6 +329,38 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.deepEqual(goQuote.rows.map(function (row) { return row.total; }), go.quoted.totals);
   assert.match(goQuote.text, /인건비 제외 차량유지비 30,852원/);
   assert.equal(q.formatDateLabel(go.date), '26.11.14(토)');
+
+  const ayeong = ledger.trips.find(function (row) { return row.id === '20261226-avril-jeongayeong'; });
+  assert.equal(ayeong.person, '정아영');
+  assert.equal(ayeong.inheritedFrom, '20261114-avril-imyeonjeong');
+  assert.deepEqual(ayeong.inheritedFields, ['km', 'fuel', 'toll']);
+  assert.equal(ayeong.goMin, 60);
+  assert.equal(ayeong.backMin, 60);
+  assert.equal(ayeong.headcount, 11);
+  const ayeongQuote = q.buildQuote({
+    type: ayeong.type,
+    person: ayeong.person,
+    event: ayeong.event,
+    date: ayeong.date,
+    depart: ayeong.depart,
+    arrive: ayeong.arrive,
+    eventTime: ayeong.eventTime,
+    place: ayeong.place,
+    items: ayeong.items,
+    km: ayeong.km,
+    fuel: ayeong.fuel,
+    toll: ayeong.toll,
+    goMin: ayeong.goMin,
+    backMin: ayeong.backMin,
+    includeBand: ayeong.includeBand,
+    percentMode: ayeong.percentMode,
+    extras: ayeong.extras
+  });
+  assert.equal(ayeongQuote.ready, true);
+  assert.equal(ayeongQuote.minutes, 120);
+  assert.deepEqual(ayeongQuote.rows.map(function (row) { return row.total; }), ayeong.quoted.totals);
+  assert.match(ayeongQuote.text, /인건비 제외 차량유지비 30,852원/);
+  assert.equal(q.formatDateLabel(ayeong.date), '26.12.26(토)');
 
   const sejong = ledger.trips.find(function (row) { return row.id === '20261114-sejong-kim'; });
   assert.equal(sejong.contacts.length, 2);

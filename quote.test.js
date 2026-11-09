@@ -539,6 +539,42 @@ test('a later Avril morning party keeps the written toll and reuses distance and
   assert.doesNotMatch(parsed.warnings.join('\n'), /통행료/);
 });
 
+test('a December Avril afternoon party reuses the recorded distance, fuel, and toll', function () {
+  const parsed = q.applyVenueDefaults(q.parseMemo([
+    '[출장] 정아영 / 아브릴모마 2부',
+    '26.12.26(토)',
+    '출발 : 13:00',
+    '도착 : 14:00',
+    '행사시작 : 17:30',
+    '광명아브릴모마 2부',
+    '* 돌잔치 출장 11인',
+    '도착소요시간 1시간',
+    '복귀소요시간 1시간',
+    '나머지는 잔여데이터를 부탁해'
+  ].join('\n')));
+  assert.equal(parsed.person, '정아영');
+  assert.equal(parsed.place, '광명아브릴모마 2부');
+  assert.equal(parsed.items, '돌잔치 출장 11인');
+  assert.equal(parsed.depart, '13:00');
+  assert.equal(parsed.arrive, '14:00');
+  assert.equal(parsed.eventTime, '17:30');
+  assert.equal(parsed.km, 33);
+  assert.equal(parsed.fuel, 5300);
+  assert.equal(parsed.toll, 2800);
+  assert.equal(parsed.goMin, 60);
+  assert.equal(parsed.backMin, 60);
+  assert.equal(q.headcount(parsed.items), 11);
+  assert.equal(q.formatDateLabel(parsed.date), '26.12.26(토)');
+  const quote = q.buildQuote(parsed);
+  assert.equal(quote.minutes, 120);
+  assert.equal(quote.vehicle, 14652);
+  assert.equal(quote.fuelRound, 10600);
+  assert.equal(quote.tollRound, 5600);
+  assert.deepEqual(quote.rows.map(function (row) { return row.total; }), [52852, 54852, 56852]);
+  assert.match(quote.text, /인건비 제외 차량유지비 30,852원/);
+  assert.doesNotMatch(quote.text, /부탁|주말할증|구간할증/);
+});
+
 test('a Jung-gu health center delivery keeps the institute name and the surcharge', function () {
   const parsed = q.parseMemo([
     '[상담배송] 박한솔 / 한국원자력안전재단',

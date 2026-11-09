@@ -605,7 +605,7 @@
   }
 
   function looksLikeInstruction(line) {
-    return /(?:해줘|해주세요|뽑아|참고|기입|계산해|알겠지)/.test(line);
+    return /(?:해줘|해주세요|뽑아|참고|기입|계산해|알겠지|부탁해|부탁드립니다)/.test(line);
   }
 
   function looksLikePlace(line) {
