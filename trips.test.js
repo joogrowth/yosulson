@@ -359,6 +359,7 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.equal(choiQuote.band, 0);
   assert.deepEqual(choiQuote.rows.map(function (row) { return row.total; }), choi.quoted.totals);
   assert.match(choiQuote.text, /세팅수고비 5,000원/);
+  assert.match(choiQuote.text, /인건비 제외 차량유지비 18,992원/);
   assert.doesNotMatch(choiQuote.text, /구간할증|8,000원/);
   assert.equal(q.formatDateLabel(choi.date), '26.11.13(금)');
 });

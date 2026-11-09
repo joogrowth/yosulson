@@ -732,6 +732,7 @@
         "labor": [22000, 24000, 26000],
         "surcharge": 0,
         "setupFee": 5000,
+        "vehicleKeep": 18992,
         "totals": [40992, 42992, 44992]
       }
     }

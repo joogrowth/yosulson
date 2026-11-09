@@ -1011,6 +1011,9 @@
     }
     lines.push('•통행료 ' + formatWon(model.tollRound));
     if (model.toll > 0) lines.push('(편도 ' + formatWon(model.toll) + ' × 왕복 2)');
+    var keeps = model.rows.map(function (r) { return r.total - r.labor; });
+    var keepSame = keeps.every(function (n) { return n === keeps[0]; });
+    lines.push('•인건비 제외 차량유지비 ' + (keepSame ? formatWon(keeps[0]) : keeps.map(formatWon).join(' / ')));
     lines.push('•합계 ' + model.rows.map(function (r) { return formatWon(r.total); }).join(' / '));
     var includeNames = [];
     if (model.band > 0) includeNames.push('배송/출장 수고비');
