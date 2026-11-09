@@ -302,7 +302,9 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.equal(go.km, 33);
   assert.equal(go.fuel, 5300);
   assert.equal(go.toll, 2800);
-  assert.equal(go.goMin, 60);
+  assert.equal(go.depart, '08:50');
+  assert.equal(go.arrive, '10:00');
+  assert.equal(go.goMin, 70);
   assert.equal(go.backMin, 70);
   assert.equal(go.headcount, 11);
   const goQuote = q.buildQuote({
@@ -325,7 +327,8 @@ test('confirmed trips stay tied to the quote that was given', function () {
     extras: go.extras
   });
   assert.equal(goQuote.ready, true);
-  assert.equal(goQuote.minutes, 130);
+  assert.equal(goQuote.minutes, 140);
+  assert.deepEqual(goQuote.rows.map(function (row) { return row.labor; }), [25667, 28000, 30333]);
   assert.deepEqual(goQuote.rows.map(function (row) { return row.total; }), go.quoted.totals);
   assert.match(goQuote.text, /인건비 제외 차량유지비 30,852원/);
   assert.equal(q.formatDateLabel(go.date), '26.11.14(토)');
