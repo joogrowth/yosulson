@@ -326,9 +326,9 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.doesNotMatch(sejongQuote.text, /주말할증|구간할증/);
 
   const choi = ledger.trips.find(function (row) { return row.id === '20261113-mokdong-choi'; });
-  assert.equal(choi.status, 'partial');
-  assert.equal(choi.backMin, null);
-  assert.equal(choi.quoted.totals, null);
+  assert.equal(choi.status, 'confirmed');
+  assert.equal(choi.goMin, 60);
+  assert.equal(choi.backMin, 60);
   assert.equal(choi.quoted.nonLabor, 23992);
   const choiQuote = q.buildQuote({
     type: choi.type,
@@ -350,8 +350,10 @@ test('confirmed trips stay tied to the quote that was given', function () {
     percentMode: choi.percentMode,
     extras: choi.extras
   });
-  assert.equal(choiQuote.ready, false);
+  assert.equal(choiQuote.ready, true);
+  assert.equal(choiQuote.minutes, 120);
   assert.equal(choiQuote.vehicle, 7992);
   assert.equal(choiQuote.fuelRound, 6000);
+  assert.deepEqual(choiQuote.rows.map(function (row) { return row.total; }), choi.quoted.totals);
   assert.equal(q.formatDateLabel(choi.date), '26.11.13(금)');
 });
