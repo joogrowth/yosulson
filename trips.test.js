@@ -329,7 +329,9 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.equal(choi.status, 'confirmed');
   assert.equal(choi.goMin, 60);
   assert.equal(choi.backMin, 60);
-  assert.equal(choi.quoted.nonLabor, 23992);
+  assert.equal(choi.includeBand, false);
+  assert.equal(choi.percentMode, 'fixed5000');
+  assert.equal(choi.quoted.surcharge, 5000);
   const choiQuote = q.buildQuote({
     type: choi.type,
     person: choi.person,
@@ -354,6 +356,9 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.equal(choiQuote.minutes, 120);
   assert.equal(choiQuote.vehicle, 7992);
   assert.equal(choiQuote.fuelRound, 6000);
+  assert.equal(choiQuote.band, 0);
   assert.deepEqual(choiQuote.rows.map(function (row) { return row.total; }), choi.quoted.totals);
+  assert.match(choiQuote.text, /구간할증 5,000원/);
+  assert.doesNotMatch(choiQuote.text, /8,000원/);
   assert.equal(q.formatDateLabel(choi.date), '26.11.13(금)');
 });
