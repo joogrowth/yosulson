@@ -8,7 +8,7 @@ const q = require('./quote.js');
 const ledger = JSON.parse(fs.readFileSync('./data/trips.json', 'utf8'));
 
 test('confirmed trips stay tied to the quote that was given', function () {
-  assert.equal(ledger.trips.length, 12);
+  assert.equal(ledger.trips.length, 13);
   const trip = ledger.trips.find(function (row) { return row.id === '20261114-avril-imyeonjeong'; });
   assert.equal(trip.id, '20261114-avril-imyeonjeong');
   assert.equal(trip.place, '광명 아브릴모마 2부');
@@ -294,6 +294,41 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.equal(yangQuote.ready, true);
   assert.deepEqual(yangQuote.rows.map(function (row) { return row.total; }), yang.quoted.totals);
   assert.equal(q.formatDateLabel(yang.date), '27.03.07(일)');
+
+  const go = ledger.trips.find(function (row) { return row.id === '20261114-avril-go'; });
+  assert.equal(go.person, '고효진');
+  assert.equal(go.inheritedFrom, '20261114-avril-imyeonjeong');
+  assert.deepEqual(go.inheritedFields, ['km', 'fuel']);
+  assert.equal(go.km, 33);
+  assert.equal(go.fuel, 5300);
+  assert.equal(go.toll, 2800);
+  assert.equal(go.goMin, 60);
+  assert.equal(go.backMin, 70);
+  assert.equal(go.headcount, 11);
+  const goQuote = q.buildQuote({
+    type: go.type,
+    person: go.person,
+    event: go.event,
+    date: go.date,
+    depart: go.depart,
+    arrive: go.arrive,
+    eventTime: go.eventTime,
+    place: go.place,
+    items: go.items,
+    km: go.km,
+    fuel: go.fuel,
+    toll: go.toll,
+    goMin: go.goMin,
+    backMin: go.backMin,
+    includeBand: go.includeBand,
+    percentMode: go.percentMode,
+    extras: go.extras
+  });
+  assert.equal(goQuote.ready, true);
+  assert.equal(goQuote.minutes, 130);
+  assert.deepEqual(goQuote.rows.map(function (row) { return row.total; }), go.quoted.totals);
+  assert.match(goQuote.text, /인건비 제외 차량유지비 30,852원/);
+  assert.equal(q.formatDateLabel(go.date), '26.11.14(토)');
 
   const sejong = ledger.trips.find(function (row) { return row.id === '20261114-sejong-kim'; });
   assert.equal(sejong.contacts.length, 2);
