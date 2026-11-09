@@ -332,6 +332,8 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.equal(choi.includeBand, false);
   assert.equal(choi.percentMode, 'none');
   assert.equal(choi.quoted.surcharge, 0);
+  assert.equal(choi.quoted.setupFee, 0);
+  assert.equal(choi.extras.length, 0);
   const choiQuote = q.buildQuote({
     type: choi.type,
     person: choi.person,
@@ -358,8 +360,8 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.equal(choiQuote.fuelRound, 6000);
   assert.equal(choiQuote.band, 0);
   assert.deepEqual(choiQuote.rows.map(function (row) { return row.total; }), choi.quoted.totals);
-  assert.match(choiQuote.text, /세팅수고비 5,000원/);
-  assert.match(choiQuote.text, /인건비 제외 차량유지비 18,992원/);
+  assert.doesNotMatch(choiQuote.text, /세팅수고비/);
+  assert.match(choiQuote.text, /인건비 제외 차량유지비 13,992원/);
   assert.doesNotMatch(choiQuote.text, /구간할증|8,000원/);
   assert.equal(q.formatDateLabel(choi.date), '26.11.13(금)');
 });
