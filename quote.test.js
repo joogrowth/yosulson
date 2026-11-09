@@ -667,3 +667,41 @@ test('a Sejong Saturday delivery keeps both contacts and both surcharges', funct
   assert.match(quote.text, /주말할증 5,000원/);
   assert.match(quote.text, /구간할증 5,000원/);
 });
+
+test('a Mokdong kids setup keeps the flat fees and leaves the return time open', function () {
+  const parsed = q.parseMemo([
+    '[배송세팅] 최은서 / 키즈케이터링',
+    '26.11.13(금)',
+    '출발 : 15:00',
+    '도착 : 15:50-16:00',
+    '세팅완료 : 17:00',
+    '양천구 목동남로 4길 81',
+    '삼성래미안 2차 102동 801호',
+    '010 2500 8071',
+    '*키즈 10명 케이터링 박스 세팅',
+    '창문쪽 풍선 및 가렌더 세팅 진행',
+    '(풍선, 가렌더, 꼬깔모자, 테이블보 화이트)',
+    '편도거리 18km',
+    '연료비 3,000원',
+    '구간할증 5,000원',
+    '세팅수고비 5,000원'
+  ].join('\n'));
+  assert.equal(parsed.place, '양천구 목동남로 4길 81 삼성래미안 2차 102동 801호');
+  assert.equal(parsed.phone, '010 2500 8071');
+  assert.equal(parsed.setupDone, '17:00');
+  assert.equal(parsed.goMin, null);
+  assert.equal(parsed.backMin, null);
+  assert.equal(parsed.percentMode, 'fixed5000');
+  assert.equal(parsed.extras[0].label, '세팅수고비');
+  assert.equal(parsed.extras[0].amount, 5000);
+  assert.match(parsed.items, /가렌더/);
+  assert.match(parsed.items, /꼬깔모자/);
+  assert.equal(q.headcount(parsed.items), 10);
+  assert.equal(q.formatDateLabel(parsed.date), '26.11.13(금)');
+  const quote = q.buildQuote(parsed);
+  assert.equal(quote.ready, false);
+  assert.deepEqual(quote.missing, ['가는 시간', '오는 시간']);
+  assert.equal(quote.vehicle, 7992);
+  assert.equal(quote.fuelRound, 6000);
+  assert.equal(q.bandFee(36), 8000);
+});

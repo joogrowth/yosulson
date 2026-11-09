@@ -547,6 +547,8 @@
     { label: '수고비', kind: 'band' },
     { label: '구간추가할증', kind: 'percent' },
     { label: '구간할증', kind: 'percent' },
+    { label: '세팅완료', key: 'setupDone' },
+    { label: '세팅수고비', kind: 'extra', name: '세팅수고비' },
     { label: '주말할증', kind: 'extra', name: '주말할증' },
     { label: '휴일할증', kind: 'extra', name: '휴일할증' },
     { label: '상하차수고비', kind: 'extra', name: '상하차 수고비' },
@@ -595,7 +597,8 @@
     if (/^\(/.test(line.trim())) {
       var inner = line.trim().replace(/^\(+/, '').replace(/\)+$/, '').trim();
       if (looksLikePlace(inner) || /건물|회관|빌딩|타워|홀|로비/.test(inner)) return false;
-      return true;
+      if (/시급|왕복|편도|유류|km|별도|포함|기준|\d[\d,]*\s*원/.test(inner)) return true;
+      return false;
     }
     if (/^[-–—_=]{4,}$/.test(line.trim())) return true;
     return false;
@@ -626,6 +629,7 @@
       depart: '',
       arrive: '',
       eventTime: '',
+      setupDone: '',
       goMin: null,
       backMin: null,
       shopMin: null,
@@ -743,7 +747,7 @@
       parsed[key] = minutes;
       return;
     }
-    if (key === 'depart' || key === 'arrive' || key === 'eventTime') {
+    if (key === 'depart' || key === 'arrive' || key === 'eventTime' || key === 'setupDone') {
       var when = normalizeWhen(rest);
       if (!when) return;
       parsed[key] = when;
@@ -828,6 +832,9 @@
       if (phone) {
         addContact(parsed, line, phone);
         continue;
+      }
+      if (parsed.items && !looksLikeInstruction(line) && !/[.?!。？！]/.test(line) && !/\d[\d,]*\s*원/.test(line)) {
+        addItem(parsed, line.replace(/^\(+/, '').replace(/\)+$/, ''));
       }
     }
     if (isShopping(parsed.type)) parsed.includeBand = false;
@@ -929,6 +936,7 @@
     var times = [];
     if (input.depart) times.push('출발: ' + input.depart);
     if (input.arrive) times.push('도착: ' + input.arrive);
+    if (input.setupDone) times.push('세팅완료: ' + input.setupDone);
     if (input.eventTime) times.push('행사시작: ' + input.eventTime);
     if (times.length) {
       lines.push('');
