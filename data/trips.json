@@ -868,6 +868,61 @@
         "bandIfIncluded": 10000,
         "totalsWithBand": [62852, 64852, 68852]
       }
+    },
+    {
+      "id": "20261115-ajin-kim",
+      "collectedOn": "2026-11-10",
+      "status": "confirmed",
+      "type": "배송",
+      "person": "김다솜",
+      "event": "서포트 도시락",
+      "date": "2026-11-15",
+      "weekday": "일",
+      "place": "아진미디어 서울 금천구 디지털로 9길 47 한신 IT타워 2차 606호",
+      "venueId": null,
+      "items": "서포트 도시락 34개",
+      "headcount": null,
+      "phone": "010 7131 9906",
+      "contacts": [
+        { "name": "메니저", "phone": "010 7131 9906" }
+      ],
+      "depart": "13:00",
+      "arrive": "13:50 ~ 14:00",
+      "eventTime": "",
+      "km": 21,
+      "fuel": 4000,
+      "toll": 0,
+      "goMin": 60,
+      "backMin": 60,
+      "shopMin": null,
+      "includeBand": false,
+      "percentMode": "none",
+      "parking": null,
+      "extras": [],
+      "notes": [
+        "통행료는 메모에 없어서 0원.",
+        "출발 13:00에 60분을 더하면 14:00. 도착 범위 13:50~14:00의 끝.",
+        "구간 수고비는 넣지 않음. 왕복 42km면 9,000원.",
+        "34개라 적재이동비는 넣지 않음.",
+        "606호 층수비는 별도 금액이 없음.",
+        "주말할증은 메모에 없어서 넣지 않음.",
+        "담당자는 김다솜. 연락처는 메니저 010 7131 9906.",
+        "아진미디어는 주소 위 상호."
+      ],
+      "revisions": [],
+      "quoted": {
+        "wages": [11000, 12000, 13000],
+        "minutes": 120,
+        "roundKm": 42,
+        "vehicle": 9324,
+        "fuelRound": 8000,
+        "tollRound": 0,
+        "labor": [22000, 24000, 26000],
+        "vehicleKeep": 17324,
+        "totals": [39324, 41324, 43324],
+        "bandIfIncluded": 9000,
+        "totalsWithBand": [48324, 50324, 52324]
+      }
     }
   ]
 }

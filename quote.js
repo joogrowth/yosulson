@@ -608,6 +608,23 @@
     return /(?:해줘|해주세요|뽑아|참고|기입|계산해|알겠지|부탁해|부탁드립니다)/.test(line);
   }
 
+  function nextContentLine(lines, index) {
+    for (var i = index + 1; i < lines.length; i++) {
+      var line = String(lines[i] || '').replace(/\*\*/g, '').trim();
+      if (!line || shouldIgnore(line)) continue;
+      return line;
+    }
+    return '';
+  }
+
+  function looksLikeNameStub(line) {
+    if (line.length < 2 || line.length > 24) return false;
+    if (looksLikeInstruction(line) || looksLikePlace(line)) return false;
+    if (/[.?!。？！\d]/.test(line)) return false;
+    if (/분|시급|합계|원|출발|도착|행사/.test(line)) return false;
+    return /[가-힣]{2,}/.test(line);
+  }
+
   function looksLikePlace(line) {
     if (line.length < 4) return false;
     if (/[.?!。？！]/.test(line)) return false;
@@ -821,6 +838,11 @@
         continue;
       }
       if (!looksLikeInstruction(line) && (looksLikePlace(line) || matchVenue({ place: line, event: '' }))) {
+        parsed.place = parsed.place ? parsed.place + ' ' + line : line;
+        continue;
+      }
+      var upcoming = nextContentLine(lines, n);
+      if (looksLikeNameStub(line) && upcoming && (looksLikePlace(upcoming) || matchVenue({ place: upcoming, event: '' }))) {
         parsed.place = parsed.place ? parsed.place + ' ' + line : line;
         continue;
       }

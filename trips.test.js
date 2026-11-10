@@ -8,7 +8,7 @@ const q = require('./quote.js');
 const ledger = JSON.parse(fs.readFileSync('./data/trips.json', 'utf8'));
 
 test('confirmed trips stay tied to the quote that was given', function () {
-  assert.equal(ledger.trips.length, 14);
+  assert.equal(ledger.trips.length, 15);
   const trip = ledger.trips.find(function (row) { return row.id === '20261114-avril-imyeonjeong'; });
   assert.equal(trip.id, '20261114-avril-imyeonjeong');
   assert.equal(trip.place, '광명 아브릴모마 2부');
@@ -364,6 +364,41 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.deepEqual(ayeongQuote.rows.map(function (row) { return row.total; }), ayeong.quoted.totals);
   assert.match(ayeongQuote.text, /인건비 제외 차량유지비 30,852원/);
   assert.equal(q.formatDateLabel(ayeong.date), '26.12.26(토)');
+
+  const dasom = ledger.trips.find(function (row) { return row.id === '20261115-ajin-kim'; });
+  assert.equal(dasom.person, '김다솜');
+  assert.equal(dasom.km, 21);
+  assert.equal(dasom.fuel, 4000);
+  assert.equal(dasom.toll, 0);
+  assert.equal(dasom.goMin, 60);
+  assert.equal(dasom.backMin, 60);
+  assert.equal(dasom.contacts[0].name, '메니저');
+  const dasomQuote = q.buildQuote({
+    type: dasom.type,
+    person: dasom.person,
+    event: dasom.event,
+    date: dasom.date,
+    phone: dasom.phone,
+    contacts: dasom.contacts,
+    depart: dasom.depart,
+    arrive: dasom.arrive,
+    place: dasom.place,
+    items: dasom.items,
+    km: dasom.km,
+    fuel: dasom.fuel,
+    toll: dasom.toll,
+    goMin: dasom.goMin,
+    backMin: dasom.backMin,
+    includeBand: dasom.includeBand,
+    percentMode: dasom.percentMode,
+    extras: dasom.extras
+  });
+  assert.equal(dasomQuote.ready, true);
+  assert.equal(dasomQuote.minutes, 120);
+  assert.equal(dasomQuote.vehicle, 9324);
+  assert.deepEqual(dasomQuote.rows.map(function (row) { return row.total; }), dasom.quoted.totals);
+  assert.match(dasomQuote.text, /인건비 제외 차량유지비 17,324원/);
+  assert.equal(q.formatDateLabel(dasom.date), '26.11.15(일)');
 
   const sejong = ledger.trips.find(function (row) { return row.id === '20261114-sejong-kim'; });
   assert.equal(sejong.contacts.length, 2);
