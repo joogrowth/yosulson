@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+
+# 로컬 수집 산출물 (Mac에서 생성)
+**/debug.log
+시세/data/kamis_latest.json
+시세/data/garak_latest.json
+시세/data/noryangjin_latest.json
+시세/data/latest.json
+시세/data/*.local.json
