@@ -318,7 +318,10 @@ def main():
         r for r in recs
         if r.get("price") and prev_window[0] <= (r.get("date") or "") <= cur_window[1]
     ]
-    kamis_n = sum(1 for r in span if not is_live(r.get("source")))
+    kamis_n = sum(
+        1 for r in span
+        if not is_live(r.get("source")) and r.get("source") not in ("쿠팡", "쇼핑취합")
+    )
     live_n = sum(1 for r in span if is_live(r.get("source")))
 
     def mover(r):
@@ -334,14 +337,22 @@ def main():
 
     shop_meta = {
         "냉동대하": (
-            "DIAMOND 홍다리 얼룩새우 20미/500g · 로켓프레시",
-            "이 상품(2379381695) 8월 쿠팡 이력은 없음. 같은 규격 식자재 10팩은 팩당 약 10,200원, 소비자가대 약 12,800원이라 지금 12,500원은 보합으로 봄. 서해 자연산 대하가 아님.",
+            "DIAMOND 홍다리 얼룩새우 20미/500g · 쿠팡 로켓프레시",
+            "추적 화면 배지는 역대 최저. 10,000원이 찍힌 날은 10월 31일. 100g당 2,000원. 서해 자연산 대하가 아님.",
+            12500,
         ),
         "냉동랍스테일": (
             "냉동 꼬리 4oz(약 110g) · 4.54kg 약 40미",
-            "꼬리 1개 약 110g(4oz). 4.54kg 박스에 37~42미(보통 약 40미). 통마리 랍스터 제외. 전월 이 규격 이력 없음.",
+            "보고 단가는 바이킹마켓. 벌쿡은 338,000원으로 그대로. 식봄은 364,000원이나 구매불가. 통마리 랍스터는 제외.",
+            349000,
         ),
     }
+
+    def purchase_pct(row):
+        meta = shop_meta.get(row["name"])
+        if not meta or not row.get("cur") or not meta[2]:
+            return None
+        return round((row["cur"]["price"] - meta[2]) / meta[2] * 100, 1)
 
     def shop_card():
         shops = [r for r in visible if r["name"] in shop_meta and r.get("cur")]
@@ -349,20 +360,24 @@ def main():
             return ""
         bits = []
         for r in shops:
-            title, note = shop_meta[r["name"]]
+            title, note, anchor = shop_meta[r["name"]]
+            pct = purchase_pct(r)
+            cls, _label = classify(pct)
+            sign = "+" if pct > 0 else ""
             bits.append(
                 '<div class="mover"><div><div class="mover-name">{}</div>'
-                '<div class="mover-meta">{}<br>당월 <strong>{}원/{}</strong>. {}</div></div>'
-                '<span class="badge flat">보합 참고</span></div>'.format(
+                '<div class="mover-meta">{}<br>지금 <strong>{}원/{}</strong>. 9월 {}원. {}</div></div>'
+                '<span class="badge {}">9월 대비 {}{:.1f}%</span></div>'.format(
                     html.escape(r["name"]), html.escape(title),
                     comma(r["cur"]["price"]), html.escape(r["cur"]["unit"]),
-                    html.escape(note),
+                    comma(anchor), html.escape(note),
+                    html.escape(cls), sign, pct,
                 )
             )
         return (
             '<div class="card keep">'
-            '<div class="card-title">구매 시세 — 쿠팡·식자재 냉동</div>'
-            '<div class="card-desc">KAMIS에 없는 실제 구매 규격입니다. 전월 이 상품 이력이 없어 변동 %는 비우고, 주변 시세로만 참고합니다.</div>'
+            '<div class="card-title">구매 시세 — 냉동대하 · 랍스테일</div>'
+            '<div class="card-desc">KAMIS에 없는 구매 규격입니다. 10월 시세는 없고, 9월에 적어 둔 구매가와 11월 12일 0시에 확인한 판매가를 비교합니다. 위 상승·하락 개수에는 넣지 않습니다.</div>'
             + "".join(bits) + "</div>"
         )
 
@@ -430,9 +445,12 @@ def main():
         for r in cat_rows:
             sign = "" if r["change"] is None else ("+" if r["change"] > 0 else "")
             if r["change"] is None:
-                if r["name"] in shop_meta:
-                    change_cell = '<span class="badge flat" title="{}">보합 참고</span>'.format(
-                        html.escape(shop_meta[r["name"]][1])
+                if r["name"] in shop_meta and r.get("cur"):
+                    pct = purchase_pct(r)
+                    pcls, _plabel = classify(pct)
+                    psign = "+" if pct > 0 else ""
+                    change_cell = '<span class="badge {}" title="{}">9월 대비 {}{:.1f}%</span>'.format(
+                        html.escape(pcls), html.escape(shop_meta[r["name"]][1]), psign, pct,
                     )
                 else:
                     if r["note"] == "전월 데이터 없음":
