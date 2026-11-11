@@ -497,6 +497,12 @@
     return m ? m[0] : '';
   }
 
+  function isPhoneOnly(line) {
+    var phone = extractPhone(line);
+    if (!phone) return false;
+    return String(line).replace(phone, '').replace(/[\s().\-]/g, '') === '';
+  }
+
   var LABELS = [
     { label: '도착소요시간', key: 'goMin' },
     { label: '도착소요', key: 'goMin' },
@@ -808,6 +814,7 @@
 
   function parseMemo(text) {
     var parsed = emptyParsed();
+    var pendingName = '';
     var lines = String(text || '').replace(/\r/g, '').split('\n');
     for (var n = 0; n < lines.length; n++) {
       var line = lines[n].replace(/\*\*/g, '').trim();
@@ -837,22 +844,28 @@
         addItem(parsed, line);
         continue;
       }
+      var upcoming = nextContentLine(lines, n);
+      var phone = extractPhone(line);
+      if (!phone && isPhoneOnly(upcoming) && !looksLikeInstruction(line) && !looksLikePlace(line) && !/[.?!。？！]/.test(line) && !/\d[\d,]*\s*원/.test(line)) {
+        pendingName = line;
+        continue;
+      }
+      if (phone) {
+        var nameSource = isPhoneOnly(line) && pendingName ? pendingName + ' ' + phone : line;
+        pendingName = '';
+        addContact(parsed, nameSource, phone);
+        continue;
+      }
       if (!looksLikeInstruction(line) && (looksLikePlace(line) || matchVenue({ place: line, event: '' }))) {
         parsed.place = parsed.place ? parsed.place + ' ' + line : line;
         continue;
       }
-      var upcoming = nextContentLine(lines, n);
       if (looksLikeNameStub(line) && upcoming && (looksLikePlace(upcoming) || matchVenue({ place: upcoming, event: '' }))) {
         parsed.place = parsed.place ? parsed.place + ' ' + line : line;
         continue;
       }
       if (!parsed.items && /\d+\s*(?:인|명)/.test(line)) {
         addItem(parsed, line);
-        continue;
-      }
-      var phone = extractPhone(line);
-      if (phone) {
-        addContact(parsed, line, phone);
         continue;
       }
       if (parsed.items && !looksLikeInstruction(line) && !/[.?!。？！]/.test(line) && !/\d[\d,]*\s*원/.test(line)) {

@@ -8,7 +8,7 @@ const q = require('./quote.js');
 const ledger = JSON.parse(fs.readFileSync('./data/trips.json', 'utf8'));
 
 test('confirmed trips stay tied to the quote that was given', function () {
-  assert.equal(ledger.trips.length, 15);
+  assert.equal(ledger.trips.length, 16);
   const trip = ledger.trips.find(function (row) { return row.id === '20261114-avril-imyeonjeong'; });
   assert.equal(trip.id, '20261114-avril-imyeonjeong');
   assert.equal(trip.place, '광명 아브릴모마 2부');
@@ -399,6 +399,43 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.deepEqual(dasomQuote.rows.map(function (row) { return row.total; }), dasom.quoted.totals);
   assert.match(dasomQuote.text, /인건비 제외 차량유지비 17,324원/);
   assert.equal(q.formatDateLabel(dasom.date), '26.11.15(일)');
+
+  const mj = ledger.trips.find(function (row) { return row.id === '20261112-geumgok-mj'; });
+  assert.equal(mj.person, 'MJ');
+  assert.equal(mj.km, 48);
+  assert.equal(mj.fuel, 8000);
+  assert.equal(mj.toll, 4000);
+  assert.equal(mj.goMin, 70);
+  assert.equal(mj.backMin, 70);
+  assert.equal(mj.headcount, 70);
+  assert.equal(mj.contacts.length, 2);
+  const mjQuote = q.buildQuote({
+    type: mj.type,
+    person: mj.person,
+    event: mj.event,
+    date: mj.date,
+    phone: mj.phone,
+    contacts: mj.contacts,
+    depart: mj.depart,
+    arrive: mj.arrive,
+    eventTime: mj.eventTime,
+    place: mj.place,
+    items: mj.items,
+    km: mj.km,
+    fuel: mj.fuel,
+    toll: mj.toll,
+    goMin: mj.goMin,
+    backMin: mj.backMin,
+    includeBand: mj.includeBand,
+    percentMode: mj.percentMode,
+    extras: mj.extras
+  });
+  assert.equal(mjQuote.ready, true);
+  assert.equal(mjQuote.minutes, 140);
+  assert.equal(mjQuote.vehicle, 21312);
+  assert.deepEqual(mjQuote.rows.map(function (row) { return row.total; }), mj.quoted.totals);
+  assert.match(mjQuote.text, /인건비 제외 차량유지비 45,312원/);
+  assert.equal(q.formatDateLabel(mj.date), '26.11.12(목)');
 
   const sejong = ledger.trips.find(function (row) { return row.id === '20261114-sejong-kim'; });
   assert.equal(sejong.contacts.length, 2);
