@@ -3,21 +3,24 @@
 월간보고 폴더는 이 화면으로 보낸다. 폼을 따로 두지 않는다.
 
     cd ~/yosulson/시세
-    python3 scripts/build_dashboard.py
+    python3 scripts/build_dashboard.py --month 2026-11 --as-of 2026-11-11
 """
 
+import argparse
+import calendar
+import datetime
 import html
 import json
 import os
+import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REPO = os.path.dirname(ROOT)
 OUT = os.path.join(REPO, "식재료시세분석", "index.html")
 DATA = os.path.join(ROOT, "data", "latest.json")
 SHOPPING = os.path.join(ROOT, "data", "shopping_buy.json")
+OUTLOOK = os.path.join(ROOT, "전망", "index.html")
 
-AUG = ("2026-08-01", "2026-08-31")
-SEP = ("2026-09-01", "2026-09-14")
 ALERT = 15
 CAT_ORDER = ["채소", "과일", "곡물", "축산물", "수산물"]
 CAT_CLASS = {"채소": "veg", "과일": "fruit", "곡물": "grain", "수산물": "fish", "축산물": "meat"}
@@ -119,6 +122,32 @@ CATALOG = [
 ]
 
 
+def parse_month(text):
+    year, month = text.split("-")
+    return int(year), int(month)
+
+
+def month_span(year, month):
+    last = calendar.monthrange(year, month)[1]
+    return datetime.date(year, month, 1), datetime.date(year, month, last)
+
+
+def previous_month(year, month):
+    if month == 1:
+        return year - 1, 12
+    return year, month - 1
+
+
+def next_month(year, month):
+    if month == 12:
+        return year + 1, 1
+    return year, month + 1
+
+
+def ym_label(day):
+    return "{}년 {}월".format(day.year, day.month)
+
+
 def match_item(entry_name, item):
     en = str(entry_name or "").strip()
     if not en:
@@ -205,7 +234,40 @@ def series_for(recs, item):
 
 
 def main():
-    with open(DATA, encoding="utf-8") as f:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--month", default="", help="보고 월 YYYY-MM. 기본은 오늘이 속한 달")
+    parser.add_argument("--as-of", default="", help="이번 달 평균의 마지막 날 YYYY-MM-DD")
+    parser.add_argument("--data", default=DATA)
+    parser.add_argument("--out", default=OUT)
+    args = parser.parse_args()
+
+    today = datetime.date.today()
+    if args.month:
+        year, month = parse_month(args.month)
+    else:
+        year, month = today.year, today.month
+    cur_start, cur_last = month_span(year, month)
+    as_of = datetime.date.fromisoformat(args.as_of) if args.as_of else min(today, cur_last)
+    if as_of < cur_start or as_of > cur_last:
+        print("오류: --as-of 가 보고 월 밖입니다.", file=sys.stderr)
+        return 1
+    py, pm = previous_month(year, month)
+    prev_start, prev_end = month_span(py, pm)
+    cur_window = (cur_start.isoformat(), as_of.isoformat())
+    prev_window = (prev_start.isoformat(), prev_end.isoformat())
+    partial = as_of < cur_last
+    cur_label = ym_label(cur_start)
+    prev_label = ym_label(prev_start)
+    cur_span = "{} {}일까지".format(cur_label, as_of.day) if partial else cur_label
+    if partial:
+        compare = "{}(한 달) → {} (각 구간 평균가)".format(prev_label, cur_span)
+    else:
+        compare = "{} → {} (각 월 평균가)".format(prev_label, cur_label)
+    title = "{} 식재료 시세 동향".format(cur_label)
+    file_stamp = "{:04d}-{:02d}".format(year, month)
+    partial_note = "{}은 {}일까지의 평균이라 한 달이 아닙니다.".format(cur_label, as_of.day) if partial else ""
+
+    with open(args.data, encoding="utf-8") as f:
         recs = json.load(f)
     if os.path.exists(SHOPPING):
         with open(SHOPPING, encoding="utf-8") as f:
@@ -216,8 +278,8 @@ def main():
     rows = []
     for item in CATALOG:
         series = series_for(recs, item)
-        cur = avg(series, *SEP)
-        prev = avg(series, *AUG)
+        cur = avg(series, *cur_window)
+        prev = avg(series, *prev_window)
         change = None
         cls, label = "na", "—"
         note = ""
@@ -230,7 +292,7 @@ def main():
                 change = (cur["price"] - prev["price"]) / prev["price"] * 100
                 cls, label = classify(change)
                 if cur["n"] <= 2:
-                    note = "9월 일수 적음"
+                    note = "{}월 조사 일수 적음".format(month)
         elif cur:
             note = "전월 데이터 없음"
         elif item["name"] in ("냉동대하", "냉동랍스테일"):
@@ -238,10 +300,10 @@ def main():
         rows.append({
             "cat": item["cat"], "name": item["name"], "cls": cls, "label": label, "note": note,
             "change": None if change is None else round(change, 1),
-            "sep": cur, "aug": prev, "spark": spark_pts(series, SEP[1]),
+            "cur": cur, "prev": prev, "spark": spark_pts(series, cur_window[1]),
         })
 
-    visible = [r for r in rows if r["sep"] or r["name"] in ("냉동대하", "냉동랍스테일")]
+    visible = [r for r in rows if r["cur"]]
     with_change = [r for r in visible if r["change"] is not None]
     up = [r for r in with_change if r["change"] > 5]
     down = [r for r in with_change if r["change"] < -5]
@@ -252,8 +314,12 @@ def main():
         [r for r in with_change if ALERT <= r["change"] < 150],
         key=lambda r: -(r["change"] or 0),
     )
-    kamis_n = sum(1 for r in recs if r.get("price") and "가락" not in str(r.get("source") or "") and "노량진" not in str(r.get("source") or ""))
-    live_n = sum(1 for r in recs if r.get("price") and is_live(r.get("source")))
+    span = [
+        r for r in recs
+        if r.get("price") and prev_window[0] <= (r.get("date") or "") <= cur_window[1]
+    ]
+    kamis_n = sum(1 for r in span if not is_live(r.get("source")))
+    live_n = sum(1 for r in span if is_live(r.get("source")))
 
     def mover(r):
         sign = "+" if r["change"] > 0 else ""
@@ -262,7 +328,7 @@ def main():
             '<div class="mover-meta">{}원/{} · 월평균</div></div>'
             '<div class="badge {}">{}{:.1f}%</div></div>'
         ).format(
-            html.escape(r["name"]), comma(r["sep"]["price"]), html.escape(r["sep"]["unit"]),
+            html.escape(r["name"]), comma(r["cur"]["price"]), html.escape(r["cur"]["unit"]),
             html.escape(r["cls"]), sign, r["change"],
         )
 
@@ -278,7 +344,7 @@ def main():
     }
 
     def shop_card():
-        shops = [r for r in visible if r["name"] in shop_meta and r.get("sep")]
+        shops = [r for r in visible if r["name"] in shop_meta and r.get("cur")]
         if not shops:
             return ""
         bits = []
@@ -289,7 +355,7 @@ def main():
                 '<div class="mover-meta">{}<br>당월 <strong>{}원/{}</strong>. {}</div></div>'
                 '<span class="badge flat">보합 참고</span></div>'.format(
                     html.escape(r["name"]), html.escape(title),
-                    comma(r["sep"]["price"]), html.escape(r["sep"]["unit"]),
+                    comma(r["cur"]["price"]), html.escape(r["cur"]["unit"]),
                     html.escape(note),
                 )
             )
@@ -311,7 +377,7 @@ def main():
                 '<td class="num"><span class="badge {}">+{:.1f}%</span></td>'
                 '<td class="mover-meta">선구매·대체 검토</td></tr>'.format(
                     html.escape(r["name"]), CAT_CLASS.get(r["cat"], ""), html.escape(r["cat"]),
-                    comma(r["sep"]["price"]), comma(r["aug"]["price"]),
+                    comma(r["cur"]["price"]), comma(r["prev"]["price"]),
                     html.escape(r["cls"]), r["change"],
                 )
             )
@@ -382,15 +448,15 @@ def main():
                 change_cell = '<span class="badge {}">{}{:.1f}%</span>'.format(
                     html.escape(r["cls"]), sign, r["change"]
                 )
-            if r["sep"]:
+            if r["cur"]:
                 if r["name"] in shop_meta:
                     extra = '<div class="mover-meta">{}</div>'.format(html.escape(shop_meta[r["name"]][0]))
                 else:
                     extra = '<div class="mover-meta">{}일 평균{}</div>'.format(
-                        r["sep"]["n"],
-                        (" · " + html.escape(r["sep"]["source"])) if r["sep"].get("source") else "",
+                        r["cur"]["n"],
+                        (" · " + html.escape(r["cur"]["source"])) if r["cur"].get("source") else "",
                     )
-                cur_cell = "{}원/{}".format(comma(r["sep"]["price"]), html.escape(r["sep"]["unit"]))
+                cur_cell = "{}원/{}".format(comma(r["cur"]["price"]), html.escape(r["cur"]["unit"]))
             else:
                 extra = '<div class="mover-meta">쿠팡·네이버 냉동 · 결제 단가 없음</div>'
                 cur_cell = '<span style="color:#a9a7a1">없음</span>'
@@ -405,7 +471,7 @@ def main():
                 '<td><canvas class="spark" id="{}"></canvas></td></tr>'.format(
                     html.escape(r["name"]), extra,
                     cur_cell,
-                    (comma(r["aug"]["price"]) + "원") if r.get("aug") else "—",
+                    (comma(r["prev"]["price"]) + "원") if r.get("prev") else "—",
                     change_cell, sid,
                 )
             )
@@ -423,13 +489,21 @@ def main():
             first = False
         cat_html.append("".join(pieces))
 
+    blank = [r["name"] for r in rows if not r["cur"]]
+    if blank:
+        blank_note = "{} 조사 없음(비움): {}. 지난 출하기 가격을 당월에 넣지 않습니다.".format(
+            cur_label, ", ".join(blank)
+        )
+    else:
+        blank_note = "이번 달 조사가 빈 품목은 없습니다."
+
     page = """<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-title" content="식재료 시세 분석">
-<title>요술손_시세월간보고_2026-09</title>
+<title>요술손_시세월간보고_""" + file_stamp + """</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f7f6f2;color:#28251d;font-size:16px;line-height:1.6}
@@ -541,8 +615,8 @@ caption.cat-h{display:table-caption;caption-side:top;text-align:left;margin:0 0 
 <main>
   <div class="print-banner">
     <div class="brand">요술손케이터링</div>
-    <div class="ptitle">2026년 9월 식재료 시세 동향</div>
-    <div class="pmeta">요술손케이터링 · KAMIS·가락도매·노량진경락(월평균) · 비교 2026년 8월 → 2026년 9월 · 시세 품목 """ + str(len(visible)) + """개</div>
+    <div class="ptitle">""" + html.escape(title) + """</div>
+    <div class="pmeta">요술손케이터링 · KAMIS·가락도매·노량진경락(월평균) · 비교 """ + html.escape(compare) + """ · 시세 품목 """ + str(len(visible)) + """개</div>
   </div>
   <h1>식재료 시세 월간 보고</h1>
   <p class="subtitle">구매 대비·대체 판단을 위한 시장 시세 동향 보고서 (원가 장부가 아님)</p>
@@ -552,9 +626,9 @@ caption.cat-h{display:table-caption;caption-side:top;text-align:left;margin:0 0 
     <div class="report-head">
       <div>
         <div class="card-title">보고서</div>
-        <div style="font-size:20px;font-weight:700">2026년 9월 식재료 시세 동향</div>
+        <div style="font-size:20px;font-weight:700">""" + html.escape(title) + """</div>
       </div>
-      <div class="report-meta">비교 기준: 2026년 8월 → 2026년 9월 (각 월 <strong>평균가</strong>)<br>
+      <div class="report-meta">비교 기준: """ + html.escape(compare) + """<br>
       시세 있는 품목 """ + str(len(visible)) + """ / 전체 """ + str(len(rows)) + """개 · 기록 """ + str(kamis_n) + """건""" + (" · 가락/노량진 {}건".format(live_n) if live_n else "") + """</div>
     </div>
     <div class="stat-grid">
@@ -592,8 +666,8 @@ caption.cat-h{display:table-caption;caption-side:top;text-align:left;margin:0 0 
   <p class="footer-note">
     출처: KAMIS 소매. 소매 조사가 있으면 소매를 쓰고, 없는 품목만 가락·노량진으로 보완합니다. 실제 구매처 단가와 다를 수 있습니다.
     보고 범위: 채소·과일·곡물·축산물·수산물. 버터·치즈·소스 등 가공품은 제외.
-    냉동대하: 쿠팡 DIAMOND 홍다리 얼룩새우 20미/500g(2026-09-14 로켓프레시 12,500원). 냉동랍스테일: 꼬리 4oz(약 110g)×약 40미/4.54kg 박스. 통마리 랍스터·활대하·노량진은 쓰지 않음.
-    9월 조사 없음(비움): 딸기, 단감, 참다래, 무, 깐마늘(수입), 닭가슴살, 닭북채, 삼치. 지난 출하기 가격을 당월에 넣지 않습니다.
+    """ + html.escape(partial_note) + """
+    """ + html.escape(blank_note) + """
   </p>
 </main>
 <script>
@@ -633,11 +707,116 @@ caption.cat-h{display:table-caption;caption-side:top;text-align:left;margin:0 0 
 </body>
 </html>
 """
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    with open(OUT, "w", encoding="utf-8") as f:
+    os.makedirs(os.path.dirname(args.out), exist_ok=True)
+    with open(args.out, "w", encoding="utf-8") as f:
         f.write(page)
-    print("시세 {}개 표시 → {}".format(len(visible), OUT))
+    ny, nm = next_month(year, month)
+    write_outlook(rows, cur_label, "{}년 {}월".format(ny, nm), as_of, partial, compare)
+    print("시세 {}개 표시 → {}".format(len(visible), args.out))
     return 0
+
+
+def write_outlook(rows, cur_label, next_label, as_of, partial, compare):
+    changed = [r for r in rows if r.get("change") is not None and r.get("cur")]
+    good = [r for r in sorted(changed, key=lambda r: r["change"]) if r["change"] <= -8][:5]
+    heavy = [r for r in sorted(changed, key=lambda r: -(r["change"] or 0)) if r["change"] >= ALERT][:6]
+    by_name = {r["name"]: r for r in rows}
+
+    def line(name, text):
+        return '<div class="item"><strong>{}</strong><span>{}</span></div>'.format(
+            html.escape(name), html.escape(text)
+        )
+
+    def price_line(r):
+        sign = "+" if r["change"] > 0 else ""
+        return line(
+            r["name"],
+            "전월 대비 {}{:.1f}%. {}원/{}.".format(
+                sign, r["change"], comma(r["cur"]["price"]), r["cur"]["unit"]
+            ),
+        )
+
+    good_html = "".join(price_line(r) for r in good) or '<div class="item"><span>전월보다 8% 넘게 내린 품목이 없습니다.</span></div>'
+    heavy_html = "".join(price_line(r) for r in heavy) or '<div class="item"><span>급등 기준(15%)을 넘긴 품목이 없습니다.</span></div>'
+    later = []
+    berry = by_name.get("딸기")
+    if not berry or not berry.get("cur"):
+        later.append(line("딸기", "국산 설향은 12월 전후. 이번 달 조사는 비워 둡니다."))
+    cabbage = by_name.get("배추")
+    cabbage_note = ""
+    if cabbage and cabbage.get("change") is not None:
+        sign = "+" if cabbage["change"] > 0 else ""
+        cabbage_note = "배추는 전월 대비 {}{:.1f}% ({}원/{}).".format(
+            sign, cabbage["change"], comma(cabbage["cur"]["price"]), cabbage["cur"]["unit"]
+        )
+    when = "{} {}일까지".format(cur_label, as_of.day) if partial else cur_label
+    page = """<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>다음 달 제철 — 요술손</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f7f6f2;color:#28251d;font-size:16px;line-height:1.6}
+header{background:#fff;border-bottom:1px solid #e0ddd8;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;color:#01696f;text-decoration:none}
+.logo-icon{width:32px;height:32px;background:#01696f;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hdr-link{font-size:12px;color:#01696f;text-decoration:none;border-bottom:1px solid #01696f;font-weight:600}
+main{max-width:720px;margin:0 auto;padding:24px 16px 88px}
+h1{font-size:26px;font-weight:700;margin-bottom:6px}
+.subtitle{font-size:14px;color:#7a7974;margin-bottom:20px}
+.card{background:#fff;border:1px solid #e0ddd8;border-radius:16px;padding:20px;margin-bottom:12px}
+.card-title{font-size:11px;font-weight:700;color:#7a7974;letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px}
+.item{padding:10px 0;border-bottom:1px solid #e8e6e1}
+.item:last-child{border-bottom:none}
+.item strong{display:block;font-size:16px}
+.item span{font-size:13px;color:#7a7974}
+.note{font-size:13px;color:#7a7974;margin-top:8px;line-height:1.65}
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="../../식재료시세분석/index.html">
+    <div class="logo-icon">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M4 12l3-8 3 8" stroke="white" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M10 12l3-8 3 8" stroke="white" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>
+        <rect x="3.5" y="13" width="13" height="1.6" rx=".8" fill="white" opacity=".7"/>
+      </svg>
+    </div>
+    요술손케이터링
+  </a>
+  <a class="hdr-link" href="../../식재료시세분석/index.html">월간 보고 · PDF</a>
+</header>
+<main>
+  <h1>다음 달 제철</h1>
+  <p class="subtitle">""" + html.escape(when) + """ 시세와 겹친 구매·대체 참고입니다. """ + html.escape(cabbage_note) + """</p>
+
+  <div class="card">
+    <div class="card-title">""" + html.escape(cur_label) + """ — 쓰기 좋은 쪽</div>
+    """ + good_html + """
+  </div>
+
+  <div class="card">
+    <div class="card-title">""" + html.escape(cur_label) + """ — 부담 · 대체 검토</div>
+    """ + heavy_html + """
+  </div>
+
+  <div class="card">
+    <div class="card-title">""" + html.escape(next_label) + """에 열리는 쪽</div>
+    """ + ("".join(later) or '<div class="item"><span>이번 수집에서 다음 달로 미룰 품목을 따로 두지 않았습니다.</span></div>') + """
+  </div>
+
+  <p class="note">출처: KAMIS 소매. 비교 """ + html.escape(compare) + """. 작황 예언이 아니라 이번 달 조사 평균입니다.</p>
+</main>
+</body>
+</html>
+"""
+    with open(OUTLOOK, "w", encoding="utf-8") as f:
+        f.write(page)
+    print("전망 → {}".format(OUTLOOK))
 
 
 if __name__ == "__main__":
