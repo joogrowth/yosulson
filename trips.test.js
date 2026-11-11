@@ -202,18 +202,26 @@ test('confirmed trips stay tied to the quote that was given', function () {
     percentMode: jung.percentMode
   });
   assert.equal(jungQuote.ready, true);
+  assert.equal(jung.depart, '09:20');
+  assert.equal(jung.arrive, '10:30');
+  assert.equal(jung.goMin, 70);
+  assert.equal(jung.backMin, 70);
   assert.deepEqual(jungQuote.rows.map(function (row) { return row.total; }), jung.quoted.totals);
-  assert.equal(q.formatDateLabel(jung.date), '26.11.16(월)');
+  assert.equal(q.formatDateLabel(jung.date), '26.11.17(화)');
   assert.match(jungQuote.text, /보건원/);
+  assert.match(jungQuote.text, /인건비 제외 차량유지비 23,880원/);
 
   const nowon = ledger.trips.find(function (row) { return row.id === '20261116-nowon-park'; });
-  assert.equal(nowon.date, jung.date);
+  assert.equal(nowon.date, '2026-11-16');
+  assert.notEqual(nowon.date, jung.date);
+  assert.equal(nowon.depart, '09:10');
+  assert.equal(nowon.arrive, '10:30');
   assert.notEqual(nowon.place, jung.place);
   assert.equal(nowon.percentMode, 'none');
   assert.equal(nowon.fuel, 7000);
   assert.equal(nowon.backMin, 60);
   assert.equal(nowon.toll, 2600);
-  assert.equal(nowon.revisions.length, 4);
+  assert.equal(nowon.revisions.length, 6);
   const nowonQuote = q.buildQuote({
     type: nowon.type,
     person: nowon.person,
