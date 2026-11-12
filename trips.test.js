@@ -8,7 +8,7 @@ const q = require('./quote.js');
 const ledger = JSON.parse(fs.readFileSync('./data/trips.json', 'utf8'));
 
 test('confirmed trips stay tied to the quote that was given', function () {
-  assert.equal(ledger.trips.length, 17);
+  assert.equal(ledger.trips.length, 18);
   const trip = ledger.trips.find(function (row) { return row.id === '20261114-avril-imyeonjeong'; });
   assert.equal(trip.id, '20261114-avril-imyeonjeong');
   assert.equal(trip.place, '광명 아브릴모마 2부');
@@ -479,6 +479,40 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.deepEqual(hyuncheolQuote.rows.map(function (row) { return row.total; }), hyuncheol.quoted.totals);
   assert.match(hyuncheolQuote.text, /인건비 제외 차량유지비 23,764원/);
   assert.equal(q.formatDateLabel(hyuncheol.date), '26.11.18(수)');
+
+  const kang = ledger.trips.find(function (row) { return row.id === '20261117-itaewon-kang'; });
+  assert.equal(kang.person, '강슬');
+  assert.equal(kang.inheritedFrom, '20261110-itaewon-kang');
+  assert.deepEqual(kang.inheritedFields, ['km', 'fuel', 'toll', 'goMin', 'backMin']);
+  assert.equal(kang.fixedDeliveryFee, 40000);
+  assert.equal(kang.headcount, 15);
+  const kangQuote = q.buildQuote({
+    type: kang.type,
+    person: kang.person,
+    event: kang.event,
+    date: kang.date,
+    phone: kang.phone,
+    contacts: kang.contacts,
+    depart: kang.depart,
+    arrive: kang.arrive,
+    eventTime: kang.eventTime,
+    place: kang.place,
+    items: kang.items,
+    km: kang.km,
+    fuel: kang.fuel,
+    toll: kang.toll,
+    goMin: kang.goMin,
+    backMin: kang.backMin,
+    includeBand: kang.includeBand,
+    percentMode: kang.percentMode,
+    extras: kang.extras,
+    fixedDeliveryFee: kang.fixedDeliveryFee
+  });
+  assert.equal(kangQuote.ready, true);
+  assert.equal(kangQuote.minutes, 140);
+  assert.deepEqual(kangQuote.rows.map(function (row) { return row.total; }), kang.quoted.totals);
+  assert.match(kangQuote.text, /고정배송비용 40,000원/);
+  assert.equal(q.formatDateLabel(kang.date), '26.11.17(화)');
 
   const sejong = ledger.trips.find(function (row) { return row.id === '20261114-sejong-kim'; });
   assert.equal(sejong.contacts.length, 2);

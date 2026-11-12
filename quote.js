@@ -611,7 +611,7 @@
   }
 
   function looksLikeInstruction(line) {
-    return /(?:해줘|해주세요|뽑아|참고|기입|계산해|알겠지|부탁해|부탁드립니다)/.test(line);
+    return /(?:해줘|해주세요|뽑아|참고|기입|계산해|계산은|넣어주|마지막에|알겠지|부탁해|부탁드립니다)/.test(line);
   }
 
   function nextContentLine(lines, index) {
@@ -985,14 +985,18 @@
     var namedContacts = contacts.filter(function (c) { return c.name; });
     if (input.person || namedContacts.length) {
       lines.push('');
+      var onlySelf = namedContacts.length > 0 && namedContacts.every(function (c) { return c.name === input.person; });
       if (input.person) {
         var phone = input.phone ? formatPhone(input.phone) : '';
         var phoneIsNamed = namedContacts.some(function (c) { return c.phone && formatPhone(c.phone) === phone; });
-        if (phone && !phoneIsNamed) lines.push('담당자: ' + input.person + ' (' + phone + ')');
+        if (onlySelf) {
+          var selfPhone = formatPhone((namedContacts[0] && namedContacts[0].phone) || input.phone);
+          lines.push('담당자: ' + input.person + (selfPhone ? ' (' + selfPhone + ')' : ''));
+        } else if (phone && !phoneIsNamed) lines.push('담당자: ' + input.person + ' (' + phone + ')');
         else if (namedContacts.length) lines.push('담당자: ' + input.person);
         else lines.push('담당자: ' + input.person + ' (연락처 확인중)');
       }
-      if (namedContacts.length) {
+      if (namedContacts.length && !onlySelf) {
         var bits = namedContacts.map(function (c) {
           var p = c.phone ? formatPhone(c.phone) : '';
           return p ? c.name + ' (' + p + ')' : c.name;
@@ -1061,6 +1065,7 @@
     tail += ')';
     lines.push(tail);
     lines.push(model.parking > 0 ? '주차비 ' + formatWon(model.parking) + ' (별도)' : '주차비 별도');
+    if (model.fixedDeliveryFee > 0) lines.push('고정배송비용 ' + formatWon(model.fixedDeliveryFee));
     return lines.join('\n');
   }
 
@@ -1152,7 +1157,8 @@
         extras: extras,
         percentMode: percentMode,
         vehicle: vehicle,
-        parking: parking
+        parking: parking,
+        fixedDeliveryFee: asMoney(input.fixedDeliveryFee || 0)
       });
     }
 
