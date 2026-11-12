@@ -9,7 +9,8 @@
 - 근퇴: https://github.com/joogrowth/yosulson/tree/main/근퇴
 - 식자재: https://github.com/joogrowth/yosulson/tree/main/식자재
 
-챗지피티, 클로드, 제미나이, 커서는 고칠 영역의 주소를 열고 그 코드를 이어서 수정한 뒤, 결과를 다시 이 저장소에 올린다.
+챗지피티, 클로드, 제미나이, 커서는 고칠 영역의 주소를 열고, 그 안 `기억.md`를 먼저 읽은 뒤 코드를 이어서 수정하고, 결과를 다시 이 저장소에 올린다.
+커서는 루트 `AGENTS.md`와 `.cursor/rules/`로 영역 역할을 공통으로 잡는다.
 
 드라이브에 있는 예전 지침의 숫자는 현재 규칙으로 쓰지 않는다.
 

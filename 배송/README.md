@@ -1,7 +1,13 @@
 # 배송
 
-주소: https://github.com/joogrowth/yosulson/tree/main/배송
+제원을 받으면 견적을 계산해 카톡 복붙용 문장으로 답한다. 계산기 화면을 사람이 직접 쓰지 않아도 된다. 복붙 견적은 배송견적 기록 시트에 자동으로 넣는다.
 
-배송비 계산기 화면은 `index.html` 이다. 종류는 배송, 배송세팅, 출장이다. 계산을 고칠 때는 이 파일을 읽고 고친다.
+먼저 읽을 파일:
 
-드라이브의 예전 배송견적 지침 숫자는 현재 규칙으로 쓰지 않는다.
+- 운영 기억: `기억.md`
+- 다른 AI용 작업 지침: `지침.md`
+- 계산 코드: `index.html`
+
+배송견적 기록: https://docs.google.com/spreadsheets/d/1O6IKOZMn_7q1Ru_NEWfYbOEFoUaKXXH2sBYqGKsRdhg/edit
+
+드라이브 같은 지침: https://drive.google.com/file/d/19kYU-NWBMxj7W3R0BXatXo7deRllWP35/view

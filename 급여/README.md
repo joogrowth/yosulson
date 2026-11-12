@@ -1,5 +1,7 @@
 # 급여
 
+먼저 `기억.md`를 읽습니다.
+
 명세서가 있는 드라이브 폴더입니다.
 
 https://drive.google.com/drive/folders/1WIGEvzWsNlLR2JalU1CRMy-5Ebs0WBw5

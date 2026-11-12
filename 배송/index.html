@@ -135,7 +135,7 @@ input:disabled{opacity:.4;cursor:not-allowed}
 
   <div class="card">
     <div class="card-title">배송 수고비 구성</div>
-    <div class="sur-info" id="sur-info">거리 입력 시 기본 구간 수고비가 자동 계산됨</div>
+    <div class="sur-info" id="sur-info">사용자가 말한 추가 수고비만 넣는다. 구간 수고비는 쓰지 않는다.</div>
     <div class="sur-list" id="sur-list">
       <div class="sur-item">
         <input type="text" value="적재수고비" placeholder="항목명">
@@ -208,20 +208,6 @@ input:disabled{opacity:.4;cursor:not-allowed}
   function fmt(n){ return comma(n)+'원'; }
   function up100(n){ return Math.ceil(n/100)*100; }
 
-  function band(km){
-    if(km<=40)return 8000; if(km<=60)return 9000; if(km<=80)return 10000;
-    if(km<=100)return 11000; if(km<=120)return 12000; if(km<=140)return 13000;
-    if(km<=160)return 14000; if(km<=180)return 15000; if(km<=200)return 16000;
-    return 17000;
-  }
-  function bandLbl(km){
-    if(km<=40)return '40km 이하'; if(km<=60)return '41~60km 구간';
-    if(km<=80)return '61~80km 구간'; if(km<=100)return '81~100km 구간';
-    if(km<=120)return '101~120km 구간'; if(km<=140)return '121~140km 구간';
-    if(km<=160)return '141~160km 구간'; if(km<=180)return '161~180km 구간';
-    if(km<=200)return '181~200km 구간'; return '201km↑';
-  }
-
   // 탭
   var tabs = document.querySelectorAll('.type-tab');
   for(var i=0;i<tabs.length;i++){
@@ -240,14 +226,6 @@ input:disabled{opacity:.4;cursor:not-allowed}
   q('park-on').addEventListener('change', function(){
     q('park-val').disabled = !this.checked;
     if(this.checked) q('park-val').focus(); else q('park-val').value='';
-  });
-
-  // 거리 안내
-  q('f-dist').addEventListener('input', function(){
-    var km = (parseFloat(this.value)||0)*2;
-    q('sur-info').textContent = km>0
-      ? '기본 수고비: 왕복 '+km+'km ('+bandLbl(km)+') → '+comma(band(km))+'원 자동 포함'
-      : '거리 입력 시 기본 구간 수고비가 자동 계산됨';
   });
 
   // 항목 추가/삭제
@@ -331,9 +309,8 @@ input:disabled{opacity:.4;cursor:not-allowed}
     var roundKm  = dist*2;
     var vehCost  = Math.round(roundKm*222);
     var fuelCost = up100(fuel*2);
-    var baseSur  = band(roundKm);
     var extraSur = extras.reduce(function(a,b){ return a+b.val; },0);
-    var totalSur = baseSur+extraSur;
+    var totalSur = extraSur;
     var tollCost = tollOn?tollVal*2:0;
 
     var dateStr='';
@@ -362,17 +339,19 @@ input:disabled{opacity:.4;cursor:not-allowed}
     var hStr=Math.floor(totalMin/60)+'시간'+(totalMin%60?' '+(totalMin%60)+'분':'');
     var laborStr=labors.map(fmt).join(' / ');
     var laborSub=wages.map(function(w){ return '시급 '+comma(w)+'원 × 왕복 '+hStr; }).join(' / ');
-    var surSub='왕복 '+roundKm+'km → '+bandLbl(roundKm)+' 기본 '+fmt(baseSur);
-    extras.forEach(function(e){ surSub+=' + '+e.label+' '+fmt(e.val); });
+    var surSub='';
+    extras.forEach(function(e,i){ surSub+=(i?' + ':'')+e.label+' '+fmt(e.val); });
     var vehSub='왕복 '+roundKm+'km × 222원/km / 감가상각·소모품·유지비 포함 / 유류비 제외';
     var fuelSub='편도 '+comma(fuel)+'원 × 왕복 2 = '+comma(fuel*2)+'원 → 100단위 올림';
 
     var rows=[
-      {l:'배송 인건비', v:laborStr,    s:laborSub},
-      {l:'배송 수고비', v:fmt(totalSur),s:surSub},
+      {l:'배송 인건비', v:laborStr,    s:laborSub}
+    ];
+    if(totalSur>0) rows.push({l:'배송 수고비', v:fmt(totalSur),s:surSub});
+    rows.push(
       {l:'차량 운영비', v:fmt(vehCost), s:vehSub},
       {l:'유류비',      v:fmt(fuelCost),s:fuelSub}
-    ];
+    );
     if(tollOn&&tollVal>0) rows.push({l:'통행료',v:fmt(tollCost),s:'편도 '+fmt(tollVal)+' × 왕복 2'});
     if(parkOn&&parkVal>0) rows.push({l:'주차비',v:fmt(parkVal),s:'현장 실비 / 실정산 시 조정'});
 
@@ -396,7 +375,7 @@ input:disabled{opacity:.4;cursor:not-allowed}
     if(items)   copyLines.push('품목: '+items);
     copyLines.push('');
     copyLines.push('•배송 인건비 '+laborStr); copyLines.push('('+laborSub+')');
-    copyLines.push('•배송 수고비 '+fmt(totalSur)); copyLines.push('('+surSub+')');
+    if(totalSur>0){ copyLines.push('•배송 수고비 '+fmt(totalSur)); copyLines.push('('+surSub+')'); }
     copyLines.push('•차량 운영비 '+fmt(vehCost)); copyLines.push('('+vehSub+')');
     copyLines.push('•유류비 '+fmt(fuelCost)); copyLines.push('('+fuelSub+')');
     if(tollOn&&tollVal>0){ copyLines.push('•통행료 '+fmt(tollCost)); copyLines.push('(편도 '+fmt(tollVal)+' × 왕복 2)'); }
