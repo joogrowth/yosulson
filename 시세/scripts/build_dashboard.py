@@ -449,8 +449,8 @@ def main():
                     pct = purchase_pct(r)
                     pcls, _plabel = classify(pct)
                     psign = "+" if pct > 0 else ""
-                    change_cell = '<span class="badge {}" title="{}">9월 대비 {}{:.1f}%</span>'.format(
-                        html.escape(pcls), html.escape(shop_meta[r["name"]][1]), psign, pct,
+                    change_cell = '<span class="badge {}">9월 대비 {}{:.1f}%</span>'.format(
+                        html.escape(pcls), psign, pct,
                     )
                 else:
                     if r["note"] == "전월 데이터 없음":
@@ -459,9 +459,7 @@ def main():
                         badge = r["note"]
                     else:
                         badge = "제외" if r["note"] else "—"
-                    change_cell = '<span class="badge na" title="{}">{}</span>'.format(
-                        html.escape(r["note"]), html.escape(badge)
-                    )
+                    change_cell = '<span class="badge na">{}</span>'.format(html.escape(badge))
             else:
                 change_cell = '<span class="badge {}">{}{:.1f}%</span>'.format(
                     html.escape(r["cls"]), sign, r["change"]
