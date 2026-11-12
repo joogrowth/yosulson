@@ -8,7 +8,7 @@
 - 다른 AI용 작업 지침: `지침.md`
 - 계산 코드: `index.html`
 
-배송견적 기록(최종): https://docs.google.com/spreadsheets/d/1Agm12-QxBM8v2kETON-qqnWu64VRpOaiy9_mm05LBVU/edit
+배송견적 기록(최종): https://docs.google.com/spreadsheets/d/1VaFa6dEGABF8aZzrIM9fjKfIqE_OckgFQvFMMhWUExQ/edit
 
 드라이브 배송 폴더: https://drive.google.com/drive/folders/1dp5kli6RcOj-37_-z6Q-nFAPuBXRndfb
 
