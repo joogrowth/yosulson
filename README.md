@@ -31,7 +31,7 @@ python3 scripts/build_dashboard.py --month YYYY-MM --as-of YYYY-MM-DD
 
 ## 근퇴
 
-출퇴근 코드는 이 저장소에 없다. 근무기록 시트는 복사하거나 이름을 바꾸지 않는다.
+`근퇴/index.html` 을 열면 지금 쓰는 근무기록 시트로 이동한다. 시트 주소는 바꾸지 않았다. 출퇴근은 이 시트로 계속 기록된다.
 
 https://docs.google.com/spreadsheets/d/1WO7kMn7Hm5CACOj0WthlIpDA2KB-wHZ5bWwiJmPs7qk/edit
 
