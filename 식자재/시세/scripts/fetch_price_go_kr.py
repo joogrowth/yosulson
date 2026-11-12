@@ -21,7 +21,7 @@ price-insight.html이 가져올 수 있는 JSON으로 변환하는 스크립트.
 사용 예시
 ---------
     export PRICEGOKR_SERVICE_KEY="발급받은키(디코딩 안 된 원본 그대로)"
-    cd ~/yosulson/시세
+    cd ~/yosulson/식자재/시세
     python3 scripts/fetch_price_go_kr.py --keyword 두부 --keyword 만두 --out data/pricegokr_latest.json
 """
 

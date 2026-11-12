@@ -20,7 +20,7 @@ https://www.kamis.or.kr 에서 회원가입 후 "고객센터 > Open-API > Open-
 ---------------------------
 아래 ITEMS 목록에 항목을 추가하면 됨. 정확한 코드는 KAMIS 고객센터 > Open-API >
 Open-API 이용안내 하단 첨부파일 "농축수산물 품목 및 등급 코드표"(같은 파일이
-시세/data/reference/kamis_품목_등급_코드표.xlsx 에도 저장되어 있음)에서 확인.
+식자재/시세/data/reference/kamis_품목_등급_코드표.xlsx 에도 저장되어 있음)에서 확인.
 - 채소/과일/곡물: itemcategorycode + itemcode + kindcode 모두 필요
 - 축산물(소/돼지/닭/계란/우유): itemcode + kindcode만 필요 (itemcategorycode 없음,
   코드표에 "축산물데이터는 축평원 데이터 사용, 부류코드 없이 조회"라고 명시됨)
@@ -29,7 +29,7 @@ Open-API 이용안내 하단 첨부파일 "농축수산물 품목 및 등급 코
 ---------
     export KAMIS_CERT_KEY="발급받은키"
     export KAMIS_CERT_ID="발급받은아이디"
-    cd ~/yosulson/시세
+    cd ~/yosulson/식자재/시세
     python3 scripts/fetch_kamis_prices.py --days 30 --out data/kamis_latest.json
 
 출력된 JSON 파일은 price-insight.html의 "시세 입력 > 가져오기/내보내기" 카드에서
@@ -69,7 +69,7 @@ DEFAULT_COUNTRY_CODE = "3138"  # 고양(일산)
 # 않았는데, 특정 등급을 고정하면 그 등급 조사 데이터가 없는 날 전체가 실패로 처리되는
 # 문제가 있어 등급 제한 없이(=KAMIS가 그날 조사된 등급을 알아서 주도록) 조회함.
 # 품목당 여러 품종이 있을 경우 가장 일반적인(수입/냉동/염장 등이 아닌) 품종 1개를
-# 대표로 선택함. 필요 없는 품목은 지워도 되고, 시세/data/reference/kamis_품목_등급_코드표.xlsx의
+# 대표로 선택함. 필요 없는 품목은 지워도 되고, 식자재/시세/data/reference/kamis_품목_등급_코드표.xlsx의
 # "코드통합" 시트를 보고 다른 품종으로 바꿔도 됨.
 PRODUCE_ITEMS = [
     {"label": "쌀", "category": "곡물", "unit": "20kg", "itemcategorycode": "100", "itemcode": "111", "kindcode": "01"},

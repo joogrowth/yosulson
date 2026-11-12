@@ -5,7 +5,7 @@
 공개 조회 화면을 날짜·어종별로 요청한 뒤 표를 읽는다. 당일 실제 낙찰
 평균가를 쓰며, 출하기를 이월하지 않는다.
 
-    cd ~/yosulson/시세
+    cd ~/yosulson/식자재/시세
     python3 scripts/fetch_noryangjin_prices.py --days 45 --out data/noryangjin_latest.json
 """
 

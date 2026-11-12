@@ -5,7 +5,7 @@
 가락·노량진 실거래가 있는 날은 그 값이 들어간다. 직전 출하기 가격을
 당월로 복사하지 않는다.
 
-    cd ~/yosulson/시세
+    cd ~/yosulson/식자재/시세
     python3 scripts/fetch_month.py --days 45 --out data/latest.json
 """
 

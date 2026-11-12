@@ -1,13 +1,14 @@
 # 요술손 작업을 잇는 AI
 
-이 저장소가 현재 프로그램이다. 저장소는 공개되어 있다.
+저장소는 공개되어 있고, 영역마다 주소가 다르다.
 
-https://github.com/joogrowth/yosulson
+- 배송: https://github.com/joogrowth/yosulson/tree/main/배송
+- 급여: https://github.com/joogrowth/yosulson/tree/main/급여
+- 근퇴: https://github.com/joogrowth/yosulson/tree/main/근퇴
+- 식자재: https://github.com/joogrowth/yosulson/tree/main/식자재
 
-시작 전에 README.md 를 읽는다. 배송 계산은 `index.html`, 식자재 월간 보고는 `식재료시세분석/index.html` 과 `시세/scripts/` 를 읽고 고친다.
+배송 계산은 `배송/index.html` 을 읽고 고친다. 식자재 월간 보고는 `식자재/식재료시세분석/index.html` 과 `식자재/시세/scripts/` 를 읽고 고친다.
 
-드라이브의 배송견적 지침, 식자재 시세 월간보고 지침, 급여명세서 지침은 예전 자료다. 그 숫자를 현재 규칙으로 적용하지 않는다.
+근퇴 근무기록 시트는 복사하거나 이름을 바꾸지 않는다. 급여 계산 코드는 이 저장소에 없다.
 
-근퇴 근무기록 시트는 복사하거나 이름을 바꾸지 않는다. 급여 계산 코드는 이 저장소에 없고, 명세서 파일은 드라이브 요술손/급여에 있다.
-
-코드와 작업 결과는 이 저장소로 다시 올린다.
+드라이브의 예전 지침 숫자는 현재 규칙으로 적용하지 않는다. 코드와 작업 결과는 이 저장소로 다시 올린다.
