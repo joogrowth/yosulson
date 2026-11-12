@@ -126,7 +126,7 @@
       "update_cycle": "일별",
       "formats": ["html"],
       "description": "국내 최대 농산물 도매시장인 가락시장의 품목별 경락가격 정보. 대량 구매를 하는 업체의 도매가 기준선으로 참고하기 좋음.",
-      "notes": "자동 수집: 시세/scripts/fetch_month.py 가 KAMIS 서울 도매(가락 조사분)를 가락도매 출처로 저장함. 가락 홈 경락 그리드는 별도 BI 권한이라 공개 API로 숫자 표를 받지 못함."
+      "notes": "자동 수집: 식자재/시세/scripts/fetch_month.py 가 KAMIS 서울 도매(가락 조사분)를 가락도매 출처로 저장함. 가락 홈 경락 그리드는 별도 BI 권한이라 공개 API로 숫자 표를 받지 못함."
     },
     {
       "id": "noryangjin-market",
@@ -140,7 +140,7 @@
       "update_cycle": "일별",
       "formats": ["html"],
       "description": "노량진 경매 낙찰 평균가. 굴·조기·오징어 등 수산 실거래 벤치마크.",
-      "notes": "시세/scripts/fetch_noryangjin_prices.py 가 어종별 일별 조회 화면을 읽어 JSON으로 저장함."
+      "notes": "식자재/시세/scripts/fetch_noryangjin_prices.py 가 어종별 일별 조회 화면을 읽어 JSON으로 저장함."
     }
   ]
 }

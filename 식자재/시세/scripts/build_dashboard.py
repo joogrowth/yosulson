@@ -2,7 +2,7 @@
 """latest.json으로 식재료시세분석(월간 보고) 화면을 만든다.
 월간보고 폴더는 이 화면으로 보낸다. 폼을 따로 두지 않는다.
 
-    cd ~/yosulson/시세
+    cd ~/yosulson/식자재/시세
     python3 scripts/build_dashboard.py --month 2026-11 --as-of 2026-11-11
 """
 
