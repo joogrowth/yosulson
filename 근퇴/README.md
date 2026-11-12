@@ -1,5 +1,7 @@
 # 근퇴
 
+먼저 `기억.md`를 읽습니다.
+
 직원 로그인 주소입니다. 단톡방에 올린 주소와 같습니다.
 
 https://script.google.com/macros/s/AKfycbzEEnzF019IyqOCB6RF-gcJXMPuEmcHnXpcKERaTyJx7H0pTFZxXwg8u8Rbyo53ekku/exec
