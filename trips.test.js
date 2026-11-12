@@ -8,7 +8,7 @@ const q = require('./quote.js');
 const ledger = JSON.parse(fs.readFileSync('./data/trips.json', 'utf8'));
 
 test('confirmed trips stay tied to the quote that was given', function () {
-  assert.equal(ledger.trips.length, 16);
+  assert.equal(ledger.trips.length, 17);
   const trip = ledger.trips.find(function (row) { return row.id === '20261114-avril-imyeonjeong'; });
   assert.equal(trip.id, '20261114-avril-imyeonjeong');
   assert.equal(trip.place, '광명 아브릴모마 2부');
@@ -444,6 +444,41 @@ test('confirmed trips stay tied to the quote that was given', function () {
   assert.deepEqual(mjQuote.rows.map(function (row) { return row.total; }), mj.quoted.totals);
   assert.match(mjQuote.text, /인건비 제외 차량유지비 45,312원/);
   assert.equal(q.formatDateLabel(mj.date), '26.11.12(목)');
+
+  const hyuncheol = ledger.trips.find(function (row) { return row.id === '20261118-gangnam-choi'; });
+  assert.equal(hyuncheol.person, '최현철');
+  assert.equal(hyuncheol.km, 31);
+  assert.equal(hyuncheol.fuel, 5000);
+  assert.equal(hyuncheol.toll, 0);
+  assert.equal(hyuncheol.goMin, 80);
+  assert.equal(hyuncheol.backMin, 120);
+  assert.equal(hyuncheol.phone, '010 2370 1262');
+  const hyuncheolQuote = q.buildQuote({
+    type: hyuncheol.type,
+    person: hyuncheol.person,
+    event: hyuncheol.event,
+    date: hyuncheol.date,
+    phone: hyuncheol.phone,
+    depart: hyuncheol.depart,
+    arrive: hyuncheol.arrive,
+    eventTime: hyuncheol.eventTime,
+    place: hyuncheol.place,
+    items: hyuncheol.items,
+    km: hyuncheol.km,
+    fuel: hyuncheol.fuel,
+    toll: hyuncheol.toll,
+    goMin: hyuncheol.goMin,
+    backMin: hyuncheol.backMin,
+    includeBand: hyuncheol.includeBand,
+    percentMode: hyuncheol.percentMode,
+    extras: hyuncheol.extras
+  });
+  assert.equal(hyuncheolQuote.ready, true);
+  assert.equal(hyuncheolQuote.minutes, 200);
+  assert.equal(hyuncheolQuote.vehicle, 13764);
+  assert.deepEqual(hyuncheolQuote.rows.map(function (row) { return row.total; }), hyuncheol.quoted.totals);
+  assert.match(hyuncheolQuote.text, /인건비 제외 차량유지비 23,764원/);
+  assert.equal(q.formatDateLabel(hyuncheol.date), '26.11.18(수)');
 
   const sejong = ledger.trips.find(function (row) { return row.id === '20261114-sejong-kim'; });
   assert.equal(sejong.contacts.length, 2);

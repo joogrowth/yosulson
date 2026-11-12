@@ -665,6 +665,50 @@ test('a Namyangju reserve outing keeps both contacts and the written specs', fun
   assert.doesNotMatch(quote.text, /구간할증|적재이동/);
 });
 
+test('a Gangnam year-end catering keeps the phone and the long return', function () {
+  const parsed = q.parseMemo([
+    '[배송] 최현철 / 기업송년회',
+    '26.11.18(수)',
+    '출발 : 15:10',
+    '도착 : 16:30 ~ 17:00',
+    '행사시작 : 17:00 ~ 21:00',
+    '서울 강남구 언주로 94길 5',
+    '2층 케미스트리',
+    '담당자 : 010 2370 1262',
+    '*케이터링 박스 30인분',
+    '편도거리 31km',
+    '연료비 5,000원',
+    '도착소요시간 1시간 20분',
+    '복귀소요시간 2시간'
+  ].join('\n'));
+  assert.equal(parsed.person, '최현철');
+  assert.equal(parsed.event, '기업송년회');
+  assert.equal(parsed.place, '서울 강남구 언주로 94길 5 2층 케미스트리');
+  assert.equal(parsed.phone, '010 2370 1262');
+  assert.equal(parsed.contacts.length, 0);
+  assert.equal(parsed.arrive, '16:30 ~ 17:00');
+  assert.equal(parsed.eventTime, '17:00 ~ 21:00');
+  assert.equal(parsed.items, '케이터링 박스 30인분');
+  assert.equal(parsed.km, 31);
+  assert.equal(parsed.fuel, 5000);
+  assert.equal(parsed.toll, null);
+  assert.equal(parsed.goMin, 80);
+  assert.equal(parsed.backMin, 120);
+  assert.equal(q.headcount(parsed.items), 30);
+  assert.equal(q.formatDateLabel(parsed.date), '26.11.18(수)');
+  const quote = q.buildQuote(parsed);
+  assert.equal(quote.ready, true);
+  assert.equal(quote.minutes, 200);
+  assert.equal(quote.vehicle, 13764);
+  assert.equal(quote.fuelRound, 10000);
+  assert.equal(quote.tollRound, 0);
+  assert.equal(quote.band, 0);
+  assert.equal(q.bandFee(62), 10000);
+  assert.deepEqual(quote.rows.map(function (row) { return row.total; }), [60431, 63764, 67097]);
+  assert.match(quote.text, /최현철 \(010 2370 1262\)/);
+  assert.match(quote.text, /인건비 제외 차량유지비 23,764원/);
+});
+
 test('a Jung-gu health center delivery keeps the institute name and the surcharge', function () {
   const parsed = q.parseMemo([
     '[상담배송] 박한솔 / 한국원자력안전재단',
