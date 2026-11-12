@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>요술손 근무기록</title>
+    <style>
+      body {
+        margin: 0;
+        background: #f4f1ea;
+        color: #1d1c19;
+        font-family: "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      }
+      main {
+        max-width: 440px;
+        margin: 0 auto;
+        padding: 32px 20px 48px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 24px;
+      }
+      .steps {
+        margin: 8px 0 0;
+        padding-left: 1.4em;
+        color: #5e584e;
+        line-height: 1.6;
+      }
+      .steps li {
+        margin: 0;
+      }
+      h2 {
+        margin: 28px 0 8px;
+        font-size: 18px;
+      }
+      .lead {
+        margin: 0 0 8px;
+        color: #5e584e;
+        line-height: 1.5;
+      }
+      #totalLine {
+        margin-top: 18px;
+      }
+      .split {
+        margin-top: 28px;
+      }
+      label {
+        display: block;
+        margin: 18px 0 8px;
+        font-size: 14px;
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 14px 12px;
+        font-size: 18px;
+        border: 1px solid #d4cfc4;
+        border-radius: 10px;
+        background: #fff;
+        font-family: inherit;
+      }
+      .dateField {
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+      }
+      #workDate {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        padding: 8px 8px;
+        font-size: 16px;
+      }
+      #workDate::-webkit-datetime-edit {
+        padding: 0;
+      }
+      #workDate::-webkit-calendar-picker-indicator {
+        margin: 0;
+        padding: 0;
+      }
+      textarea {
+        line-height: 1.5;
+      }
+      button.block,
+      button.quiet {
+        width: 100%;
+        margin-top: 18px;
+        padding: 14px;
+        font-size: 18px;
+        border-radius: 10px;
+      }
+      button.block {
+        border: 0;
+        background: #2c4a34;
+        color: #fff;
+      }
+      button.quiet {
+        background: transparent;
+        color: #1d1c19;
+        border: 1px solid #d4cfc4;
+      }
+      button.small,
+      button.danger {
+        width: auto;
+        margin-top: 0;
+        padding: 10px 12px;
+        font-size: 15px;
+        border-radius: 10px;
+      }
+      button.small {
+        border: 0;
+        background: #5c6b58;
+        color: #fff;
+      }
+      button.danger {
+        margin-top: 12px;
+        background: #fff;
+        color: #8d2d2d;
+        border: 1px solid #d4cfc4;
+      }
+      button:disabled {
+        opacity: 0.6;
+      }
+      #trips {
+        overflow-anchor: none;
+      }
+      .card {
+        margin-top: 16px;
+        padding: 4px 12px 12px;
+        border: 1px solid #d4cfc4;
+        border-radius: 12px;
+        background: #fff;
+      }
+      .cardTitle {
+        margin: 12px 0 0;
+        font-weight: 700;
+      }
+      .stop.via {
+        margin-top: 14px;
+        padding-top: 10px;
+        border-top: 1px solid #d4cfc4;
+      }
+      .stopTitle {
+        margin: 4px 0 0;
+        font-weight: 700;
+      }
+      .timeLine {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .timeLine input[type="time"] {
+        flex: 1;
+        min-width: 0;
+      }
+      .addLine {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .addLine input {
+        flex: 1;
+        min-width: 0;
+      }
+      label.check {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin: 0;
+        font-size: 14px;
+        white-space: nowrap;
+      }
+      label.check input {
+        width: auto;
+        padding: 0;
+      }
+      .error,
+      .ok {
+        min-height: 1.4em;
+        margin: 14px 0 0;
+      }
+      .error {
+        color: #8d2d2d;
+      }
+      .ok {
+        color: #2c4a34;
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>요술손 근무기록</h1>
+      <p class="lead" id="lead">이름과 비밀번호를 입력해 주세요.</p>
+      <p class="lead" id="help">처음인 직원은 아래 직원등록을 누릅니다.</p>
+      <p class="ok hidden" id="liveNote"></p>
+
+      <section id="loginHome">
+        <label for="name">이름</label>
+        <input id="name" autocomplete="username" />
+        <label for="pw">비밀번호</label>
+        <input id="pw" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="current-password" placeholder="숫자 4자리" />
+        <button type="button" class="block" id="enterBtn">들어가기</button>
+        <p class="lead split">처음이신가요?</p>
+        <button type="button" class="quiet" id="registerBtn">직원등록</button>
+      </section>
+
+      <section id="registerStep" class="hidden">
+        <label for="regName">이름</label>
+        <input id="regName" autocomplete="name" />
+        <label for="newPw">새 비밀번호</label>
+        <input id="newPw" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="new-password" placeholder="숫자 4자리" />
+        <label for="confirmPw">비밀번호 확인</label>
+        <input id="confirmPw" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="new-password" placeholder="숫자 4자리" />
+        <button type="button" class="block" id="saveBtn">등록</button>
+        <button type="button" class="quiet" id="backBtn">로그인으로</button>
+      </section>
+
+      <section id="workStep" class="hidden">
+        <ol class="steps">
+          <li>최종 기록을 기입한 후</li>
+          <li>저장하기 버튼 누른 뒤</li>
+          <li>생성된 내용을 복사하여</li>
+          <li>네이버 캘린더에 붙여넣기 해주세요.</li>
+        </ol>
+        <div id="subjectWrap" class="hidden">
+          <label for="subject">누구의 기록</label>
+          <select id="subject"></select>
+        </div>
+        <label for="workDate">날짜</label>
+        <div class="dateField">
+          <input id="workDate" type="date" />
+        </div>
+        <div class="timeBlock" id="clockInBlock">
+          <label>출근</label>
+          <div class="timeLine">
+            <input type="time" data-part="time" />
+            <button type="button" class="small" data-part="now">지금</button>
+          </div>
+        </div>
+        <div id="trips"></div>
+        <button type="button" class="block" id="addTripBtn">업무 추가</button>
+        <div class="timeBlock" id="clockOutBlock">
+          <label>퇴근</label>
+          <div class="timeLine">
+            <input type="time" data-part="time" />
+            <button type="button" class="small" data-part="now">지금</button>
+          </div>
+        </div>
+        <p class="lead" id="totalLine"></p>
+        <button type="button" class="block" id="saveDayBtn">저장</button>
+        <div id="copyWrap" class="hidden">
+          <label for="copyText">네이버에 붙여넣을 글</label>
+          <textarea id="copyText" readonly rows="12"></textarea>
+          <p class="lead" id="copyHint">네이버 캘린더에 복붙할 내용이 생성됩니다.</p>
+          <button type="button" class="block" id="copyBtn">복사</button>
+        </div>
+        <button type="button" class="quiet" id="changeOpenBtn">비밀번호 변경</button>
+        <button type="button" class="quiet hidden" id="adminOpenBtn">관리</button>
+        <button type="button" class="quiet" id="outBtn">나가기</button>
+      </section>
+
+      <section id="changeStep" class="hidden">
+        <label for="currentPw">지금 비밀번호</label>
+        <input id="currentPw" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="current-password" placeholder="지금 숫자 4자리" />
+        <label for="changedPw">새 비밀번호</label>
+        <input id="changedPw" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="new-password" placeholder="새 숫자 4자리" />
+        <label for="changedPwConfirm">새 비밀번호 확인</label>
+        <input id="changedPwConfirm" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="new-password" placeholder="같은 숫자 4자리" />
+        <button type="button" class="block" id="changePwBtn">변경</button>
+        <button type="button" class="quiet" id="changeBackBtn">근무 화면으로</button>
+      </section>
+
+      <section id="adminStep" class="hidden">
+        <label for="newPlace">장보기 장소</label>
+        <div class="addLine">
+          <input id="newPlace" placeholder="가게 이름" autocomplete="off" />
+          <button type="button" class="small" id="addPlaceBtn">추가</button>
+        </div>
+        <label for="newVehicle">차량</label>
+        <div class="addLine">
+          <input id="newVehicle" placeholder="차량 이름" autocomplete="off" />
+          <button type="button" class="small" id="addVehicleBtn">추가</button>
+        </div>
+        <label for="newStaff">직원 이름</label>
+        <div class="addLine">
+          <input id="newStaff" placeholder="직원 이름" autocomplete="off" />
+          <button type="button" class="small" id="addStaffBtn">추가</button>
+        </div>
+        <label for="pwPerson">비밀번호를 정할 사람</label>
+        <select id="pwPerson"></select>
+        <label for="adminPw">비밀번호</label>
+        <input id="adminPw" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="new-password" placeholder="숫자 4자리, 0123 가능" />
+        <label for="adminPwConfirm">비밀번호 확인</label>
+        <input id="adminPwConfirm" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="new-password" placeholder="같은 숫자 4자리" />
+        <button type="button" class="block" id="setPwBtn">비밀번호 저장</button>
+        <button type="button" class="quiet" id="adminBackBtn">근무 화면으로</button>
+      </section>
+
+      <p class="error" id="error"></p>
+      <p class="ok" id="savedNote"></p>
+    </main>
+    <script>
+      var nameInput = document.getElementById("name");
+      var regName = document.getElementById("regName");
+      var saveBtn = document.getElementById("saveBtn");
+      var enterBtn = document.getElementById("enterBtn");
+      var outBtn = document.getElementById("outBtn");
+      var error = document.getElementById("error");
+      var savedNote = document.getElementById("savedNote");
+      var lead = document.getElementById("lead");
+      var help = document.getElementById("help");
+      var workStep = document.getElementById("workStep");
+      var tripsBox = document.getElementById("trips");
+      var workDate = document.getElementById("workDate");
+      var subjectBox = document.getElementById("subject");
+      var saveDayBtn = document.getElementById("saveDayBtn");
+      var session = { name: "", role: "", password: "" };
+      var catalog = { works: [], vehicles: [], places: [], people: [] };
+      var day = blankDay();
+      var loadedKey = "";
+      var dirty = false;
+      var typedPassword = "";
+      var screenRevision = 0;
+
+      function markScreenEdited() {
+        screenRevision += 1;
+      }
+
+      function blankDay() {
+        return { clockIn: null, clockOut: null, memo: "", trips: [] };
+      }
+
+      function blankTrip() {
+        return {
+          type: "",
+          name: "",
+          vehicle: "",
+          depart: null,
+          arrive: null,
+          returnDepart: null,
+          returnArrive: null
+        };
+      }
+
+      function pad2(number) {
+        return (number < 10 ? "0" : "") + number;
+      }
+
+      function todayText() {
+        var now = new Date();
+        return now.getFullYear() + "-" + pad2(now.getMonth() + 1) + "-" + pad2(now.getDate());
+      }
+
+      function nowTime() {
+        var now = new Date();
+        return { h: now.getHours(), m: now.getMinutes(), planned: false };
+      }
+
+      function timeValue(time) {
+        if (!time || time.h == null || time.m == null) {
+          return "";
+        }
+        return pad2(time.h) + ":" + pad2(time.m);
+      }
+
+      function timeFromInput(input) {
+        if (!input || !input.value) {
+          return null;
+        }
+        var parts = input.value.split(":");
+        var sameClock = input.getAttribute("data-clock") === input.value;
+        return {
+          h: Number(parts[0]),
+          m: Number(parts[1]),
+          planned: sameClock && input.getAttribute("data-planned") === "1"
+        };
+      }
+
+      function markTimeInput(input, time) {
+        input.value = timeValue(time);
+        if (time && time.planned) {
+          input.setAttribute("data-planned", "1");
+          input.setAttribute("data-clock", timeValue(time));
+          return;
+        }
+        input.removeAttribute("data-planned");
+        input.removeAttribute("data-clock");
+      }
+
+      function escapeHtml(value) {
+        return String(value || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function withNim(name) {
+        var text = String(name || "").trim();
+        if (!text) {
+          return "";
+        }
+        return text.slice(-1) === "님" ? text : text + "님";
+      }
+
+      function show(id) {
+        ["loginHome", "registerStep", "workStep", "changeStep", "adminStep"].forEach(function (step) {
+          document.getElementById(step).classList.toggle("hidden", step !== id);
+        });
+        var onWork = id === "workStep";
+        lead.classList.toggle("hidden", onWork);
+        help.classList.toggle("hidden", onWork);
+        error.textContent = "";
+      }
+
+      function showRegister(name) {
+        regName.value = name || "";
+        document.getElementById("newPw").value = "";
+        document.getElementById("confirmPw").value = "";
+        lead.textContent = "직원등록";
+        help.textContent = "이름, 새 비밀번호, 비밀번호 확인을 입력한 뒤 등록을 누릅니다. 0123처럼 0으로 시작해도 됩니다.";
+        show("registerStep");
+      }
+
+      function fail(message) {
+        error.textContent = message || "다시 시도해 주세요.";
+      }
+
+      function run(send, button, done) {
+        if (button) {
+          button.disabled = true;
+        }
+        send(
+          google.script.run
+            .withSuccessHandler(function (result) {
+              if (button) {
+                button.disabled = false;
+              }
+              if (!result || !result.ok) {
+                if (result && result.needsSetup) {
+                  showRegister(nameInput.value);
+                  help.textContent = withNim(nameInput.value) + ", 새 비밀번호와 비밀번호 확인을 입력한 뒤 등록을 누릅니다.";
+                  return;
+                }
+                fail(result && result.message);
+                return;
+              }
+              done(result);
+            })
+            .withFailureHandler(function () {
+              if (button) {
+                button.disabled = false;
+              }
+              fail("연결이 되지 않았습니다. 다시 시도해 주세요.");
+            })
+        );
+      }
+
+      var screenLock = null;
+
+      var loginStoreKey = "yosulsonLogin";
+
+      function savedLogin() {
+        try {
+          var raw = localStorage.getItem(loginStoreKey);
+          if (!raw) {
+            return null;
+          }
+          var data = JSON.parse(raw);
+          if (!data || !String(data.name || "").trim() || !String(data.password || "")) {
+            return null;
+          }
+          return { name: String(data.name).trim(), password: String(data.password) };
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function rememberLogin() {
+        try {
+          if (!session.name || !session.password) {
+            return;
+          }
+          localStorage.setItem(
+            loginStoreKey,
+            JSON.stringify({ name: session.name, password: session.password })
+          );
+        } catch (error) {}
+      }
+
+      function forgetLogin() {
+        try {
+          localStorage.removeItem(loginStoreKey);
+        } catch (error) {}
+      }
+
+      function keepScreenOn() {
+        if (!navigator.wakeLock || !navigator.wakeLock.request) {
+          return;
+        }
+        navigator.wakeLock.request("screen").then(function (lock) {
+          screenLock = lock;
+        }, function () {
+          screenLock = null;
+        });
+      }
+
+      function releaseScreen() {
+        if (!screenLock) {
+          return;
+        }
+        screenLock.release();
+        screenLock = null;
+      }
+
+      function openWork(result) {
+        session = { name: result.name, role: result.role, password: typedPassword };
+        rememberLogin();
+        savedNote.textContent = "";
+        show("workStep");
+        keepScreenOn();
+        if (result.day) {
+          catalog = result;
+          workDate.value = result.date || todayText();
+          fillSubject();
+          applyDay(result);
+          savedNote.textContent = "";
+          return;
+        }
+        workDate.value = todayText();
+        run(
+          function (runner) {
+            runner.listCatalog(session.name, session.password);
+          },
+          saveDayBtn,
+          function (resultCatalog) {
+            catalog = resultCatalog;
+            fillSubject();
+            loadCurrentDay();
+          }
+        );
+      }
+
+      function showWork() {
+        show("workStep");
+      }
+
+      function fillSubject() {
+        var wrap = document.getElementById("subjectWrap");
+        var admin = document.getElementById("adminOpenBtn");
+        var isAdmin = session.role === "관리자";
+        admin.classList.toggle("hidden", !isAdmin);
+        if (!isAdmin) {
+          wrap.classList.add("hidden");
+          return;
+        }
+        var people = catalog.people || [];
+        var keep = subjectBox.value || session.name;
+        wrap.classList.remove("hidden");
+        subjectBox.innerHTML = people
+          .map(function (person) {
+            return '<option value="' + escapeHtml(person) + '">' + escapeHtml(person) + "</option>";
+          })
+          .join("");
+        subjectBox.value = people.indexOf(keep) >= 0 ? keep : session.name;
+        fillPasswordPeople(document.getElementById("pwPerson").value);
+      }
+
+      function fillPasswordPeople(keep) {
+        var box = document.getElementById("pwPerson");
+        var people = catalog.people || [];
+        box.innerHTML = people
+          .map(function (person) {
+            return '<option value="' + escapeHtml(person) + '">' + escapeHtml(person) + "</option>";
+          })
+          .join("");
+        if (keep && people.indexOf(keep) >= 0) {
+          box.value = keep;
+        }
+      }
+
+      function applyAdminLists(result) {
+        var keepSubject = currentSubject();
+        day = readDayFromScreen();
+        catalog.people = result.people || catalog.people;
+        catalog.places = result.places || catalog.places;
+        catalog.vehicles = result.vehicles || catalog.vehicles;
+        fillSubject();
+        if (session.role === "관리자" && (catalog.people || []).indexOf(keepSubject) >= 0) {
+          subjectBox.value = keepSubject;
+        }
+        if (result.added) {
+          document.getElementById("pwPerson").value = result.added;
+        }
+        renderTrips();
+        savedNote.textContent = result.message || "저장했습니다.";
+      }
+
+      function currentSubject() {
+        if (session.role === "관리자" && subjectBox.value) {
+          return subjectBox.value;
+        }
+        return session.name;
+      }
+
+      function currentKey() {
+        return currentSubject() + "|" + workDate.value;
+      }
+
+      var pendingSave = null;
+      var saveRunning = false;
+
+      function clearLiveNote() {
+        var live = document.getElementById("liveNote");
+        if (!live) {
+          return;
+        }
+        live.textContent = "";
+        live.classList.add("hidden");
+      }
+
+      function showLiveNote(text) {
+        savedNote.textContent = text || "";
+        var live = document.getElementById("liveNote");
+        if (!live) {
+          return;
+        }
+        live.textContent = text || "";
+        live.classList.toggle("hidden", !text);
+      }
+
+      function nowSavedNote(block) {
+        if (block.id === "clockInBlock") {
+          return "출근 시각을 시트에 넣었습니다.";
+        }
+        if (block.id === "clockOutBlock") {
+          return "";
+        }
+        return "이 시각을 시트에 넣었습니다.";
+      }
+
+      function finishSave(job, result) {
+        if (job.key !== currentKey()) {
+          return;
+        }
+        if (job.revision !== screenRevision) {
+          showLiveNote(job.note || "");
+          return;
+        }
+        applyDay(result, job.scrollCopy);
+        if (job.scrollCopy) {
+          clearLiveNote();
+          savedNote.textContent = result.copyText ? "" : "저장했습니다. 이 날짜의 기록을 비웠습니다.";
+          if (result.copyText) {
+            document.getElementById("copyWrap").scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
+          return;
+        }
+        showLiveNote(job.note || "");
+      }
+
+      function startSave() {
+        if (saveRunning || !pendingSave) {
+          return;
+        }
+        var job = pendingSave;
+        pendingSave = null;
+        saveRunning = true;
+        google.script.run
+          .withSuccessHandler(function (result) {
+            saveRunning = false;
+            if (!result || !result.ok) {
+              if (!pendingSave) {
+                showLiveNote("");
+              }
+              fail(result && result.message);
+              startSave();
+              return;
+            }
+            if (pendingSave) {
+              startSave();
+              return;
+            }
+            finishSave(job, result);
+          })
+          .withFailureHandler(function () {
+            saveRunning = false;
+            if (!pendingSave) {
+              showLiveNote("");
+            }
+            fail("연결이 되지 않았습니다. 다시 시도해 주세요.");
+            startSave();
+          })
+          .saveDay(session.name, session.password, job.subject, job.date, job.payload);
+      }
+
+      function queueSave(note, scrollCopy) {
+        if (!session.name) {
+          fail("다시 로그인해 주세요.");
+          return;
+        }
+        if (loadedKey !== currentKey()) {
+          fail("기록을 불러온 뒤에 저장해 주세요.");
+          return;
+        }
+        pendingSave = {
+          subject: currentSubject(),
+          date: workDate.value,
+          payload: readDayFromScreen(),
+          key: currentKey(),
+          note: note,
+          scrollCopy: !!scrollCopy,
+          revision: screenRevision
+        };
+        error.textContent = "";
+        if (scrollCopy) {
+          showLiveNote("저장하는 중입니다.");
+        } else if (note) {
+          showLiveNote(note.replace("넣었습니다.", "넣는 중입니다."));
+        }
+        startSave();
+      }
+
+      function loadCurrentDay() {
+        loadedKey = "";
+        clearLiveNote();
+        var date = workDate.value;
+        var subject = currentSubject();
+        run(
+          function (runner) {
+            runner.loadDay(session.name, session.password, subject, date);
+          },
+          null,
+          function (result) {
+            applyDay(result);
+            savedNote.textContent = "";
+          }
+        );
+      }
+
+      function applyDay(result, showCopy) {
+        day = result.day || blankDay();
+        if (!day.trips) {
+          day.trips = [];
+        }
+        fillTimeBlock("clockInBlock", day.clockIn);
+        fillTimeBlock("clockOutBlock", day.clockOut);
+        renderTrips();
+        var copyBox = document.getElementById("copyText");
+        var copyWrap = document.getElementById("copyWrap");
+        if (showCopy && result.copyText) {
+          copyBox.value = result.copyText;
+          copyWrap.classList.remove("hidden");
+        } else {
+          copyBox.value = "";
+          copyWrap.classList.add("hidden");
+        }
+        showTotal();
+        dirty = false;
+        loadedKey = (result.name || currentSubject()) + "|" + (result.date || workDate.value);
+      }
+
+      function fillTimeBlock(id, time) {
+        var block = document.getElementById(id);
+        markTimeInput(block.querySelector('[data-part="time"]'), time);
+      }
+
+      function readTimeBlock(id) {
+        var block = document.getElementById(id);
+        return timeFromInput(block.querySelector('[data-part="time"]'));
+      }
+
+      function formatDurationText(clockIn, clockOut) {
+        if (!clockIn || !clockOut || clockIn.h == null || clockOut.h == null) {
+          return "";
+        }
+        var minutes = clockOut.h * 60 + clockOut.m - (clockIn.h * 60 + clockIn.m);
+        if (minutes < 0) {
+          minutes += 24 * 60;
+        }
+        var hours = Math.floor(minutes / 60);
+        var rest = minutes % 60;
+        var text = "";
+        if (hours) {
+          text += hours + "시간";
+        }
+        if (rest) {
+          text += (text ? " " : "") + rest + "분";
+        }
+        if (!text) {
+          text = "0분";
+        }
+        return text;
+      }
+
+      function showTotal() {
+        var total = formatDurationText(readTimeBlock("clockInBlock"), readTimeBlock("clockOutBlock"));
+        var line = document.getElementById("totalLine");
+        line.textContent = total ? "총근무시간 " + total : "";
+        line.classList.toggle("hidden", !total);
+      }
+
+      function selectHtml(field, current, choices, placeholder) {
+        var list = (choices || []).slice();
+        if (current && list.indexOf(current) < 0) {
+          list.push(current);
+        }
+        var html = '<select data-field="' + field + '"><option value="">' + escapeHtml(placeholder) + "</option>";
+        var seen = {};
+        list.forEach(function (choice) {
+          if (!choice || seen[choice]) {
+            return;
+          }
+          seen[choice] = true;
+          html +=
+            '<option value="' +
+            escapeHtml(choice) +
+            '"' +
+            (choice === current ? " selected" : "") +
+            ">" +
+            escapeHtml(choice) +
+            "</option>";
+        });
+        return html + "</select>";
+      }
+
+      function timeBlockHtml(field, label, time) {
+        return (
+          '<div class="timeBlock" data-field="' +
+          field +
+          '"><label>' +
+          label +
+          '</label><div class="timeLine"><input type="time" data-part="time" value="' +
+          timeValue(time) +
+          '"' +
+          (time && time.planned ? ' data-planned="1" data-clock="' + timeValue(time) + '"' : "") +
+          ' /><button type="button" class="small" data-part="now">지금</button></div></div>'
+        );
+      }
+
+      function chainList(trips) {
+        var chains = [];
+        (trips || []).forEach(function (trip) {
+          if (trip.type === "경유" && chains.length) {
+            chains[chains.length - 1].push(trip);
+            return;
+          }
+          chains.push([trip]);
+        });
+        return chains;
+      }
+
+      function renderStop(trip, index) {
+        var remove =
+          index === 0
+            ? ""
+            : '<button type="button" class="danger" data-action="remove-stop" data-stop="' +
+              index +
+              '">이 경유지 빼기</button>';
+        return (
+          '<div class="stop' +
+          (index === 0 ? "" : " via") +
+          '" data-stop="' +
+          index +
+          '">' +
+          (index === 0 ? "" : '<p class="stopTitle">경유지</p>') +
+          "<label>가게</label>" +
+          selectHtml("name", trip.name, catalog.places, "가게 선택") +
+          remove +
+          "</div>"
+        );
+      }
+
+      function personField(value) {
+        return (
+          '<label>대상</label><input data-field="name" value="' +
+          escapeHtml(value) +
+          '" placeholder="고객명, 주문고객명, 기업명" />'
+        );
+      }
+
+      function renderDeliveryStop(trip, index) {
+        var remove =
+          index === 0
+            ? ""
+            : '<button type="button" class="danger" data-action="remove-stop" data-stop="' +
+              index +
+              '">이 경유지 빼기</button>';
+        return (
+          '<div class="stop' +
+          (index === 0 ? "" : " via") +
+          '" data-stop="' +
+          index +
+          '">' +
+          (index === 0 ? "" : '<p class="stopTitle">경유지</p>') +
+          personField(trip.name) +
+          timeBlockHtml("depart", index === 0 ? "첫번째 출발" : "경유지 출발", trip.depart) +
+          timeBlockHtml("arrive", index === 0 ? "첫번째 도착" : "경유지 도착", trip.arrive) +
+          remove +
+          "</div>"
+        );
+      }
+
+      function renderCard(chain, offset, chainIndex) {
+        var trip = chain[0];
+        var shopping = trip.type === "장보기";
+        var delivery = trip.type === "배송";
+        var vehicleField =
+          "<label>차량</label>" + selectHtml("vehicle", trip.vehicle, catalog.vehicles, "차량 선택");
+        var body = "";
+        if (shopping && chain.length > 1) {
+          var lastStop = chain[chain.length - 1];
+          body =
+            vehicleField +
+            chain
+              .map(function (stop, index) {
+                return renderStop(stop, index);
+              })
+              .join("") +
+            timeBlockHtml("depart", "현장 출발", trip.depart) +
+            timeBlockHtml("returnArrive", "사무실 복귀", lastStop.returnArrive);
+        } else if (delivery && chain.length > 1) {
+          var lastDelivery = chain[chain.length - 1];
+          body =
+            vehicleField +
+            chain
+              .map(function (stop, index) {
+                return renderDeliveryStop(stop, index);
+              })
+              .join("") +
+            timeBlockHtml("returnDepart", "복귀 출발", lastDelivery.returnDepart) +
+            timeBlockHtml("returnArrive", "복귀 도착", lastDelivery.returnArrive);
+        } else {
+          var nameField = shopping
+            ? "<label>가게</label>" + selectHtml("name", trip.name, catalog.places, "가게 선택")
+            : delivery
+              ? personField(trip.name)
+              : '<label>대상</label><input data-field="name" value="' +
+                escapeHtml(trip.name) +
+                '" placeholder="고객 또는 대상 이름" />';
+          body =
+            nameField +
+            vehicleField +
+            timeBlockHtml("depart", "현장 출발", trip.depart) +
+            timeBlockHtml("arrive", "현장 도착", trip.arrive) +
+            timeBlockHtml("returnDepart", "복귀 출발", trip.returnDepart) +
+            timeBlockHtml("returnArrive", "복귀 도착", trip.returnArrive);
+        }
+        var addStop = shopping || delivery
+          ? '<button type="button" class="quiet" data-action="add-stop">경유지 추가</button>'
+          : "";
+        return (
+          '<article class="card" data-index="' +
+          offset +
+          '" data-count="' +
+          chain.length +
+          '"><p class="cardTitle">업무 ' +
+          (chainIndex + 1) +
+          "</p><label>업무</label>" +
+          selectHtml("type", trip.type, catalog.works, "업무 선택") +
+          body +
+          addStop +
+          '<button type="button" class="danger" data-action="delete">이 건 삭제</button></article>'
+        );
+      }
+
+      function renderTrips() {
+        var offset = 0;
+        tripsBox.innerHTML = chainList(day.trips)
+          .map(function (chain, chainIndex) {
+            var html = renderCard(chain, offset, chainIndex);
+            offset += chain.length;
+            return html;
+          })
+          .join("");
+      }
+
+      function cardTime(card, field) {
+        var blocks = card.querySelectorAll(".timeBlock");
+        for (var i = 0; i < blocks.length; i++) {
+          if (blocks[i].getAttribute("data-field") === field) {
+            return timeFromInput(blocks[i].querySelector('[data-part="time"]'));
+          }
+        }
+        return null;
+      }
+
+      function stopTime(stop, field) {
+        var blocks = stop.querySelectorAll(".timeBlock");
+        for (var i = 0; i < blocks.length; i++) {
+          if (blocks[i].getAttribute("data-field") === field) {
+            return timeFromInput(blocks[i].querySelector('[data-part="time"]'));
+          }
+        }
+        return null;
+      }
+
+      function readStops(card, vehicle, stopNodes) {
+        var depart = cardTime(card, "depart");
+        var officeReturn = cardTime(card, "returnArrive");
+        var trips = [];
+        for (var i = 0; i < stopNodes.length; i++) {
+          var nameNode = stopNodes[i].querySelector('[data-field="name"]');
+          var last = i === stopNodes.length - 1;
+          trips.push({
+            type: i === 0 ? "장보기" : "경유",
+            name: nameNode ? nameNode.value : "",
+            vehicle: vehicle,
+            depart: i === 0 ? depart : null,
+            arrive: null,
+            returnDepart: null,
+            returnArrive: last ? officeReturn : null
+          });
+        }
+        return trips;
+      }
+
+      function readDeliveryStops(card, vehicle, stopNodes) {
+        var trips = [];
+        for (var i = 0; i < stopNodes.length; i++) {
+          var stop = stopNodes[i];
+          var nameNode = stop.querySelector('[data-field="name"]');
+          var last = i === stopNodes.length - 1;
+          trips.push({
+            type: i === 0 ? "배송" : "경유",
+            name: nameNode ? nameNode.value : "",
+            vehicle: vehicle,
+            depart: stopTime(stop, "depart"),
+            arrive: stopTime(stop, "arrive"),
+            returnDepart: last ? cardTime(card, "returnDepart") : null,
+            returnArrive: last ? cardTime(card, "returnArrive") : null
+          });
+        }
+        return trips;
+      }
+
+      function readCard(card) {
+        function valueOf(field) {
+          var node = card.querySelector('[data-field="' + field + '"]');
+          return node ? node.value : "";
+        }
+        var type = valueOf("type");
+        var vehicle = valueOf("vehicle");
+        var stopNodes = card.querySelectorAll(".stop");
+        if (type === "장보기" && stopNodes.length) {
+          return readStops(card, vehicle, stopNodes);
+        }
+        if (type === "배송" && stopNodes.length) {
+          return readDeliveryStops(card, vehicle, stopNodes);
+        }
+        return [
+          {
+            type: type,
+            name: valueOf("name"),
+            vehicle: vehicle,
+            depart: cardTime(card, "depart"),
+            arrive: cardTime(card, "arrive"),
+            returnDepart: cardTime(card, "returnDepart"),
+            returnArrive: cardTime(card, "returnArrive")
+          }
+        ];
+      }
+
+      function readDayFromScreen() {
+        var trips = [];
+        var cards = tripsBox.querySelectorAll(".card");
+        for (var i = 0; i < cards.length; i++) {
+          readCard(cards[i]).forEach(function (trip) {
+            trips.push(trip);
+          });
+        }
+        return {
+          clockIn: readTimeBlock("clockInBlock"),
+          clockOut: readTimeBlock("clockOutBlock"),
+          memo: day.memo || "",
+          trips: trips
+        };
+      }
+
+      function parentCard(node) {
+        var current = node;
+        while (current) {
+          if (current.classList && current.classList.contains("card")) {
+            return current;
+          }
+          current = current.parentNode;
+        }
+        return null;
+      }
+
+      function parentTimeBlock(node) {
+        var current = node;
+        while (current) {
+          if (current.classList && current.classList.contains("timeBlock")) {
+            return current;
+          }
+          current = current.parentNode;
+        }
+        return null;
+      }
+
+      document.getElementById("registerBtn").onclick = function () {
+        showRegister("");
+      };
+
+      document.getElementById("backBtn").onclick = function () {
+        lead.textContent = "이름과 비밀번호를 입력해 주세요.";
+        help.textContent = "처음인 직원은 아래 직원등록을 누릅니다.";
+        show("loginHome");
+      };
+
+      saveBtn.onclick = function () {
+        typedPassword = document.getElementById("newPw").value;
+        var confirm = document.getElementById("confirmPw").value;
+        nameInput.value = regName.value;
+        run(
+          function (runner) {
+            runner.registerStaff(regName.value, typedPassword, confirm, todayText());
+          },
+          saveBtn,
+          openWork
+        );
+      };
+
+      document.getElementById("changeOpenBtn").onclick = function () {
+        document.getElementById("currentPw").value = "";
+        document.getElementById("changedPw").value = "";
+        document.getElementById("changedPwConfirm").value = "";
+        lead.textContent = "비밀번호 변경";
+        help.textContent = "지금 비밀번호를 맞춘 뒤 새 숫자 4자리로 바꿉니다. 0123처럼 0으로 시작해도 됩니다.";
+        show("changeStep");
+      };
+
+      document.getElementById("changeBackBtn").onclick = function () {
+        showWork();
+      };
+
+      document.getElementById("adminOpenBtn").onclick = function () {
+        lead.textContent = "관리";
+        help.textContent = "장보기 장소, 차량, 직원 이름, 비밀번호를 넣으면 시트에도 들어갑니다.";
+        show("adminStep");
+      };
+
+      document.getElementById("adminBackBtn").onclick = function () {
+        showWork();
+      };
+
+      document.getElementById("changePwBtn").onclick = function () {
+        var button = document.getElementById("changePwBtn");
+        var nextPassword = document.getElementById("changedPw").value;
+        run(
+          function (runner) {
+            runner.changePassword(
+              session.name,
+              document.getElementById("currentPw").value,
+              nextPassword,
+              document.getElementById("changedPwConfirm").value
+            );
+          },
+          button,
+          function (result) {
+            session.password = nextPassword;
+            typedPassword = nextPassword;
+            rememberLogin();
+            document.getElementById("currentPw").value = "";
+            document.getElementById("changedPw").value = "";
+            document.getElementById("changedPwConfirm").value = "";
+            showWork();
+            savedNote.textContent = result.message || "비밀번호를 바꿨습니다.";
+          }
+        );
+      };
+
+      enterBtn.onclick = function () {
+        typedPassword = document.getElementById("pw").value;
+        run(
+          function (runner) {
+            runner.enterDay(nameInput.value, typedPassword, todayText());
+          },
+          enterBtn,
+          openWork
+        );
+      };
+
+      ["newPw", "confirmPw", "pw", "adminPw", "adminPwConfirm", "currentPw", "changedPw", "changedPwConfirm"].forEach(function (id) {
+        var field = document.getElementById(id);
+        field.addEventListener("input", function () {
+          field.value = field.value.replace(/\D/g, "").slice(0, 4);
+        });
+      });
+
+      document.getElementById("addPlaceBtn").onclick = function () {
+        var button = document.getElementById("addPlaceBtn");
+        run(
+          function (runner) {
+            runner.addPlace(session.name, session.password, document.getElementById("newPlace").value);
+          },
+          button,
+          function (result) {
+            document.getElementById("newPlace").value = "";
+            applyAdminLists(result);
+          }
+        );
+      };
+
+      document.getElementById("addVehicleBtn").onclick = function () {
+        var button = document.getElementById("addVehicleBtn");
+        run(
+          function (runner) {
+            runner.addVehicle(session.name, session.password, document.getElementById("newVehicle").value);
+          },
+          button,
+          function (result) {
+            document.getElementById("newVehicle").value = "";
+            applyAdminLists(result);
+          }
+        );
+      };
+
+      document.getElementById("addStaffBtn").onclick = function () {
+        var button = document.getElementById("addStaffBtn");
+        run(
+          function (runner) {
+            runner.addStaff(session.name, session.password, document.getElementById("newStaff").value);
+          },
+          button,
+          function (result) {
+            document.getElementById("newStaff").value = "";
+            applyAdminLists(result);
+          }
+        );
+      };
+
+      document.getElementById("setPwBtn").onclick = function () {
+        var button = document.getElementById("setPwBtn");
+        var staffName = document.getElementById("pwPerson").value;
+        var nextPassword = document.getElementById("adminPw").value;
+        run(
+          function (runner) {
+            runner.setStaffPassword(
+              session.name,
+              session.password,
+              staffName,
+              nextPassword,
+              document.getElementById("adminPwConfirm").value
+            );
+          },
+          button,
+          function (result) {
+            if (result.passwordFor && result.passwordFor === session.name) {
+              session.password = nextPassword;
+              typedPassword = nextPassword;
+              rememberLogin();
+            }
+            document.getElementById("adminPw").value = "";
+            document.getElementById("adminPwConfirm").value = "";
+            applyAdminLists(result);
+          }
+        );
+      };
+
+      document.getElementById("addTripBtn").onclick = function () {
+        markScreenEdited();
+        day = readDayFromScreen();
+        day.trips.push(blankTrip());
+        dirty = true;
+        renderTrips();
+        var cards = tripsBox.querySelectorAll(".card");
+        if (cards.length) {
+          cards[cards.length - 1].scrollIntoView({ behavior: "auto", block: "start" });
+        }
+      };
+
+      saveDayBtn.onclick = function () {
+        if (!session.name) {
+          fail("다시 로그인해 주세요.");
+          return;
+        }
+        if (loadedKey !== currentKey()) {
+          fail("기록을 불러온 뒤에 저장해 주세요.");
+          return;
+        }
+        queueSave("", true);
+      };
+
+      document.getElementById("copyBtn").onclick = function () {
+        var box = document.getElementById("copyText");
+        var text = box.value;
+        if (!text) {
+          return;
+        }
+        var done = function () {
+          savedNote.textContent = "복사했습니다. 네이버 캘린더 제목에 붙이면 됩니다.";
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done, function () {
+            box.focus();
+            box.select();
+            document.execCommand("copy");
+            done();
+          });
+          return;
+        }
+        box.focus();
+        box.select();
+        document.execCommand("copy");
+        done();
+      };
+
+      workStep.addEventListener("input", function (event) {
+        if (event.target.id === "workDate") {
+          return;
+        }
+        markScreenEdited();
+        if (loadedKey) {
+          dirty = true;
+        }
+        if (event.target.closest && event.target.closest("#clockInBlock, #clockOutBlock")) {
+          showTotal();
+        }
+      });
+
+      workStep.addEventListener("change", function (event) {
+        if (event.target.id === "workDate" || event.target.id === "subject") {
+          return;
+        }
+        markScreenEdited();
+        if (loadedKey) {
+          dirty = true;
+        }
+        if (event.target.closest && event.target.closest("#clockInBlock, #clockOutBlock")) {
+          showTotal();
+        }
+        if (event.target.getAttribute("data-field") === "type") {
+          day = readDayFromScreen();
+          day.trips.forEach(function (trip) {
+            if ((trip.type === "장보기" || trip.type === "경유") && trip.name && (catalog.places || []).indexOf(trip.name) < 0) {
+              trip.name = "";
+            }
+          });
+          renderTrips();
+          return;
+        }
+        if (event.target.getAttribute("data-field") === "name") {
+          var namedCard = parentCard(event.target);
+          if (namedCard && Number(namedCard.getAttribute("data-count")) > 1) {
+            day = readDayFromScreen();
+            renderTrips();
+          }
+        }
+      });
+
+      workStep.addEventListener("click", function (event) {
+        var part = event.target.getAttribute("data-part");
+        var action = event.target.getAttribute("data-action");
+        if (part === "now") {
+          var block = parentTimeBlock(event.target);
+          if (!block) {
+            return;
+          }
+          var time = nowTime();
+          markTimeInput(block.querySelector('[data-part="time"]'), time);
+          dirty = true;
+          if (block.id === "clockInBlock" || block.id === "clockOutBlock") {
+            showTotal();
+          }
+          if (block.id === "clockOutBlock") {
+            showLiveNote("");
+            queueSave("", false);
+            return;
+          }
+          queueSave(nowSavedNote(block), false);
+          return;
+        }
+        if (action === "add-stop" || action === "remove-stop" || action === "delete") {
+          var card = parentCard(event.target);
+          var index = card ? Number(card.getAttribute("data-index")) : -1;
+          var count = card ? Number(card.getAttribute("data-count")) || 1 : 1;
+          if (action === "delete" && !confirm("이 업무를 삭제할까요?")) {
+            return;
+          }
+          if (action === "remove-stop" && !confirm("이 경유지를 뺄까요?")) {
+            return;
+          }
+          markScreenEdited();
+          day = readDayFromScreen();
+          if (index < 0) {
+            return;
+          }
+          if (action === "delete") {
+            day.trips.splice(index, count);
+          } else if (action === "add-stop") {
+            var first = day.trips[index];
+            var last = day.trips[index + count - 1];
+            if (!first || (first.type !== "장보기" && first.type !== "배송")) {
+              return;
+            }
+            if (first.type === "배송") {
+              var keptDepart = last.returnDepart;
+              var keptArrive = last.returnArrive;
+              for (var d = 0; d < count; d++) {
+                day.trips[index + d].returnDepart = null;
+                day.trips[index + d].returnArrive = null;
+              }
+              day.trips.splice(index + count, 0, {
+                type: "경유",
+                name: "",
+                vehicle: first.vehicle,
+                depart: null,
+                arrive: null,
+                returnDepart: keptDepart,
+                returnArrive: keptArrive
+              });
+            } else {
+              var officeReturn = last.returnArrive;
+              for (var s = 0; s < count; s++) {
+                day.trips[index + s].arrive = null;
+                day.trips[index + s].returnDepart = null;
+                day.trips[index + s].returnArrive = null;
+                if (s > 0) {
+                  day.trips[index + s].depart = null;
+                }
+              }
+              day.trips.splice(index + count, 0, {
+                type: "경유",
+                name: "",
+                vehicle: first.vehicle,
+                depart: null,
+                arrive: null,
+                returnDepart: null,
+                returnArrive: officeReturn
+              });
+            }
+          } else {
+            var stopIndex = Number(event.target.getAttribute("data-stop"));
+            if (count < 2 || !(stopIndex > 0)) {
+              return;
+            }
+            var chain = day.trips.slice(index, index + count);
+            var deliveryChain = chain[0].type === "배송";
+            var officeLeave = chain[0].depart;
+            var keptReturnDepart = null;
+            var keptReturn = null;
+            chain.forEach(function (trip) {
+              if (trip.returnDepart) {
+                keptReturnDepart = trip.returnDepart;
+              }
+              if (trip.returnArrive) {
+                keptReturn = trip.returnArrive;
+              }
+            });
+            chain.splice(stopIndex, 1);
+            chain.forEach(function (trip, tripIndex) {
+              var end = tripIndex === chain.length - 1;
+              trip.type = tripIndex === 0 ? (deliveryChain ? "배송" : "장보기") : "경유";
+              if (!deliveryChain) {
+                trip.depart = tripIndex === 0 ? officeLeave : null;
+                trip.arrive = null;
+                trip.returnDepart = null;
+              } else {
+                trip.returnDepart = end ? keptReturnDepart : null;
+              }
+              trip.returnArrive = end ? keptReturn : null;
+            });
+            var args = [index, count].concat(chain);
+            day.trips.splice.apply(day.trips, args);
+          }
+          dirty = true;
+          renderTrips();
+          if (action === "add-stop") {
+            var cards = tripsBox.querySelectorAll(".card");
+            for (var c = 0; c < cards.length; c++) {
+              if (Number(cards[c].getAttribute("data-index")) === index) {
+                var stops = cards[c].querySelectorAll(".stop");
+                if (stops.length) {
+                  stops[stops.length - 1].scrollIntoView({ behavior: "auto", block: "nearest" });
+                }
+              }
+            }
+          }
+        }
+      });
+
+      workDate.addEventListener("change", function () {
+        if (dirty && !confirm("저장하지 않은 내용이 있습니다. 날짜를 바꿀까요?")) {
+          workDate.value = loadedKey.split("|")[1] || workDate.value;
+          return;
+        }
+        loadCurrentDay();
+      });
+
+      subjectBox.addEventListener("change", function () {
+        if (dirty && !confirm("저장하지 않은 내용이 있습니다. 다른 사람 기록으로 바꿀까요?")) {
+          subjectBox.value = loadedKey.split("|")[0] || session.name;
+          return;
+        }
+        loadCurrentDay();
+      });
+
+      document.addEventListener("visibilitychange", function () {
+        if (document.visibilityState === "visible" && session.name && !workStep.classList.contains("hidden")) {
+          keepScreenOn();
+        }
+      });
+
+      outBtn.onclick = function () {
+        if (dirty && !confirm("저장하지 않은 내용이 있습니다. 나갈까요?")) {
+          return;
+        }
+        session = { name: "", role: "", password: "" };
+        typedPassword = "";
+        forgetLogin();
+        day = blankDay();
+        loadedKey = "";
+        dirty = false;
+        catalog = { works: [], vehicles: [], places: [], people: [] };
+        document.getElementById("newPw").value = "";
+        document.getElementById("confirmPw").value = "";
+        document.getElementById("pw").value = "";
+        document.getElementById("newPlace").value = "";
+        document.getElementById("newVehicle").value = "";
+        document.getElementById("newStaff").value = "";
+        document.getElementById("adminPw").value = "";
+        document.getElementById("adminPwConfirm").value = "";
+        document.getElementById("currentPw").value = "";
+        document.getElementById("changedPw").value = "";
+        document.getElementById("changedPwConfirm").value = "";
+        document.getElementById("adminOpenBtn").classList.add("hidden");
+        clearLiveNote();
+        regName.value = "";
+        nameInput.value = "";
+        savedNote.textContent = "";
+        document.getElementById("copyText").value = "";
+        document.getElementById("copyWrap").classList.add("hidden");
+        document.getElementById("totalLine").textContent = "";
+        releaseScreen();
+        tripsBox.innerHTML = "";
+        lead.textContent = "이름과 비밀번호를 입력해 주세요.";
+        help.textContent = "처음인 직원은 아래 직원등록을 누릅니다.";
+        show("loginHome");
+      };
+
+      var keptLogin = savedLogin();
+      if (keptLogin) {
+        nameInput.value = keptLogin.name;
+        typedPassword = keptLogin.password;
+        google.script.run
+          .withSuccessHandler(function (result) {
+            if (!result || !result.ok) {
+              forgetLogin();
+              typedPassword = "";
+              nameInput.value = keptLogin.name;
+              if (result && result.needsSetup) {
+                showRegister(keptLogin.name);
+                return;
+              }
+              fail(result && result.message);
+              return;
+            }
+            openWork(result);
+          })
+          .withFailureHandler(function () {
+            fail("연결이 되지 않았습니다. 다시 시도해 주세요.");
+          })
+          .enterDay(keptLogin.name, keptLogin.password, todayText());
+      }
+    </script>
+  </body>
+</html>

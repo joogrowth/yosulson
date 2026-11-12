@@ -31,7 +31,11 @@ python3 scripts/build_dashboard.py --month YYYY-MM --as-of YYYY-MM-DD
 
 ## 근퇴
 
-`근퇴/index.html` 을 열면 지금 쓰는 근무기록 시트로 이동한다. 시트 주소는 바꾸지 않았다. 출퇴근은 이 시트로 계속 기록된다.
+직원 로그인 주소는 단톡방에 올린 주소와 같다.
+
+https://script.google.com/macros/s/AKfycbzEEnzF019IyqOCB6RF-gcJXMPuEmcHnXpcKERaTyJx7H0pTFZxXwg8u8Rbyo53ekku/exec
+
+`근퇴/index.html` 을 열면 위 로그인 화면으로 이동한다. 프로그램 코드는 `근퇴/apps-script/` 에 있다. 기록이 쌓이는 시트 주소는 바꾸지 않았다.
 
 https://docs.google.com/spreadsheets/d/1WO7kMn7Hm5CACOj0WthlIpDA2KB-wHZ5bWwiJmPs7qk/edit
 
