@@ -28,7 +28,7 @@ Cursor는 루트 `AGENTS.md`, `.cursor/rules/`, 각 영역 `AGENTS.md`·`기억.
 |------|----------------|-------------|
 | 배송 | `배송/기억.md`, `배송/지침.md` | `.cursor/rules/baesong.mdc` |
 | 근퇴 | `근퇴/기억.md`, `근퇴/README.md` | `.cursor/rules/geuntoe.mdc` |
-| 식자재 | `식자재/기억.md` | `.cursor/rules/sikjjae.mdc` |
+| 식자재 | `식자재/기억.md`, `식자재/지침.md` | `.cursor/rules/sikjjae.mdc` |
 | 급여 | `급여/기억.md` | `.cursor/rules/geubyeo.mdc` |
 
 공통 규칙: `.cursor/rules/always.mdc`
