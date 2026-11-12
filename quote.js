@@ -68,6 +68,8 @@
 
   function formatPhone(raw) {
     var digits = String(raw || '').replace(/\D/g, '');
+    if (digits.length === 9 && digits.indexOf('02') === 0) return '02 ' + digits.slice(2, 5) + ' ' + digits.slice(5);
+    if (digits.length === 10 && digits.indexOf('02') === 0) return '02 ' + digits.slice(2, 6) + ' ' + digits.slice(6);
     if (digits.length === 11) return digits.slice(0, 3) + ' ' + digits.slice(3, 7) + ' ' + digits.slice(7);
     if (digits.length === 10) return digits.slice(0, 3) + ' ' + digits.slice(3, 6) + ' ' + digits.slice(6);
     return String(raw || '').trim();
@@ -221,11 +223,12 @@
     {
       id: 'gwangmyeong',
       name: '광명 아브릴모마',
-      keys: ['아브릴모마', '아브릴', '광명'],
-      km: [28, 32],
+      keys: ['아브릴 모마', '아브릴모마', '아브릴', '광명'],
+      km: 33,
+      kmUsual: [28, 32],
+      fuel: 5300,
       toll: 2800,
-      tollOptional: true,
-      tollNote: '톨게이트를 안 타면 0원'
+      tollNote: '2026-11-14 실측. 톨게이트를 안 타면 0원'
     },
     {
       id: 'banyan',
@@ -336,9 +339,26 @@
     var next = Object.assign({}, input);
     if (!venue) return next;
     var kmEmpty = next.km == null || next.km === '';
+    var fuelEmpty = next.fuel == null || next.fuel === '';
     var tollEmpty = next.toll == null || next.toll === '';
-    if (kmEmpty && typeof venue.km === 'number') next.km = venue.km;
-    if (tollEmpty && typeof venue.toll === 'number' && !venue.tollOptional) next.toll = venue.toll;
+    var filled = [];
+    if (kmEmpty && typeof venue.km === 'number') {
+      next.km = venue.km;
+      filled.push('편도 ' + venue.km + 'km');
+    }
+    if (fuelEmpty && typeof venue.fuel === 'number') {
+      next.fuel = venue.fuel;
+      filled.push('연료비 ' + formatWon(venue.fuel));
+    }
+    if (tollEmpty && typeof venue.toll === 'number' && !venue.tollOptional) {
+      next.toll = venue.toll;
+      filled.push('통행료 ' + formatWon(venue.toll));
+    }
+    if (filled.length) {
+      next.warnings = (next.warnings || []).concat(
+        venue.name + ' 지난 실측을 넣었습니다. ' + filled.join(', ') + '.'
+      );
+    }
     return next;
   }
 
@@ -470,11 +490,17 @@
     return clocks[0] + ' ~ ' + clocks[1];
   }
 
-  var PHONE_RE = /01[016789][-\s.]?\d{3,4}[-\s.]?\d{4}/;
+  var PHONE_RE = /01[016789][-\s.]?\d{3,4}[-\s.]?\d{4}|0(?:2[-\s.]?\d{3,4}|[3-6]\d[-\s.]?\d{3,4}|70[-\s.]?\d{3,4})[-\s.]?\d{4}/;
 
   function extractPhone(line) {
     var m = String(line || '').match(PHONE_RE);
     return m ? m[0] : '';
+  }
+
+  function isPhoneOnly(line) {
+    var phone = extractPhone(line);
+    if (!phone) return false;
+    return String(line).replace(phone, '').replace(/[\s().\-]/g, '') === '';
   }
 
   var LABELS = [
@@ -525,7 +551,13 @@
     { label: '구간수고비', kind: 'band' },
     { label: '기본수고비', kind: 'band' },
     { label: '수고비', kind: 'band' },
+    { label: '구간추가할증', kind: 'percent' },
     { label: '구간할증', kind: 'percent' },
+    { label: '세팅완료', key: 'setupDone' },
+    { label: '세팅수고비', kind: 'extra', name: '세팅수고비' },
+    { label: '주말할증', kind: 'extra', name: '주말할증' },
+    { label: '휴일할증', kind: 'extra', name: '휴일할증' },
+    { label: '상하차수고비', kind: 'extra', name: '상하차 수고비' },
     { label: '적재이동비', kind: 'extra', name: '적재이동비' },
     { label: '적재수고비', kind: 'extra', name: '적재이동비' },
     { label: '적대이동비', kind: 'extra', name: '적재이동비' },
@@ -568,15 +600,43 @@
     var c = compact(line);
     if (/^(총소요시간|합계|인건비|차량운영비)/.test(c)) return true;
     if (/^[•ㆍ]/.test(line.trim()) && /^(유류비|통행료)/.test(c)) return true;
-    if (/^\(/.test(line.trim())) return true;
+    if (/^\(/.test(line.trim())) {
+      var inner = line.trim().replace(/^\(+/, '').replace(/\)+$/, '').trim();
+      if (looksLikePlace(inner) || /건물|회관|빌딩|타워|홀|로비/.test(inner)) return false;
+      if (/시급|왕복|편도|유류|km|별도|포함|기준|\d[\d,]*\s*원/.test(inner)) return true;
+      return false;
+    }
     if (/^[-–—_=]{4,}$/.test(line.trim())) return true;
     return false;
   }
 
+  function looksLikeInstruction(line) {
+    return /(?:해줘|해주세요|뽑아|참고|기입|계산해|계산은|넣어주|마지막에|알겠지|부탁해|부탁드립니다)/.test(line);
+  }
+
+  function nextContentLine(lines, index) {
+    for (var i = index + 1; i < lines.length; i++) {
+      var line = String(lines[i] || '').replace(/\*\*/g, '').trim();
+      if (!line || shouldIgnore(line)) continue;
+      return line;
+    }
+    return '';
+  }
+
+  function looksLikeNameStub(line) {
+    if (line.length < 2 || line.length > 24) return false;
+    if (looksLikeInstruction(line) || looksLikePlace(line)) return false;
+    if (/[.?!。？！\d]/.test(line)) return false;
+    if (/분|시급|합계|원|출발|도착|행사/.test(line)) return false;
+    return /[가-힣]{2,}/.test(line);
+  }
+
   function looksLikePlace(line) {
     if (line.length < 4) return false;
-    if (/원|분|km|시급|합계/i.test(line)) return false;
-    return /[가-힣]/.test(line) && /(?:로|길|\d+동|\d+호|[가-힣]+구|[가-힣]+시|[가-힣]+군|읍|면|리|\d+층|호텔|관|센터|빌딩|타워|캠퍼스)/.test(line);
+    if (/[.?!。？！]/.test(line)) return false;
+    if (/분|km|시급|합계/i.test(line)) return false;
+    if (/\d[\d,]*\s*원/.test(line)) return false;
+    return /[가-힣]/.test(line) && /(?:로|길|\d+동|\d+호|[가-힣]+구|[가-힣]+시|[가-힣]+군|읍|면|리|\d+층|호텔|관|홀|대학교|센터|빌딩|타워|캠퍼스|원(?![가-힣]))/.test(line);
   }
 
   function emptyParsed() {
@@ -586,11 +646,13 @@
       event: '',
       date: '',
       phone: '',
+      contacts: [],
       place: '',
       items: '',
       depart: '',
       arrive: '',
       eventTime: '',
+      setupDone: '',
       goMin: null,
       backMin: null,
       shopMin: null,
@@ -605,6 +667,23 @@
       extras: [],
       warnings: []
     };
+  }
+
+  function addContact(parsed, name, phone) {
+    phone = String(phone || '').trim();
+    name = String(name || '').replace(phone, '').replace(/[()（）]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!name) {
+      if (phone && !parsed.phone) parsed.phone = phone;
+      return;
+    }
+    if (!phone) return;
+    parsed.contacts = parsed.contacts || [];
+    var key = name + '|' + phone;
+    for (var i = 0; i < parsed.contacts.length; i++) {
+      if (parsed.contacts[i].name + '|' + parsed.contacts[i].phone === key) return;
+    }
+    parsed.contacts.push({ name: name, phone: phone });
+    if (phone && !parsed.phone) parsed.phone = phone;
   }
 
   function addItem(parsed, text) {
@@ -691,7 +770,7 @@
       parsed[key] = minutes;
       return;
     }
-    if (key === 'depart' || key === 'arrive' || key === 'eventTime') {
+    if (key === 'depart' || key === 'arrive' || key === 'eventTime' || key === 'setupDone') {
       var when = normalizeWhen(rest);
       if (!when) return;
       parsed[key] = when;
@@ -735,6 +814,7 @@
 
   function parseMemo(text) {
     var parsed = emptyParsed();
+    var pendingName = '';
     var lines = String(text || '').replace(/\r/g, '').split('\n');
     for (var n = 0; n < lines.length; n++) {
       var line = lines[n].replace(/\*\*/g, '').trim();
@@ -764,16 +844,33 @@
         addItem(parsed, line);
         continue;
       }
-      if (!parsed.place && looksLikePlace(line)) {
-        parsed.place = line;
+      var upcoming = nextContentLine(lines, n);
+      var phone = extractPhone(line);
+      if (!phone && isPhoneOnly(upcoming) && !looksLikeInstruction(line) && !looksLikePlace(line) && !/[.?!。？！]/.test(line) && !/\d[\d,]*\s*원/.test(line)) {
+        pendingName = line;
+        continue;
+      }
+      if (phone) {
+        var nameSource = isPhoneOnly(line) && pendingName ? pendingName + ' ' + phone : line;
+        pendingName = '';
+        addContact(parsed, nameSource, phone);
+        continue;
+      }
+      if (!looksLikeInstruction(line) && (looksLikePlace(line) || matchVenue({ place: line, event: '' }))) {
+        parsed.place = parsed.place ? parsed.place + ' ' + line : line;
+        continue;
+      }
+      if (looksLikeNameStub(line) && upcoming && (looksLikePlace(upcoming) || matchVenue({ place: upcoming, event: '' }))) {
+        parsed.place = parsed.place ? parsed.place + ' ' + line : line;
         continue;
       }
       if (!parsed.items && /\d+\s*(?:인|명)/.test(line)) {
         addItem(parsed, line);
         continue;
       }
-      var phone = extractPhone(line);
-      if (phone && !parsed.phone) parsed.phone = phone;
+      if (parsed.items && !looksLikeInstruction(line) && !/[.?!。？！]/.test(line) && !/\d[\d,]*\s*원/.test(line)) {
+        addItem(parsed, line.replace(/^\(+/, '').replace(/\)+$/, ''));
+      }
     }
     if (isShopping(parsed.type)) parsed.includeBand = false;
     return parsed;
@@ -874,6 +971,7 @@
     var times = [];
     if (input.depart) times.push('출발: ' + input.depart);
     if (input.arrive) times.push('도착: ' + input.arrive);
+    if (input.setupDone) times.push('세팅완료: ' + input.setupDone);
     if (input.eventTime) times.push('행사시작: ' + input.eventTime);
     if (times.length) {
       lines.push('');
@@ -883,10 +981,28 @@
       lines.push('');
       lines.push('장소: ' + input.place);
     }
-    if (input.person) {
+    var contacts = input.contacts || [];
+    var namedContacts = contacts.filter(function (c) { return c.name; });
+    if (input.person || namedContacts.length) {
       lines.push('');
-      var phone = input.phone ? formatPhone(input.phone) : '';
-      lines.push('담당자: ' + input.person + (phone ? ' (' + phone + ')' : ' (연락처 확인중)'));
+      var onlySelf = namedContacts.length > 0 && namedContacts.every(function (c) { return c.name === input.person; });
+      if (input.person) {
+        var phone = input.phone ? formatPhone(input.phone) : '';
+        var phoneIsNamed = namedContacts.some(function (c) { return c.phone && formatPhone(c.phone) === phone; });
+        if (onlySelf) {
+          var selfPhone = formatPhone((namedContacts[0] && namedContacts[0].phone) || input.phone);
+          lines.push('담당자: ' + input.person + (selfPhone ? ' (' + selfPhone + ')' : ''));
+        } else if (phone && !phoneIsNamed) lines.push('담당자: ' + input.person + ' (' + phone + ')');
+        else if (namedContacts.length) lines.push('담당자: ' + input.person);
+        else lines.push('담당자: ' + input.person + ' (연락처 확인중)');
+      }
+      if (namedContacts.length && !onlySelf) {
+        var bits = namedContacts.map(function (c) {
+          var p = c.phone ? formatPhone(c.phone) : '';
+          return p ? c.name + ' (' + p + ')' : c.name;
+        });
+        lines.push('연락처: ' + bits.join(', '));
+      }
     }
     if (input.items) {
       lines.push('');
@@ -934,6 +1050,9 @@
     }
     lines.push('•통행료 ' + formatWon(model.tollRound));
     if (model.toll > 0) lines.push('(편도 ' + formatWon(model.toll) + ' × 왕복 2)');
+    var keeps = model.rows.map(function (r) { return r.total - r.labor; });
+    var keepSame = keeps.every(function (n) { return n === keeps[0]; });
+    lines.push('•인건비 제외 차량유지비 ' + (keepSame ? formatWon(keeps[0]) : keeps.map(formatWon).join(' / ')));
     lines.push('•합계 ' + model.rows.map(function (r) { return formatWon(r.total); }).join(' / '));
     var includeNames = [];
     if (model.band > 0) includeNames.push('배송/출장 수고비');
@@ -946,6 +1065,7 @@
     tail += ')';
     lines.push(tail);
     lines.push(model.parking > 0 ? '주차비 ' + formatWon(model.parking) + ' (별도)' : '주차비 별도');
+    if (model.fixedDeliveryFee > 0) lines.push('고정배송비용 ' + formatWon(model.fixedDeliveryFee));
     return lines.join('\n');
   }
 
@@ -1037,7 +1157,8 @@
         extras: extras,
         percentMode: percentMode,
         vehicle: vehicle,
-        parking: parking
+        parking: parking,
+        fixedDeliveryFee: asMoney(input.fixedDeliveryFee || 0)
       });
     }
 

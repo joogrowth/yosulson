@@ -1,0 +1,586 @@
+'use strict';
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('fs');
+const q = require('./quote.js');
+
+const ledger = JSON.parse(fs.readFileSync('./data/trips.json', 'utf8'));
+
+test('confirmed trips stay tied to the quote that was given', function () {
+  assert.equal(ledger.trips.length, 18);
+  const trip = ledger.trips.find(function (row) { return row.id === '20261114-avril-imyeonjeong'; });
+  assert.equal(trip.id, '20261114-avril-imyeonjeong');
+  assert.equal(trip.place, '광명 아브릴모마 2부');
+  assert.equal(trip.km, 33);
+  assert.equal(trip.fuel, 5300);
+  assert.equal(trip.toll, 2800);
+  assert.equal(trip.goMin, 70);
+  assert.equal(trip.backMin, 70);
+  assert.equal(trip.revisions[0].from, 60);
+  assert.equal(trip.revisions[0].to, 70);
+
+  const quote = q.buildQuote({
+    type: trip.type,
+    person: trip.person,
+    event: trip.event,
+    date: trip.date,
+    depart: trip.depart,
+    arrive: trip.arrive,
+    eventTime: trip.eventTime,
+    place: trip.place,
+    items: trip.items,
+    km: trip.km,
+    fuel: trip.fuel,
+    toll: trip.toll,
+    goMin: trip.goMin,
+    backMin: trip.backMin,
+    includeBand: trip.includeBand
+  });
+  assert.equal(quote.ready, true);
+  assert.deepEqual(quote.rows.map(function (row) { return row.labor; }), trip.quoted.labor);
+  assert.deepEqual(quote.rows.map(function (row) { return row.total; }), trip.quoted.totals);
+  assert.equal(quote.vehicle, trip.quoted.vehicle);
+  assert.equal(quote.fuelRound, trip.quoted.fuelRound);
+  assert.equal(quote.tollRound, trip.quoted.tollRound);
+  assert.equal(q.bandFee(trip.quoted.roundKm), trip.quoted.bandIfIncluded);
+
+  const venue = q.matchVenue({ place: trip.place, event: trip.event });
+  assert.equal(venue.id, trip.venueId);
+  assert.ok(trip.km > venue.kmUsual[1]);
+
+  const sangam = ledger.trips.find(function (row) { return row.id === '20261117-sangam-shin'; });
+  const sangamQuote = q.buildQuote({
+    type: sangam.type,
+    person: sangam.person,
+    event: sangam.event,
+    date: sangam.date,
+    depart: sangam.depart,
+    arrive: sangam.arrive,
+    place: sangam.place,
+    items: sangam.items,
+    phone: sangam.phone,
+    km: sangam.km,
+    fuel: sangam.fuel,
+    toll: sangam.toll,
+    goMin: sangam.goMin,
+    backMin: sangam.backMin,
+    includeBand: sangam.includeBand,
+    percentMode: sangam.percentMode,
+    extras: sangam.extras
+  });
+  assert.equal(sangamQuote.ready, true);
+  assert.deepEqual(sangamQuote.rows.map(function (row) { return row.total; }), sangam.quoted.totals);
+  assert.equal(q.bandFee(sangam.quoted.roundKm), sangam.quoted.bandIfIncluded);
+  assert.equal(q.formatDateLabel(sangam.date), '26.11.17(화)');
+
+  const snu = ledger.trips.find(function (row) { return row.id === '20270106-snu-kim'; });
+  const snuQuote = q.buildQuote({
+    type: snu.type,
+    person: snu.person,
+    event: snu.event,
+    date: snu.date,
+    phone: snu.phone,
+    depart: snu.depart,
+    arrive: snu.arrive,
+    eventTime: snu.eventTime,
+    place: snu.place,
+    items: snu.items,
+    km: snu.km,
+    fuel: snu.fuel,
+    toll: snu.toll,
+    goMin: snu.goMin,
+    backMin: snu.backMin,
+    includeBand: snu.includeBand,
+    percentMode: snu.percentMode
+  });
+  assert.equal(snuQuote.ready, true);
+  assert.deepEqual(snuQuote.rows.map(function (row) { return row.total; }), snu.quoted.totals);
+  assert.equal(snuQuote.suggestions[0].note, '6층 605호 기물/세팅 운반');
+  assert.equal(q.matchVenue({ place: snu.place }).id, snu.venueId);
+  assert.equal(q.formatDateLabel(snu.date), '27.01.06(수)');
+  assert.equal(q.formatPhone(snu.phone), '02 880 6113');
+
+  const yonsei = ledger.trips.find(function (row) { return row.id === '20261108-yonsei-gu'; });
+  const yonseiQuote = q.buildQuote({
+    type: yonsei.type,
+    person: yonsei.person,
+    event: yonsei.event,
+    date: yonsei.date,
+    phone: yonsei.phone,
+    depart: yonsei.depart,
+    arrive: yonsei.arrive,
+    place: yonsei.place,
+    items: yonsei.items,
+    km: yonsei.km,
+    fuel: yonsei.fuel,
+    toll: yonsei.toll,
+    goMin: yonsei.goMin,
+    backMin: yonsei.backMin,
+    includeBand: yonsei.includeBand,
+    percentMode: yonsei.percentMode,
+    extras: yonsei.extras,
+    parking: yonsei.parking
+  });
+  assert.equal(yonseiQuote.ready, true);
+  assert.equal(yonseiQuote.band, 0);
+  assert.deepEqual(yonseiQuote.rows.map(function (row) { return row.total; }), yonsei.quoted.totals);
+  assert.equal(q.bandFee(yonsei.quoted.roundKm), yonsei.quoted.bandRegulation);
+  assert.equal(yonsei.quoted.bandAlreadyInSurcharge, false);
+  assert.match(yonseiQuote.text, /주차비 3,000원 \(별도\)/);
+  assert.equal(yonseiQuote.rows[0].total, 40213);
+  assert.equal(q.formatDateLabel(yonsei.date), '26.11.08(일)');
+
+  const division = ledger.trips.find(function (row) { return row.id === '20261117-deogyang-yun'; });
+  const divisionQuote = q.buildQuote({
+    type: division.type,
+    person: division.person,
+    event: division.event,
+    date: division.date,
+    phone: division.phone,
+    depart: division.depart,
+    arrive: division.arrive,
+    eventTime: division.eventTime,
+    place: division.place,
+    items: division.items,
+    km: division.km,
+    fuel: division.fuel,
+    toll: division.toll,
+    goMin: division.goMin,
+    backMin: division.backMin,
+    includeBand: division.includeBand
+  });
+  assert.equal(divisionQuote.ready, true);
+  assert.equal(q.matchVenue({ place: division.place, event: division.event }), null);
+  assert.deepEqual(divisionQuote.rows.map(function (row) { return row.total; }), division.quoted.totals);
+  assert.equal(q.bandFee(division.quoted.roundKm), division.quoted.bandIfIncluded);
+  assert.equal(q.formatDateLabel(division.date), '26.11.17(화)');
+
+  const morning = ledger.trips.find(function (row) { return row.id === '20261129-avril-jeong'; });
+  const earlier = ledger.trips.find(function (row) { return row.id === morning.inheritedFrom; });
+  assert.equal(morning.km, earlier.km);
+  assert.equal(morning.fuel, earlier.fuel);
+  assert.equal(morning.toll, earlier.toll);
+  assert.notEqual(morning.goMin, earlier.goMin);
+  const morningQuote = q.buildQuote({
+    type: morning.type,
+    person: morning.person,
+    event: morning.event,
+    date: morning.date,
+    depart: morning.depart,
+    arrive: morning.arrive,
+    eventTime: morning.eventTime,
+    place: morning.place,
+    items: morning.items,
+    km: morning.km,
+    fuel: morning.fuel,
+    toll: morning.toll,
+    goMin: morning.goMin,
+    backMin: morning.backMin,
+    includeBand: morning.includeBand
+  });
+  assert.deepEqual(morningQuote.rows.map(function (row) { return row.total; }), morning.quoted.totals);
+  assert.equal(q.formatDateLabel(morning.date), '26.11.29(일)');
+
+  const jung = ledger.trips.find(function (row) { return row.id === '20261116-seosomun-park'; });
+  const jungQuote = q.buildQuote({
+    type: jung.type,
+    person: jung.person,
+    event: jung.event,
+    date: jung.date,
+    phone: jung.phone,
+    depart: jung.depart,
+    arrive: jung.arrive,
+    place: jung.place,
+    items: jung.items,
+    km: jung.km,
+    fuel: jung.fuel,
+    toll: jung.toll,
+    goMin: jung.goMin,
+    backMin: jung.backMin,
+    includeBand: jung.includeBand,
+    percentMode: jung.percentMode
+  });
+  assert.equal(jungQuote.ready, true);
+  assert.equal(jung.depart, '09:20');
+  assert.equal(jung.arrive, '10:30');
+  assert.equal(jung.goMin, 70);
+  assert.equal(jung.backMin, 70);
+  assert.deepEqual(jungQuote.rows.map(function (row) { return row.total; }), jung.quoted.totals);
+  assert.equal(q.formatDateLabel(jung.date), '26.11.17(화)');
+  assert.match(jungQuote.text, /보건원/);
+  assert.match(jungQuote.text, /인건비 제외 차량유지비 23,880원/);
+
+  const nowon = ledger.trips.find(function (row) { return row.id === '20261116-nowon-park'; });
+  assert.equal(nowon.date, '2026-11-16');
+  assert.notEqual(nowon.date, jung.date);
+  assert.equal(nowon.depart, '09:10');
+  assert.equal(nowon.arrive, '10:30');
+  assert.notEqual(nowon.place, jung.place);
+  assert.equal(nowon.percentMode, 'none');
+  assert.equal(nowon.fuel, 7000);
+  assert.equal(nowon.backMin, 60);
+  assert.equal(nowon.toll, 2600);
+  assert.equal(nowon.revisions.length, 6);
+  const nowonQuote = q.buildQuote({
+    type: nowon.type,
+    person: nowon.person,
+    event: nowon.event,
+    date: nowon.date,
+    phone: nowon.phone,
+    depart: nowon.depart,
+    arrive: nowon.arrive,
+    place: nowon.place,
+    items: nowon.items,
+    km: nowon.km,
+    fuel: nowon.fuel,
+    toll: nowon.toll,
+    goMin: nowon.goMin,
+    backMin: nowon.backMin,
+    includeBand: nowon.includeBand,
+    percentMode: nowon.percentMode
+  });
+  assert.equal(nowonQuote.ready, true);
+  assert.equal(nowonQuote.vehicle, 19092);
+  assert.equal(nowonQuote.tollRound, 5200);
+  assert.equal(nowonQuote.fuelRound, 14000);
+  assert.equal(nowonQuote.minutes, 130);
+  assert.deepEqual(nowonQuote.rows.map(function (row) { return row.total; }), nowon.quoted.totals);
+  assert.equal(q.bandFee(nowon.quoted.roundKm), 11000);
+  assert.doesNotMatch(nowonQuote.text, /구간할증/);
+
+  const airbnb = ledger.trips.find(function (row) { return row.id === '20261110-itaewon-kang'; });
+  assert.equal(airbnb.fixedDeliveryFee, 40000);
+  assert.equal(q.formatDateLabel(airbnb.date), '26.11.10(화)');
+  const airbnbQuote = q.buildQuote({
+    type: airbnb.type,
+    person: airbnb.person,
+    event: airbnb.event,
+    date: airbnb.date,
+    phone: airbnb.phone,
+    depart: airbnb.depart,
+    arrive: airbnb.arrive,
+    eventTime: airbnb.eventTime,
+    place: airbnb.place,
+    items: airbnb.items,
+    km: airbnb.km,
+    fuel: airbnb.fuel,
+    toll: airbnb.toll,
+    goMin: airbnb.goMin,
+    backMin: airbnb.backMin,
+    includeBand: airbnb.includeBand,
+    percentMode: airbnb.percentMode
+  });
+  assert.equal(airbnbQuote.ready, true);
+  assert.equal(airbnbQuote.vehicle, 9768);
+  assert.equal(airbnbQuote.minutes, 140);
+  assert.deepEqual(airbnbQuote.rows.map(function (row) { return row.total; }), airbnb.quoted.totals);
+  assert.ok(airbnb.quoted.totals[0] > airbnb.fixedDeliveryFee);
+
+  const yang = ledger.trips.find(function (row) { return row.id === '20270307-avril-yang'; });
+  assert.equal(yang.inheritedFrom, '20261114-avril-imyeonjeong');
+  assert.deepEqual(yang.inheritedFields, ['km', 'fuel', 'toll']);
+  assert.equal(yang.goMin, 60);
+  assert.equal(yang.backMin, 70);
+  const yangQuote = q.buildQuote({
+    type: yang.type,
+    person: yang.person,
+    event: yang.event,
+    date: yang.date,
+    depart: yang.depart,
+    arrive: yang.arrive,
+    eventTime: yang.eventTime,
+    place: yang.place,
+    items: yang.items,
+    km: yang.km,
+    fuel: yang.fuel,
+    toll: yang.toll,
+    goMin: yang.goMin,
+    backMin: yang.backMin,
+    includeBand: yang.includeBand
+  });
+  assert.equal(yangQuote.ready, true);
+  assert.deepEqual(yangQuote.rows.map(function (row) { return row.total; }), yang.quoted.totals);
+  assert.equal(q.formatDateLabel(yang.date), '27.03.07(일)');
+
+  const go = ledger.trips.find(function (row) { return row.id === '20261114-avril-go'; });
+  assert.equal(go.person, '고효진');
+  assert.equal(go.inheritedFrom, '20261114-avril-imyeonjeong');
+  assert.deepEqual(go.inheritedFields, ['km', 'fuel']);
+  assert.equal(go.km, 33);
+  assert.equal(go.fuel, 5300);
+  assert.equal(go.toll, 2800);
+  assert.equal(go.depart, '08:50');
+  assert.equal(go.arrive, '10:00');
+  assert.equal(go.goMin, 70);
+  assert.equal(go.backMin, 70);
+  assert.equal(go.headcount, 11);
+  const goQuote = q.buildQuote({
+    type: go.type,
+    person: go.person,
+    event: go.event,
+    date: go.date,
+    depart: go.depart,
+    arrive: go.arrive,
+    eventTime: go.eventTime,
+    place: go.place,
+    items: go.items,
+    km: go.km,
+    fuel: go.fuel,
+    toll: go.toll,
+    goMin: go.goMin,
+    backMin: go.backMin,
+    includeBand: go.includeBand,
+    percentMode: go.percentMode,
+    extras: go.extras
+  });
+  assert.equal(goQuote.ready, true);
+  assert.equal(goQuote.minutes, 140);
+  assert.deepEqual(goQuote.rows.map(function (row) { return row.labor; }), [25667, 28000, 30333]);
+  assert.deepEqual(goQuote.rows.map(function (row) { return row.total; }), go.quoted.totals);
+  assert.match(goQuote.text, /인건비 제외 차량유지비 30,852원/);
+  assert.equal(q.formatDateLabel(go.date), '26.11.14(토)');
+
+  const ayeong = ledger.trips.find(function (row) { return row.id === '20261226-avril-jeongayeong'; });
+  assert.equal(ayeong.person, '정아영');
+  assert.equal(ayeong.inheritedFrom, '20261114-avril-imyeonjeong');
+  assert.deepEqual(ayeong.inheritedFields, ['km', 'fuel', 'toll']);
+  assert.equal(ayeong.goMin, 60);
+  assert.equal(ayeong.backMin, 60);
+  assert.equal(ayeong.headcount, 11);
+  const ayeongQuote = q.buildQuote({
+    type: ayeong.type,
+    person: ayeong.person,
+    event: ayeong.event,
+    date: ayeong.date,
+    depart: ayeong.depart,
+    arrive: ayeong.arrive,
+    eventTime: ayeong.eventTime,
+    place: ayeong.place,
+    items: ayeong.items,
+    km: ayeong.km,
+    fuel: ayeong.fuel,
+    toll: ayeong.toll,
+    goMin: ayeong.goMin,
+    backMin: ayeong.backMin,
+    includeBand: ayeong.includeBand,
+    percentMode: ayeong.percentMode,
+    extras: ayeong.extras
+  });
+  assert.equal(ayeongQuote.ready, true);
+  assert.equal(ayeongQuote.minutes, 120);
+  assert.deepEqual(ayeongQuote.rows.map(function (row) { return row.total; }), ayeong.quoted.totals);
+  assert.match(ayeongQuote.text, /인건비 제외 차량유지비 30,852원/);
+  assert.equal(q.formatDateLabel(ayeong.date), '26.12.26(토)');
+
+  const dasom = ledger.trips.find(function (row) { return row.id === '20261115-ajin-kim'; });
+  assert.equal(dasom.person, '김다솜');
+  assert.equal(dasom.km, 21);
+  assert.equal(dasom.fuel, 4000);
+  assert.equal(dasom.toll, 0);
+  assert.equal(dasom.goMin, 60);
+  assert.equal(dasom.backMin, 60);
+  assert.equal(dasom.contacts[0].name, '메니저');
+  const dasomQuote = q.buildQuote({
+    type: dasom.type,
+    person: dasom.person,
+    event: dasom.event,
+    date: dasom.date,
+    phone: dasom.phone,
+    contacts: dasom.contacts,
+    depart: dasom.depart,
+    arrive: dasom.arrive,
+    place: dasom.place,
+    items: dasom.items,
+    km: dasom.km,
+    fuel: dasom.fuel,
+    toll: dasom.toll,
+    goMin: dasom.goMin,
+    backMin: dasom.backMin,
+    includeBand: dasom.includeBand,
+    percentMode: dasom.percentMode,
+    extras: dasom.extras
+  });
+  assert.equal(dasomQuote.ready, true);
+  assert.equal(dasomQuote.minutes, 120);
+  assert.equal(dasomQuote.vehicle, 9324);
+  assert.deepEqual(dasomQuote.rows.map(function (row) { return row.total; }), dasom.quoted.totals);
+  assert.match(dasomQuote.text, /인건비 제외 차량유지비 17,324원/);
+  assert.equal(q.formatDateLabel(dasom.date), '26.11.15(일)');
+
+  const mj = ledger.trips.find(function (row) { return row.id === '20261112-geumgok-mj'; });
+  assert.equal(mj.person, 'MJ');
+  assert.equal(mj.km, 48);
+  assert.equal(mj.fuel, 8000);
+  assert.equal(mj.toll, 4000);
+  assert.equal(mj.goMin, 70);
+  assert.equal(mj.backMin, 70);
+  assert.equal(mj.headcount, 70);
+  assert.equal(mj.contacts.length, 2);
+  const mjQuote = q.buildQuote({
+    type: mj.type,
+    person: mj.person,
+    event: mj.event,
+    date: mj.date,
+    phone: mj.phone,
+    contacts: mj.contacts,
+    depart: mj.depart,
+    arrive: mj.arrive,
+    eventTime: mj.eventTime,
+    place: mj.place,
+    items: mj.items,
+    km: mj.km,
+    fuel: mj.fuel,
+    toll: mj.toll,
+    goMin: mj.goMin,
+    backMin: mj.backMin,
+    includeBand: mj.includeBand,
+    percentMode: mj.percentMode,
+    extras: mj.extras
+  });
+  assert.equal(mjQuote.ready, true);
+  assert.equal(mjQuote.minutes, 140);
+  assert.equal(mjQuote.vehicle, 21312);
+  assert.deepEqual(mjQuote.rows.map(function (row) { return row.total; }), mj.quoted.totals);
+  assert.match(mjQuote.text, /인건비 제외 차량유지비 45,312원/);
+  assert.equal(q.formatDateLabel(mj.date), '26.11.12(목)');
+
+  const hyuncheol = ledger.trips.find(function (row) { return row.id === '20261118-gangnam-choi'; });
+  assert.equal(hyuncheol.person, '최현철');
+  assert.equal(hyuncheol.km, 31);
+  assert.equal(hyuncheol.fuel, 5000);
+  assert.equal(hyuncheol.toll, 0);
+  assert.equal(hyuncheol.goMin, 80);
+  assert.equal(hyuncheol.backMin, 120);
+  assert.equal(hyuncheol.phone, '010 2370 1262');
+  const hyuncheolQuote = q.buildQuote({
+    type: hyuncheol.type,
+    person: hyuncheol.person,
+    event: hyuncheol.event,
+    date: hyuncheol.date,
+    phone: hyuncheol.phone,
+    depart: hyuncheol.depart,
+    arrive: hyuncheol.arrive,
+    eventTime: hyuncheol.eventTime,
+    place: hyuncheol.place,
+    items: hyuncheol.items,
+    km: hyuncheol.km,
+    fuel: hyuncheol.fuel,
+    toll: hyuncheol.toll,
+    goMin: hyuncheol.goMin,
+    backMin: hyuncheol.backMin,
+    includeBand: hyuncheol.includeBand,
+    percentMode: hyuncheol.percentMode,
+    extras: hyuncheol.extras
+  });
+  assert.equal(hyuncheolQuote.ready, true);
+  assert.equal(hyuncheolQuote.minutes, 200);
+  assert.equal(hyuncheolQuote.vehicle, 13764);
+  assert.deepEqual(hyuncheolQuote.rows.map(function (row) { return row.total; }), hyuncheol.quoted.totals);
+  assert.match(hyuncheolQuote.text, /인건비 제외 차량유지비 23,764원/);
+  assert.equal(q.formatDateLabel(hyuncheol.date), '26.11.18(수)');
+
+  const kang = ledger.trips.find(function (row) { return row.id === '20261117-itaewon-kang'; });
+  assert.equal(kang.person, '강슬');
+  assert.equal(kang.inheritedFrom, '20261110-itaewon-kang');
+  assert.deepEqual(kang.inheritedFields, ['km', 'fuel', 'toll', 'goMin', 'backMin']);
+  assert.equal(kang.fixedDeliveryFee, 40000);
+  assert.equal(kang.headcount, 15);
+  const kangQuote = q.buildQuote({
+    type: kang.type,
+    person: kang.person,
+    event: kang.event,
+    date: kang.date,
+    phone: kang.phone,
+    contacts: kang.contacts,
+    depart: kang.depart,
+    arrive: kang.arrive,
+    eventTime: kang.eventTime,
+    place: kang.place,
+    items: kang.items,
+    km: kang.km,
+    fuel: kang.fuel,
+    toll: kang.toll,
+    goMin: kang.goMin,
+    backMin: kang.backMin,
+    includeBand: kang.includeBand,
+    percentMode: kang.percentMode,
+    extras: kang.extras,
+    fixedDeliveryFee: kang.fixedDeliveryFee
+  });
+  assert.equal(kangQuote.ready, true);
+  assert.equal(kangQuote.minutes, 140);
+  assert.deepEqual(kangQuote.rows.map(function (row) { return row.total; }), kang.quoted.totals);
+  assert.match(kangQuote.text, /고정배송비용 40,000원/);
+  assert.equal(q.formatDateLabel(kang.date), '26.11.17(화)');
+
+  const sejong = ledger.trips.find(function (row) { return row.id === '20261114-sejong-kim'; });
+  assert.equal(sejong.contacts.length, 2);
+  assert.equal(q.formatDateLabel(sejong.date), '26.11.14(토)');
+  const sejongQuote = q.buildQuote({
+    type: sejong.type,
+    person: sejong.person,
+    event: sejong.event,
+    date: sejong.date,
+    phone: sejong.phone,
+    contacts: sejong.contacts,
+    depart: sejong.depart,
+    arrive: sejong.arrive,
+    place: sejong.place,
+    items: sejong.items,
+    km: sejong.km,
+    fuel: sejong.fuel,
+    toll: sejong.toll,
+    goMin: sejong.goMin,
+    backMin: sejong.backMin,
+    includeBand: sejong.includeBand,
+    percentMode: sejong.percentMode,
+    extras: sejong.extras
+  });
+  assert.equal(sejongQuote.ready, true);
+  assert.equal(sejongQuote.vehicle, 15096);
+  assert.equal(sejong.percentMode, 'none');
+  assert.equal(sejong.extras.length, 0);
+  assert.deepEqual(sejongQuote.rows.map(function (row) { return row.total; }), sejong.quoted.totals);
+  assert.doesNotMatch(sejongQuote.text, /주말할증|구간할증/);
+
+  const choi = ledger.trips.find(function (row) { return row.id === '20261113-mokdong-choi'; });
+  assert.equal(choi.status, 'confirmed');
+  assert.equal(choi.goMin, 60);
+  assert.equal(choi.backMin, 60);
+  assert.equal(choi.includeBand, false);
+  assert.equal(choi.percentMode, 'none');
+  assert.equal(choi.quoted.surcharge, 0);
+  assert.equal(choi.quoted.setupFee, 0);
+  assert.equal(choi.extras.length, 0);
+  const choiQuote = q.buildQuote({
+    type: choi.type,
+    person: choi.person,
+    event: choi.event,
+    date: choi.date,
+    phone: choi.phone,
+    depart: choi.depart,
+    arrive: choi.arrive,
+    setupDone: choi.setupDone,
+    place: choi.place,
+    items: choi.items,
+    km: choi.km,
+    fuel: choi.fuel,
+    toll: choi.toll,
+    goMin: choi.goMin,
+    backMin: choi.backMin,
+    includeBand: choi.includeBand,
+    percentMode: choi.percentMode,
+    extras: choi.extras
+  });
+  assert.equal(choiQuote.ready, true);
+  assert.equal(choiQuote.minutes, 120);
+  assert.equal(choiQuote.vehicle, 7992);
+  assert.equal(choiQuote.fuelRound, 6000);
+  assert.equal(choiQuote.band, 0);
+  assert.deepEqual(choiQuote.rows.map(function (row) { return row.total; }), choi.quoted.totals);
+  assert.doesNotMatch(choiQuote.text, /세팅수고비/);
+  assert.match(choiQuote.text, /인건비 제외 차량유지비 13,992원/);
+  assert.doesNotMatch(choiQuote.text, /구간할증|8,000원/);
+  assert.equal(q.formatDateLabel(choi.date), '26.11.13(금)');
+});
