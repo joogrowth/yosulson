@@ -26,7 +26,7 @@ h1{font-size:26px;font-weight:700;margin-bottom:6px}
 .fi{display:flex;flex-direction:column;gap:5px}
 .fi.full{grid-column:1/-1}
 label{font-size:12px;font-weight:600;color:#7a7974}
-input[type=text],input[type=number],input[type=date],input[type=time]{background:#f9f8f5;border:1px solid #d4d1ca;border-radius:8px;padding:10px 12px;font-size:14px;color:#28251d;font-family:inherit;width:100%}
+input[type=text],input[type=number],input[type=date],input[type=time]{background:#f9f8f5;border:1px solid #d4d1ca;border-radius:8px;padding:10px 12px;font-size:16px;color:#28251d;font-family:inherit;width:100%}
 input:focus{outline:2px solid #01696f;outline-offset:1px}
 input::placeholder{color:#bab9b4}
 input:disabled{opacity:.4;cursor:not-allowed}
@@ -175,7 +175,7 @@ input:disabled{opacity:.4;cursor:not-allowed}
     </div>
   </div>
 
-  <button id="btn-calc">계산하기</button>
+  <button id="btn-calc" type="button">계산하기</button>
 
   <div class="result" id="result">
     <div class="r-head">
@@ -297,6 +297,7 @@ input:disabled{opacity:.4;cursor:not-allowed}
 
   // 계산
   q('btn-calc').addEventListener('click', function(){
+    if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
     var name    = val('f-name');
     var org     = val('f-org');
     var date    = val('f-date');
@@ -407,29 +408,36 @@ input:disabled{opacity:.4;cursor:not-allowed}
 
     var rc=q('result');
     rc.className='result show';
-    rc.scrollIntoView({behavior:'smooth',block:'start'});
+    setTimeout(function(){
+      var top=rc.getBoundingClientRect().top+window.pageYOffset-8;
+      window.scrollTo(0, Math.max(0, top));
+    }, 300);
   });
 
   // 복사
   q('copy-btn').addEventListener('click', function(){
-    var text=copyLines.join('
-');
+    var text=copyLines.join('\n');
     var btn=this;
     function done(){ btn.textContent='복사됨'; setTimeout(function(){ btn.textContent='텍스트 복사'; },2000); }
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(text).then(done).catch(function(){
-        var ta=document.createElement('textarea');
-        ta.value=text; ta.style.cssText='position:fixed;opacity:0';
-        document.body.appendChild(ta); ta.focus(); ta.select();
-        try{ document.execCommand('copy'); done(); }catch(e){}
-        document.body.removeChild(ta);
-      });
-    } else {
+    function fallback(){
       var ta=document.createElement('textarea');
-      ta.value=text; ta.style.cssText='position:fixed;opacity:0';
-      document.body.appendChild(ta); ta.focus(); ta.select();
-      try{ document.execCommand('copy'); done(); }catch(e){}
+      ta.value=text;
+      ta.readOnly=true;
+      ta.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      var ok=false;
+      try{ ok=document.execCommand('copy'); }catch(e){}
+      ta.blur();
       document.body.removeChild(ta);
+      if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+      if(ok) done();
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(fallback);
+    } else {
+      fallback();
     }
   });
 
