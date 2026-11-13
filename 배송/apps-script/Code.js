@@ -63,12 +63,15 @@ var COLUMNS = [
   { key: 'vehicle',     head: '차량운영비',           group: '금액', num: true },
   { key: 'fuelCost',    head: '유류비',              group: '금액', num: true },
   { key: 'tollTotal',   head: '통행료왕복',           group: '금액', num: true },
-  { key: 'upkeep',      head: '차량유지비',           group: '금액', num: true },
+  { key: 'upkeep',      head: '차량유지비(인건비 제외)', group: '금액', num: true },
   { key: 'total11',     head: '합계11000',           group: '금액', num: true },
   { key: 'total12',     head: '합계12000',           group: '금액', num: true },
   { key: 'total13',     head: '합계13000',           group: '금액', num: true },
   { key: 'text',        head: '최종견적글',           group: '글', text: true }
 ];
+var ROW_HEIGHT = 21;                // 데이터 줄은 한 줄 높이로 고정한다(긴 글은 잘라서 보이고, 칸을 누르면 전체가 보인다)
+var UPKEEP_HEAD_COLOR = '#f2b36f'; // 차량유지비(인건비 제외) 칸을 다른 금액 칸과 구분하는 색
+var UPKEEP_CELL_COLOR = '#fdebd5';
 var GROUP_COLORS = { '관리': '#e3e6ea', '가안': '#d6e4f7', '제원': '#d8f0dc', '금액': '#fbeccb', '글': '#ead9f2' };
 
 var DRAFT_KEYS = ['sang', 'type', 'name', 'org', 'date', 'arrive', 'eventTime', 'place', 'contactName', 'phone', 'notes'];
@@ -361,6 +364,43 @@ function setupYearSheet_(sh) {
   sh.getRange(1, 1, 1, n).setValues([groupRow]);
   sh.getRange(2, 1, 1, n).setValues([headRow]);
   formatYearSheet_(sh);
+  lookSheet_(sh);
+}
+
+function writeHeaders_(sh) {
+  var n = COLUMNS.length;
+  var groupRow = [];
+  var headRow = [];
+  var lastGroup = '';
+  for (var i = 0; i < n; i++) {
+    headRow.push(COLUMNS[i].head);
+    groupRow.push(COLUMNS[i].group !== lastGroup ? COLUMNS[i].group : '');
+    lastGroup = COLUMNS[i].group;
+  }
+  ensureCols_(sh, n);
+  sh.getRange(1, 1, 1, n).setValues([groupRow]);
+  sh.getRange(2, 1, 1, n).setValues([headRow]);
+}
+
+// 색, 한 줄 높이, 차량유지비 칸 강조. 여러 번 실행해도 같은 결과가 된다.
+function lookSheet_(sh) {
+  try {
+    var n = COLUMNS.length;
+    var rows = Math.max(sh.getMaxRows(), 1000);
+    if (sh.getMaxRows() < rows) sh.insertRowsAfter(sh.getMaxRows(), rows - sh.getMaxRows());
+    for (var i = 0; i < n; i++) {
+      sh.getRange(1, i + 1, 2, 1).setBackground(GROUP_COLORS[COLUMNS[i].group]).setFontWeight('bold');
+    }
+    var body = rows - DATA_START + 1;
+    sh.getRange(DATA_START, 1, body, n).setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP).setVerticalAlignment('middle');
+    sh.setRowHeightsForced(DATA_START, body, ROW_HEIGHT);
+    var up = colIndex_('upkeep') + 1;
+    sh.getRange(1, up, 2, 1).setBackground(UPKEEP_HEAD_COLOR);
+    sh.getRange(DATA_START, up, body, 1).setBackground(UPKEEP_CELL_COLOR);
+    sh.setColumnWidth(up, 170);
+  } catch (err) {
+    // 모양은 건너뛴다.
+  }
 }
 
 // 모양 다듬기. 실패해도 저장에는 영향이 없도록 따로 감싼다.
@@ -423,6 +463,7 @@ function ensureCustomerSheet_() {
 function setup() {
   ensureYearSheet_(currentYear_());
   ensureCustomerSheet_();
+  yearSheets_().forEach(function (sh) { writeHeaders_(sh); lookSheet_(sh); }); // 여러 번 실행해도 안전하다.
   return {
     adminRegistered: adminRegistered_(),
     ownerRegistered: ownerRegistered_(),
@@ -473,6 +514,10 @@ function readRows_(sh) {
 function writeRow_(sh, row, obj) {
   ensureRows_(sh, row);
   sh.getRange(row, 1, 1, COLUMNS.length).setValues([objToRow_(obj)]);
+  try {
+    sh.getRange(row, 1, 1, COLUMNS.length).setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+    sh.setRowHeightsForced(row, 1, ROW_HEIGHT);
+  } catch (err) { /* 높이 고정은 건너뛴다 */ }
 }
 
 function nextId_(sh, year) {
