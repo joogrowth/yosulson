@@ -45,11 +45,12 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 .btns > *{flex:1;min-width:120px}
 .field{display:flex;flex-direction:column;gap:4px;min-width:0}
 .field > label,.field > .lbl{font-size:13px;color:var(--muted)}
-input[type=text],input[type=password],input[type=number],input[type=date],input[type=time],input[type=search],input:not([type]),textarea{
+input[type=text],input[type=password],input[type=number],input[type=date],input[type=time],input[type=search],input:not([type]),select,textarea{
   width:100%;font:inherit;color:var(--fg);background:var(--box);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:42px;min-width:0;
 }
+select{appearance:auto}
 textarea{resize:vertical;line-height:1.5}
-input:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
 .row2{display:flex;gap:10px;align-items:flex-end}
 .row2 > .grow{flex:1;min-width:0}
 .range{display:flex;align-items:center;gap:8px}
@@ -763,8 +764,10 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<h1>' + (row ? '견적문의 수정' : '견적문의') + '</h1>' +
       '<div class="card">' +
       '<div class="row2"><label class="sw"><input type="checkbox" id="sang"' + (d.sang === '예' ? ' checked' : '') + '><span class="track"></span><span>상담</span></label>' +
-      '<div class="field grow"><label for="type">종류</label><input id="type" list="typeList" autocomplete="off" placeholder="검색해서 고르기" value="' + esc(d.type) + '">' +
-      '<datalist id="typeList">' + TYPES.map(function (t) { return '<option value="' + t + '">'; }).join('') + '</datalist></div></div>' +
+      '<div class="field grow"><label for="type">종류</label><select id="type">' +
+      '<option value=""' + (d.type ? '' : ' selected') + '>선택</option>' +
+      TYPES.map(function (t) { return '<option value="' + t + '"' + (d.type === t ? ' selected' : '') + '>' + t + '</option>'; }).join('') +
+      '</select></div></div>' +
       '<div class="cols"><div class="field"><label for="name">이름</label><input id="name" autocomplete="off" value="' + esc(d.name) + '"></div>' +
       '<div class="field"><label for="org">소속</label><input id="org" autocomplete="off" value="' + esc(d.org) + '"></div></div>' +
       '<div class="field"><label for="date">날짜 <span id="wd" class="muted"></span></label><input id="date" type="date" value="' + esc(d.date) + '"><span class="muted">아직 정해지지 않았으면 비워 두세요.</span></div>' +
@@ -784,9 +787,9 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       var dd = readDraft();
       var w = dateLabel(dd.date);
       $('#wd').textContent = w ? '· ' + w : '';
-      $('#preview').textContent = dd.type && dd.name ? draftText(dd) : '종류와 이름을 입력하면 견적문의 글이 나옵니다.';
+      $('#preview').textContent = dd.type && dd.name ? draftText(dd) : '';
     };
-    $all('input,textarea').forEach(function (el) { el.addEventListener('input', upd); el.addEventListener('change', upd); });
+    $all('input,select,textarea').forEach(function (el) { el.addEventListener('input', upd); el.addEventListener('change', upd); });
     upd();
     $('#back').addEventListener('click', function () { back(); });
     $('#copy').addEventListener('click', function () {
