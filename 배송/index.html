@@ -683,9 +683,43 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     if (!rows.length) { el.innerHTML = '<p class="muted">' + (S.rows.length ? '찾는 건이 없습니다.' : '아직 건이 없습니다. “+ 새 가안”으로 시작하세요.') + '</p>'; return; }
     el.innerHTML = rows.map(function (r) {
       var sub = [(r.sang === '예' ? '상담' : '') + r.type, r.date ? dateLabel(r.date) : '날짜 미정', firstLine(r.place)].filter(Boolean).join(' · ');
-      return '<button class="li" type="button" data-id="' + esc(r.id) + '"><span class="t"><b>' + rowTitle(r) + '</b><small>' + esc(sub) + '</small></span>' + statusChip(r.status) + '</button>';
+      var canDelete = S.role === 'admin' || r.status !== '견적완료';
+      return '<div class="li" data-id="' + esc(r.id) + '"><button class="ghost" type="button" data-open="' + esc(r.id) + '" style="flex:1;min-width:0;justify-content:flex-start;text-align:left;border:0;padding:0"><span class="t"><b>' + rowTitle(r) + '</b><small>' + esc(sub) + '</small></span></button>' +
+        statusChip(r.status) +
+        (canDelete ? '<button class="ghost" type="button" data-del="' + esc(r.id) + '">삭제</button>' : '') +
+        '</div><div id="delBox-' + esc(r.id) + '"></div>';
     }).join('');
-    $all('#list .li').forEach(function (b) { b.addEventListener('click', function () { openRow(b.dataset.id); }); });
+    $all('#list [data-open]').forEach(function (b) {
+      b.addEventListener('click', function () { openRow(b.dataset.open); });
+    });
+    $all('#list [data-del]').forEach(function (b) {
+      b.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var r = findRow(b.dataset.del);
+        if (!r) return;
+        var box = $('#delBox-' + r.id);
+        if (!box) return;
+        box.innerHTML = '<div class="banner">이 건을 삭제할까요? 삭제하면 목록과 시트에서 사라집니다.</div>' +
+          '<div class="btns" style="margin-top:8px"><button class="btn" type="button" data-delyes="' + esc(r.id) + '">삭제 확인</button><button class="btn sub" type="button" data-delno="' + esc(r.id) + '">취소</button></div>';
+        var no = $('[data-delno="' + r.id + '"]', box);
+        if (no) no.addEventListener('click', function () { box.innerHTML = ''; });
+        var yes = $('[data-delyes="' + r.id + '"]', box);
+        if (yes) yes.addEventListener('click', function () {
+          busy(yes, true, '삭제 중…');
+          busy(b, true, '삭제 중…');
+          api('deleteDraft', { id: r.id }).then(function () {
+            removeLocalRow(r.id);
+            toast('삭제했습니다');
+            return refresh().then(viewList);
+          }).catch(function (err) {
+            busy(yes, false);
+            busy(b, false);
+            fail(err);
+          });
+        });
+      });
+    });
   }
   function findRow(id) { return S.rows.filter(function (r) { return r.id === id; })[0]; }
   function openRow(id) {
