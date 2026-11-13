@@ -134,24 +134,6 @@ input:disabled{opacity:.4;cursor:not-allowed}
   </div>
 
   <div class="card">
-    <div class="card-title">배송 수고비 구성</div>
-    <div class="sur-info" id="sur-info">사용자가 말한 추가 수고비만 넣는다. 구간 수고비는 쓰지 않는다.</div>
-    <div class="sur-list" id="sur-list">
-      <div class="sur-item">
-        <input type="text" value="적재수고비" placeholder="항목명">
-        <input type="number" placeholder="금액(원)" min="0">
-        <button class="del-btn">✕</button>
-      </div>
-      <div class="sur-item">
-        <input type="text" value="외곽수고비" placeholder="항목명">
-        <input type="number" placeholder="금액(원)" min="0">
-        <button class="del-btn">✕</button>
-      </div>
-    </div>
-    <button class="add-btn" id="btn-add">+ 항목 추가</button>
-  </div>
-
-  <div class="card">
     <div class="card-title">추가 비용 옵션</div>
     <div class="tgl-row">
       <div class="tgl-left">
@@ -228,29 +210,6 @@ input:disabled{opacity:.4;cursor:not-allowed}
     if(this.checked) q('park-val').focus(); else q('park-val').value='';
   });
 
-  // 항목 추가/삭제
-  function bindDel(btn){
-    btn.addEventListener('click', function(){
-      var item = this.parentNode;
-      item.parentNode.removeChild(item);
-    });
-  }
-  var delBtns = document.querySelectorAll('.del-btn');
-  for(var d=0;d<delBtns.length;d++) bindDel(delBtns[d]);
-
-  q('btn-add').addEventListener('click', function(){
-    var list = q('sur-list');
-    var item = document.createElement('div');
-    item.className = 'sur-item';
-    var n = document.createElement('input'); n.type='text'; n.placeholder='항목명 입력';
-    var v = document.createElement('input'); v.type='number'; v.placeholder='금액(원)'; v.min='0';
-    var b = document.createElement('button'); b.className='del-btn'; b.textContent='✕';
-    bindDel(b);
-    item.appendChild(n); item.appendChild(v); item.appendChild(b);
-    list.appendChild(item);
-    n.focus();
-  });
-
   // 다크모드
   q('theme-btn').addEventListener('click', function(){
     dark = !dark;
@@ -294,23 +253,13 @@ input:disabled{opacity:.4;cursor:not-allowed}
     var parkOn  = chk('park-on');
     var parkVal = parkOn?(parseInt(q('park-val').value)||0):0;
 
-    var extras = [];
-    var surItems = document.querySelectorAll('#sur-list .sur-item');
-    for(var si=0;si<surItems.length;si++){
-      var ins = surItems[si].querySelectorAll('input');
-      var lbl = (ins[0].value||'').trim();
-      var sv  = parseInt(ins[1].value)||0;
-      if(lbl && sv>0) extras.push({label:lbl, val:sv});
-    }
-
     var totalMin = goMin+bkMin;
     var wages    = [11000,12000,13000];
     var labors   = wages.map(function(w){ return Math.round(w*totalMin/60); });
     var roundKm  = dist*2;
     var vehCost  = Math.round(roundKm*222);
     var fuelCost = up100(fuel*2);
-    var extraSur = extras.reduce(function(a,b){ return a+b.val; },0);
-    var totalSur = extraSur;
+    var totalSur = 0; // 수고비 금지(구간·추가 모두)
     var tollCost = tollOn?tollVal*2:0;
 
     var dateStr='';
@@ -339,19 +288,14 @@ input:disabled{opacity:.4;cursor:not-allowed}
     var hStr=Math.floor(totalMin/60)+'시간'+(totalMin%60?' '+(totalMin%60)+'분':'');
     var laborStr=labors.map(fmt).join(' / ');
     var laborSub=wages.map(function(w){ return '시급 '+comma(w)+'원 × 왕복 '+hStr; }).join(' / ');
-    var surSub='';
-    extras.forEach(function(e,i){ surSub+=(i?' + ':'')+e.label+' '+fmt(e.val); });
     var vehSub='왕복 '+roundKm+'km × 222원/km / 감가상각·소모품·유지비 포함 / 유류비 제외';
     var fuelSub='편도 '+comma(fuel)+'원 × 왕복 2 = '+comma(fuel*2)+'원 → 100단위 올림';
 
     var rows=[
-      {l:'배송 인건비', v:laborStr,    s:laborSub}
-    ];
-    if(totalSur>0) rows.push({l:'배송 수고비', v:fmt(totalSur),s:surSub});
-    rows.push(
+      {l:'배송 인건비', v:laborStr,    s:laborSub},
       {l:'차량 운영비', v:fmt(vehCost), s:vehSub},
       {l:'유류비',      v:fmt(fuelCost),s:fuelSub}
-    );
+    ];
     if(tollOn&&tollVal>0) rows.push({l:'통행료',v:fmt(tollCost),s:'편도 '+fmt(tollVal)+' × 왕복 2'});
     if(parkOn&&parkVal>0) rows.push({l:'주차비',v:fmt(parkVal),s:'현장 실비 / 실정산 시 조정'});
 
@@ -375,7 +319,6 @@ input:disabled{opacity:.4;cursor:not-allowed}
     if(items)   copyLines.push('품목: '+items);
     copyLines.push('');
     copyLines.push('•배송 인건비 '+laborStr); copyLines.push('('+laborSub+')');
-    if(totalSur>0){ copyLines.push('•배송 수고비 '+fmt(totalSur)); copyLines.push('('+surSub+')'); }
     copyLines.push('•차량 운영비 '+fmt(vehCost)); copyLines.push('('+vehSub+')');
     copyLines.push('•유류비 '+fmt(fuelCost)); copyLines.push('('+fuelSub+')');
     if(tollOn&&tollVal>0){ copyLines.push('•통행료 '+fmt(tollCost)); copyLines.push('(편도 '+fmt(tollVal)+' × 왕복 2)'); }
