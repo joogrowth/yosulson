@@ -4,11 +4,15 @@
  * 화면(배송/index.html, GitHub Pages)이 이 웹앱에 요청을 보내면
  * 비밀번호를 확인하고 구글시트를 읽고 쓴다.
  *
- * 비밀번호는 코드에 적지 않는다. 스크립트 속성(프로젝트 설정 > 스크립트 속성)에만 둔다.
- *   PW_OWNER  대표님 비밀번호
- *   PW_ADMIN  팀장님(관리자) 비밀번호  (대표님 것과 달라야 한다)
- *   SHEET_ID  (시트에 묶이지 않은 스크립트일 때만) 데이터 구글시트의 ID
- *   TOKEN_SECRET 는 처음 로그인할 때 자동으로 만들어진다.
+ * 계정 (모두 스크립트 속성에 저장. 코드와 GitHub에는 없다)
+ *   관리자(팀장님): 아이디는 admin 고정. 로그인 화면에서 처음 한 번 비밀번호와 비밀번호 확인으로 등록한다.
+ *                   저장은 암호처럼 바꾼 값(ADMIN_HASH)만 한다. 아무도 원래 비밀번호를 볼 수 없다.
+ *   대표님:         로그인 화면의 '새 계정 만들기'로 원하는 아이디와 비밀번호를 직접 등록한다.
+ *                   관리자가 볼 수 있어야 하므로 읽을 수 있는 글자로 저장한다(OWNER_ID, OWNER_PW).
+ *                   관리자는 대표님 계정을 보고, 수정하고, 삭제할 수 있다. 삭제하면 등록이 다시 열린다.
+ *   SHEET_ID       (시트에 묶이지 않은 스크립트일 때만) 데이터 구글시트의 ID
+ *   TOKEN_SECRET 은 처음 로그인할 때 자동으로 만들어진다.
+ *   관리자 비밀번호를 잊었을 때: 프로젝트 설정 > 스크립트 속성에서 ADMIN_HASH, ADMIN_SALT 를 지우면 등록 화면이 다시 나온다.
  *
  * 시트 구조
  *   연도 탭 '2026', '2027' …  한 탭에 그 해에 받은 주문 전부 (1행 묶음 이름, 2행 칸 이름, 3행부터 데이터)
@@ -17,11 +21,12 @@
  *
  * 권한
  *   owner(대표님): 가안 저장, 견적대기 건의 가안 수정, 목록·최종 견적 글 보기
- *   admin(팀장님): 전부 + 제원 입력, 최종저장
+ *   admin(팀장님): 전부 + 제원 입력, 최종저장, 대표님 계정 보기·수정·삭제
  */
 
 var TZ = 'Asia/Seoul';
 var TOKEN_HOURS = 24;          // 마지막으로 쓴 때부터 24시간
+var PW_MIN = 4;                // 비밀번호 최소 글자 수
 var DATA_START = 3;            // 3행부터 데이터
 var TYPES = ['배송', '배송세팅', '출장', '반출장', '픽업'];
 var STATUS_WAIT = '견적대기';
@@ -99,6 +104,11 @@ function fail_(code, message) {
 
 function handle_(req) {
   var action = String(req.action || '');
+
+  // 로그인 전에도 쓰는 요청
+  if (action === 'status') return { ok: true, adminRegistered: adminRegistered_(), ownerRegistered: ownerRegistered_() };
+  if (action === 'registerAdmin') return registerAdmin_(req);
+  if (action === 'registerOwner') return registerOwner_(req);
   if (action === 'login') return login_(req);
 
   var role = verifyToken_(req.token);
@@ -108,8 +118,17 @@ function handle_(req) {
   if (action === 'list') out = list_(role);
   else if (action === 'saveDraft') out = saveDraft_(role, req);
   else if (action === 'finalize') {
-    if (role !== 'admin') fail_('forbidden', '제원은 팀장님만 입력할 수 있습니다.');
+    requireAdmin_(role, '제원은 팀장님만 입력할 수 있습니다.');
     out = finalize_(req);
+  } else if (action === 'ownerAccount') {
+    requireAdmin_(role);
+    out = { account: ownerAccount_() };
+  } else if (action === 'updateOwner') {
+    requireAdmin_(role);
+    out = updateOwner_(req);
+  } else if (action === 'deleteOwner') {
+    requireAdmin_(role);
+    out = deleteOwner_();
   } else fail_('bad', '알 수 없는 요청입니다.');
 
   out.ok = true;
@@ -118,31 +137,131 @@ function handle_(req) {
   return out;
 }
 
+function requireAdmin_(role, message) {
+  if (role !== 'admin') fail_('forbidden', message || '팀장님만 할 수 있습니다.');
+}
+
 // ───────────────────────── 로그인 · 토큰 ─────────────────────────
 
-function login_(req) {
-  var props = PropertiesService.getScriptProperties();
-  var pwOwner = props.getProperty('PW_OWNER');
-  var pwAdmin = props.getProperty('PW_ADMIN');
-  if (!pwOwner || !pwAdmin) fail_('config', '비밀번호가 아직 설정되지 않았습니다.');
-  if (pwOwner === pwAdmin) fail_('config', '대표님 비밀번호와 팀장님 비밀번호는 달라야 합니다.');
+function props_() {
+  return PropertiesService.getScriptProperties();
+}
 
+function hashPw_(pw, salt) {
+  return Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(String(pw), String(salt)));
+}
+
+function adminRegistered_() {
+  return !!props_().getProperty('ADMIN_HASH');
+}
+
+function ownerRegistered_() {
+  var p = props_();
+  return !!(p.getProperty('OWNER_ID') && p.getProperty('OWNER_PW'));
+}
+
+function checkPw_(pw, confirm) {
+  pw = String(pw === null || pw === undefined ? '' : pw);
+  if (pw.length < PW_MIN) fail_('bad', '비밀번호는 ' + PW_MIN + '글자 이상으로 해 주세요.');
+  if (pw.length > 100) fail_('bad', '비밀번호가 너무 깁니다.');
+  if (pw !== String(confirm === null || confirm === undefined ? '' : confirm)) fail_('bad', '비밀번호와 비밀번호 확인이 같지 않습니다.');
+  return pw;
+}
+
+function checkOwnerId_(id) {
+  id = String(id === null || id === undefined ? '' : id).trim();
+  if (!id) fail_('bad', '아이디를 적어 주세요.');
+  if (id.length > 30) fail_('bad', '아이디는 30글자 이하로 해 주세요.');
+  if (/\s/.test(id)) fail_('bad', '아이디에는 띄어쓰기를 쓸 수 없습니다.');
+  if (id.toLowerCase() === 'admin') fail_('bad', '이 아이디는 쓸 수 없습니다.');
+  return id;
+}
+
+function bumpOwnerEpoch_() {
+  var p = props_();
+  p.setProperty('OWNER_EPOCH', String(Number(p.getProperty('OWNER_EPOCH') || 0) + 1));
+}
+
+// 관리자 등록: 관리자가 아직 없을 때만 된다. 아이디는 admin 으로 정해져 있다.
+function registerAdmin_(req) {
+  return withLock_(function () {
+    if (adminRegistered_()) fail_('exists', '관리자가 이미 등록되어 있습니다.');
+    var pw = checkPw_(req.password, req.confirm);
+    var salt = Utilities.getUuid();
+    var p = props_();
+    p.setProperty('ADMIN_SALT', salt);
+    p.setProperty('ADMIN_HASH', hashPw_(pw, salt));
+    return { ok: true, role: 'admin', token: issueToken_('admin') };
+  });
+}
+
+// 대표님 등록: 관리자가 등록된 뒤, 대표님 계정이 아직 없을 때만 된다.
+function registerOwner_(req) {
+  return withLock_(function () {
+    if (!adminRegistered_()) fail_('setup', '먼저 관리자를 등록해 주세요.');
+    if (ownerRegistered_()) fail_('exists', '대표님 계정이 이미 등록되어 있습니다.');
+    var id = checkOwnerId_(req.id);
+    var pw = checkPw_(req.password, req.confirm);
+    var p = props_();
+    p.setProperty('OWNER_ID', id);
+    p.setProperty('OWNER_PW', pw);
+    bumpOwnerEpoch_();
+    return { ok: true, role: 'owner', token: issueToken_('owner') };
+  });
+}
+
+function login_(req) {
+  if (!adminRegistered_()) fail_('setup', '먼저 관리자를 등록해 주세요.');
   var cache = CacheService.getScriptCache();
   var fails = Number(cache.get('login_fails') || 0);
   if (fails >= 10) fail_('locked', '로그인 시도가 너무 많습니다. 10분 뒤에 다시 해 주세요.');
 
+  var id = String(req.id || '').trim().toLowerCase();
   var pw = String(req.password || '');
+  var p = props_();
   var role = null;
-  if (safeEq_(pw, pwAdmin)) role = 'admin';
-  else if (safeEq_(pw, pwOwner)) role = 'owner';
+  if (id === 'admin') {
+    if (safeEq_(hashPw_(pw, p.getProperty('ADMIN_SALT') || ''), p.getProperty('ADMIN_HASH') || '')) role = 'admin';
+  } else if (ownerRegistered_() && safeEq_(id, String(p.getProperty('OWNER_ID')).toLowerCase())) {
+    if (safeEq_(pw, p.getProperty('OWNER_PW'))) role = 'owner';
+  }
 
   if (!role) {
     cache.put('login_fails', String(fails + 1), 600);
     Utilities.sleep(800);
-    fail_('password', '비밀번호가 맞지 않습니다.');
+    fail_('password', '아이디 또는 비밀번호가 맞지 않습니다.');
   }
   cache.remove('login_fails');
   return { ok: true, role: role, token: issueToken_(role) };
+}
+
+// 관리자 전용: 대표님 계정 보기·수정·삭제
+function ownerAccount_() {
+  var p = props_();
+  if (!ownerRegistered_()) return { registered: false };
+  return { registered: true, id: p.getProperty('OWNER_ID'), password: p.getProperty('OWNER_PW') };
+}
+
+function updateOwner_(req) {
+  return withLock_(function () {
+    var id = checkOwnerId_(req.id);
+    var pw = checkPw_(req.password, req.confirm);
+    var p = props_();
+    p.setProperty('OWNER_ID', id);
+    p.setProperty('OWNER_PW', pw);
+    bumpOwnerEpoch_(); // 이미 로그인해 있던 대표님은 다시 로그인해야 한다.
+    return { account: ownerAccount_() };
+  });
+}
+
+function deleteOwner_() {
+  return withLock_(function () {
+    var p = props_();
+    p.deleteProperty('OWNER_ID');
+    p.deleteProperty('OWNER_PW');
+    bumpOwnerEpoch_();
+    return { account: ownerAccount_() };
+  });
 }
 
 function safeEq_(a, b) {
@@ -170,21 +289,28 @@ function sign_(body) {
   return Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(body, tokenSecret_()));
 }
 
+function epoch_(role) {
+  return role === 'owner' ? String(props_().getProperty('OWNER_EPOCH') || '0') : 'a';
+}
+
 function issueToken_(role) {
   var exp = Date.now() + TOKEN_HOURS * 3600 * 1000;
-  var body = role + '.' + exp;
+  var body = role + '.' + epoch_(role) + '.' + exp;
   return body + '.' + sign_(body);
 }
 
 function verifyToken_(token) {
   if (!token) return null;
   var parts = String(token).split('.');
-  if (parts.length !== 3) return null;
+  if (parts.length !== 4) return null;
   var role = parts[0];
   if (role !== 'owner' && role !== 'admin') return null;
-  var exp = Number(parts[1]);
+  var exp = Number(parts[2]);
   if (!exp || exp < Date.now()) return null;
-  if (!safeEq_(parts[2], sign_(role + '.' + exp))) return null;
+  if (!safeEq_(parts[1], epoch_(role))) return null;
+  if (!safeEq_(parts[3], sign_(role + '.' + parts[1] + '.' + exp))) return null;
+  if (role === 'owner' && !ownerRegistered_()) return null;
+  if (role === 'admin' && !adminRegistered_()) return null;
   return role;
 }
 
@@ -296,10 +422,9 @@ function ensureCustomerSheet_() {
 function setup() {
   ensureYearSheet_(currentYear_());
   ensureCustomerSheet_();
-  var props = PropertiesService.getScriptProperties();
   return {
-    PW_OWNER: !!props.getProperty('PW_OWNER'),
-    PW_ADMIN: !!props.getProperty('PW_ADMIN'),
+    adminRegistered: adminRegistered_(),
+    ownerRegistered: ownerRegistered_(),
     sheets: ss_().getSheets().map(function (s) { return s.getName(); })
   };
 }

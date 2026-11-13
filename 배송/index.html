@@ -120,6 +120,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
   var WD = ['일', '월', '화', '수', '목', '금', '토'];
   var TOKEN_KEY = 'bs_token';
   var SEP = '--------------------------------';
+  var PW_MIN = 4;
 
   var S = { token: '', role: '', rows: [], counts: { wait: 0, done: 0 }, filter: 'all', q: '', view: '' };
 
@@ -299,7 +300,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
   }
 
   /* ───────── 미리보기 모드 (연결 전, 가짜 데이터) ───────── */
-  var demoMem = null;
+  var demoMem = null, demoAcctMem = null;
   function demoLoad() {
     if (demoMem) return demoMem;
     var s = lsGet('bs_demo_rows');
@@ -324,6 +325,27 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     if (r.status === '견적완료') o.text = r.text;
     return o;
   }
+  function demoAcct() {
+    if (demoAcctMem) return demoAcctMem;
+    var t = lsGet('bs_demo_acct');
+    if (t) { try { demoAcctMem = JSON.parse(t); return demoAcctMem; } catch (e) { /* 새로 만든다 */ } }
+    demoAcctMem = { adminPw: '', ownerId: '', ownerPw: '', epoch: 0 };
+    return demoAcctMem;
+  }
+  function demoAcctSave() { lsSet('bs_demo_acct', JSON.stringify(demoAcctMem)); }
+  function demoReset() { demoMem = null; demoAcctMem = null; lsSet('bs_demo_rows', ''); lsSet('bs_demo_acct', ''); lsSet(TOKEN_KEY, ''); S.token = ''; S.role = ''; }
+  function demoPwError(pw, confirm) {
+    if (String(pw || '').length < PW_MIN) return '비밀번호는 ' + PW_MIN + '글자 이상으로 해 주세요.';
+    if (pw !== confirm) return '비밀번호와 비밀번호 확인이 같지 않습니다.';
+    return '';
+  }
+  function demoIdError(id) {
+    id = String(id || '').trim();
+    if (!id) return '아이디를 적어 주세요.';
+    if (/\s/.test(id)) return '아이디에는 띄어쓰기를 쓸 수 없습니다.';
+    if (id.toLowerCase() === 'admin') return '이 아이디는 쓸 수 없습니다.';
+    return '';
+  }
   function demoApi(b) {
     return new Promise(function (resolve) {
       setTimeout(function () { resolve(demoHandle(b)); }, 150);
@@ -331,15 +353,48 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
   }
   function demoHandle(b) {
     var rows = demoLoad();
-    if (b.action === 'login') {
-      if (b.password === 'admin') return { ok: true, role: 'admin', token: 'demo-admin' };
-      if (b.password === 'owner') return { ok: true, role: 'owner', token: 'demo-owner' };
-      return { ok: false, error: 'password', message: '비밀번호가 맞지 않습니다. (미리보기: 대표님 owner / 팀장님 admin)' };
+    var a = demoAcct();
+    var owner = !!(a.ownerId && a.ownerPw);
+    var bad = function (code, msg) { return { ok: false, error: code, message: msg }; };
+    if (b.action === 'status') return { ok: true, adminRegistered: !!a.adminPw, ownerRegistered: owner };
+    if (b.action === 'registerAdmin') {
+      if (a.adminPw) return bad('exists', '관리자가 이미 등록되어 있습니다.');
+      var e1 = demoPwError(b.password, b.confirm);
+      if (e1) return bad('bad', e1);
+      a.adminPw = b.password; demoAcctSave();
+      return { ok: true, role: 'admin', token: 'demo-admin' };
     }
-    var role = b.token === 'demo-admin' ? 'admin' : b.token === 'demo-owner' ? 'owner' : '';
-    if (!role) return { ok: false, error: 'auth', message: '로그인이 필요합니다.' };
+    if (b.action === 'registerOwner') {
+      if (!a.adminPw) return bad('setup', '먼저 관리자를 등록해 주세요.');
+      if (owner) return bad('exists', '대표님 계정이 이미 등록되어 있습니다.');
+      var e2 = demoIdError(b.id) || demoPwError(b.password, b.confirm);
+      if (e2) return bad('bad', e2);
+      a.ownerId = String(b.id).trim(); a.ownerPw = b.password; a.epoch++; demoAcctSave();
+      return { ok: true, role: 'owner', token: 'demo-owner-' + a.epoch };
+    }
+    if (b.action === 'login') {
+      if (!a.adminPw) return bad('setup', '먼저 관리자를 등록해 주세요.');
+      var id = String(b.id || '').trim().toLowerCase();
+      if (id === 'admin' && b.password === a.adminPw) return { ok: true, role: 'admin', token: 'demo-admin' };
+      if (owner && id === a.ownerId.toLowerCase() && b.password === a.ownerPw) return { ok: true, role: 'owner', token: 'demo-owner-' + a.epoch };
+      return bad('password', '아이디 또는 비밀번호가 맞지 않습니다.');
+    }
+    var role = b.token === 'demo-admin' && a.adminPw ? 'admin' : (b.token === 'demo-owner-' + a.epoch && owner ? 'owner' : '');
+    if (!role) return bad('auth', '로그인이 필요합니다.');
     S.role = role;
     var out = { ok: true, role: role, token: b.token };
+    if (b.action === 'ownerAccount' || b.action === 'updateOwner' || b.action === 'deleteOwner') {
+      if (role !== 'admin') return bad('forbidden', '팀장님만 할 수 있습니다.');
+      if (b.action === 'updateOwner') {
+        var e3 = demoIdError(b.id) || demoPwError(b.password, b.confirm);
+        if (e3) return bad('bad', e3);
+        a.ownerId = String(b.id).trim(); a.ownerPw = b.password; a.epoch++; demoAcctSave();
+      } else if (b.action === 'deleteOwner') {
+        a.ownerId = ''; a.ownerPw = ''; a.epoch++; demoAcctSave();
+      }
+      out.account = (a.ownerId && a.ownerPw) ? { registered: true, id: a.ownerId, password: a.ownerPw } : { registered: false };
+      return out;
+    }
     if (b.action === 'list') {
       out.rows = rows.map(demoView);
       out.counts = { wait: rows.filter(function (r) { return r.status !== '견적완료'; }).length, done: rows.filter(function (r) { return r.status === '견적완료'; }).length };
@@ -349,8 +404,8 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       var row;
       if (b.id) {
         row = rows.filter(function (r) { return r.id === b.id; })[0];
-        if (!row) return { ok: false, error: 'notfound', message: '해당 건을 찾을 수 없습니다.' };
-        if (role === 'owner' && row.status !== '견적대기') return { ok: false, error: 'forbidden', message: '이미 견적이 완료된 건은 수정할 수 없습니다.' };
+        if (!row) return bad('notfound', '해당 건을 찾을 수 없습니다.');
+        if (role === 'owner' && row.status !== '견적대기') return bad('forbidden', '이미 견적이 완료된 건은 수정할 수 없습니다.');
       } else {
         row = { id: '26-' + ('000' + (rows.length + 1)).slice(-3), status: '견적대기', review: '' };
         rows.push(row);
@@ -361,15 +416,15 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       return out;
     }
     if (b.action === 'finalize') {
-      if (role !== 'admin') return { ok: false, error: 'forbidden', message: '제원은 팀장님만 입력할 수 있습니다.' };
+      if (role !== 'admin') return bad('forbidden', '제원은 팀장님만 입력할 수 있습니다.');
       var r = rows.filter(function (x) { return x.id === b.id; })[0];
-      if (!r) return { ok: false, error: 'notfound', message: '해당 건을 찾을 수 없습니다.' };
+      if (!r) return bad('notfound', '해당 건을 찾을 수 없습니다.');
       Object.assign(r, b.draft, b.specs, b.calc, { text: b.text, status: '견적완료' });
       demoSave();
       out.row = demoView(r);
       return out;
     }
-    return { ok: false, error: 'bad', message: '알 수 없는 요청입니다.' };
+    return bad('bad', '알 수 없는 요청입니다.');
   }
 
   /* ───────── 공통 화면 조각 ───────── */
@@ -377,12 +432,15 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
   function topbar() {
     return '<div class="topbar"><span class="brand">배송견적</span><span class="right">' +
       '<span class="role">' + roleName() + '</span>' +
+      (S.role === 'admin' ? '<button class="ghost" id="acct" type="button">대표님 계정</button>' : '') +
       '<button class="ghost" id="logout" type="button">로그아웃</button></span></div>' +
       (DEMO ? '<div class="banner">미리보기 모드입니다. 예시 데이터이고 구글시트에는 저장되지 않습니다.</div>' : '');
   }
   function bindTop() {
     var b = $('#logout');
     if (b) b.addEventListener('click', function () { S.token = ''; S.role = ''; lsSet(TOKEN_KEY, ''); viewLogin(); });
+    var c = $('#acct');
+    if (c) c.addEventListener('click', viewOwnerAccount);
   }
   function statusChip(st) { return '<span class="chip ' + (st === '견적완료' ? 'done' : 'wait') + '">' + esc(st || '견적대기') + '</span>'; }
   function firstLine(s) { return String(s || '').split('\n')[0]; }
@@ -406,26 +464,143 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     if (e.code === 'auth') viewLogin(e.message);
   }
 
-  /* ───────── 로그인 ───────── */
+  /* ───────── 로그인 · 계정 ───────── */
+  function authCard(title, body) { return '<div class="card login"><h1>' + title + '</h1>' + body + '</div>'; }
+  function pwFieldsHTML(first, second) {
+    return '<div class="field"><label for="pw1">' + first + '</label><input id="pw1" type="password" autocomplete="new-password"></div>' +
+      '<div class="field"><label for="pw2">' + second + '</label><input id="pw2" type="password" autocomplete="new-password"></div>';
+  }
+  function pwError(pw1, pw2) {
+    if (pw1.length < PW_MIN) return '비밀번호는 ' + PW_MIN + '글자 이상으로 해 주세요.';
+    if (pw1 !== pw2) return '비밀번호와 비밀번호 확인이 같지 않습니다.';
+    return '';
+  }
   function viewLogin(msg) {
     S.view = 'login';
-    mount('<div class="card login"><h1>배송견적</h1>' +
-      '<div class="field"><label for="pw">비밀번호</label><input id="pw" type="password" autocomplete="current-password" autofocus></div>' +
+    mount(authCard('배송견적', '<p class="muted">확인하는 중…</p>'));
+    api('status').then(function (st) {
+      if (!st.adminRegistered) viewRegisterAdmin();
+      else renderLogin(msg, st);
+    }).catch(function (e) {
+      mount(authCard('배송견적', '<div class="err">' + esc(e.message) + '</div><button class="btn" id="retry" type="button">다시 시도</button>'));
+      $('#retry').addEventListener('click', function () { viewLogin(); });
+    });
+  }
+  function renderLogin(msg, st) {
+    mount(authCard('배송견적',
+      '<div class="field"><label for="uid">아이디</label><input id="uid" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"></div>' +
+      '<div class="field"><label for="pw">비밀번호</label><input id="pw" type="password" autocomplete="current-password"></div>' +
       '<div class="err" id="loginErr">' + esc(msg || '') + '</div>' +
-      '<button class="btn" id="loginBtn" type="button">들어가기</button>' +
-      (DEMO ? '<p class="muted">미리보기 모드: 대표님은 owner, 팀장님은 admin 을 입력해 보세요.</p>' : '') + '</div>');
+      '<button class="btn" id="loginBtn" type="button">로그인</button>' +
+      (st.ownerRegistered ? '' : '<button class="btn sub" id="newAcct" type="button">새 계정 만들기</button>') +
+      (DEMO ? '<p class="muted">미리보기 모드입니다. 예시 데이터이고 구글시트에는 저장되지 않습니다.</p><button class="ghost" id="demoReset" type="button">미리보기 처음부터 다시</button>' : '')));
     var go = function () {
-      var pw = $('#pw').value;
-      if (!pw) { $('#loginErr').textContent = '비밀번호를 입력해 주세요.'; return; }
+      var uid = $('#uid').value.trim(), pw = $('#pw').value;
+      if (!uid || !pw) { $('#loginErr').textContent = '아이디와 비밀번호를 입력해 주세요.'; return; }
       var btn = $('#loginBtn');
       busy(btn, true, '확인 중…');
-      api('login', { password: pw }).then(function () { return refresh(); }).then(viewList).catch(function (e) {
+      api('login', { id: uid, password: pw }).then(function () { return refresh(); }).then(viewList).catch(function (e) {
         busy(btn, false);
         $('#loginErr').textContent = e.message;
       });
     };
     $('#loginBtn').addEventListener('click', go);
     $('#pw').addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+    var n = $('#newAcct');
+    if (n) n.addEventListener('click', viewRegisterOwner);
+    var r = $('#demoReset');
+    if (r) r.addEventListener('click', function () { demoReset(); viewLogin(); });
+  }
+  function viewRegisterAdmin() {
+    S.view = 'register';
+    mount(authCard('관리자 등록',
+      '<p class="muted">처음 한 번만 하는 등록입니다. 아이디는 admin 으로 정해져 있습니다.</p>' +
+      '<div class="field"><label for="uid">아이디</label><input id="uid" value="admin" readonly></div>' +
+      pwFieldsHTML('비밀번호 (' + PW_MIN + '글자 이상)', '비밀번호 확인') +
+      '<div class="err" id="regErr"></div><button class="btn" id="regBtn" type="button">등록</button>'));
+    var go = function () {
+      var p1 = $('#pw1').value, p2 = $('#pw2').value;
+      var err = pwError(p1, p2);
+      if (err) { $('#regErr').textContent = err; return; }
+      var btn = $('#regBtn');
+      busy(btn, true, '등록 중…');
+      api('registerAdmin', { password: p1, confirm: p2 }).then(function () { return refresh(); }).then(function () { toast('관리자로 등록했습니다'); viewList(); }).catch(function (e) {
+        busy(btn, false);
+        $('#regErr').textContent = e.message;
+        if (e.code === 'exists') viewLogin();
+      });
+    };
+    $('#regBtn').addEventListener('click', go);
+    $('#pw2').addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+  }
+  function viewRegisterOwner() {
+    S.view = 'register';
+    mount(authCard('새 계정 만들기',
+      '<p class="muted">원하는 아이디와 비밀번호를 정해 주세요.</p>' +
+      '<div class="field"><label for="uid">아이디</label><input id="uid" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"></div>' +
+      pwFieldsHTML('비밀번호 (' + PW_MIN + '글자 이상)', '비밀번호 확인') +
+      '<div class="err" id="regErr"></div><button class="btn" id="regBtn" type="button">등록</button>' +
+      '<button class="ghost" id="toLogin" type="button">← 로그인으로</button>'));
+    var go = function () {
+      var uid = $('#uid').value.trim(), p1 = $('#pw1').value, p2 = $('#pw2').value;
+      if (!uid) { $('#regErr').textContent = '아이디를 적어 주세요.'; return; }
+      var err = pwError(p1, p2);
+      if (err) { $('#regErr').textContent = err; return; }
+      var btn = $('#regBtn');
+      busy(btn, true, '등록 중…');
+      api('registerOwner', { id: uid, password: p1, confirm: p2 }).then(function () { return refresh(); }).then(function () { toast('등록했습니다'); viewList(); }).catch(function (e) {
+        busy(btn, false);
+        $('#regErr').textContent = e.message;
+        if (e.code === 'exists') viewLogin();
+      });
+    };
+    $('#regBtn').addEventListener('click', go);
+    $('#pw2').addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+    $('#toLogin').addEventListener('click', function () { viewLogin(); });
+  }
+  // 팀장님 전용: 대표님 계정 보기 · 수정 · 삭제
+  function viewOwnerAccount() {
+    S.view = 'account';
+    mount(topbar() +
+      '<button class="ghost" id="back" type="button" style="align-self:flex-start">← 목록</button>' +
+      '<h1>대표님 계정</h1><div class="card" id="acctBox"><p class="muted">불러오는 중…</p></div>');
+    bindTop();
+    $('#back').addEventListener('click', viewList);
+    api('ownerAccount').then(function (res) { drawAccount(res.account); }).catch(fail);
+  }
+  function drawAccount(a) {
+    var box = $('#acctBox');
+    box.innerHTML =
+      (a.registered
+        ? '<div class="field"><span class="lbl">현재 아이디</span><b>' + esc(a.id) + '</b></div>' +
+          '<div class="field"><span class="lbl">현재 비밀번호</span><b>' + esc(a.password) + '</b></div>'
+        : '<p>대표님 계정이 아직 없습니다. 대표님이 로그인 화면에서 “새 계정 만들기”로 등록하거나, 아래에서 직접 만들 수 있습니다.</p>') +
+      '<h2>' + (a.registered ? '수정' : '직접 만들기') + '</h2>' +
+      '<div class="field"><label for="oid">아이디</label><input id="oid" autocomplete="off" autocapitalize="none" value="' + esc(a.registered ? a.id : '') + '"></div>' +
+      pwFieldsHTML('새 비밀번호 (' + PW_MIN + '글자 이상)', '새 비밀번호 확인') +
+      '<div class="err" id="acctErr"></div>' +
+      '<div class="btns"><button class="btn" id="acctSave" type="button">저장</button>' +
+      (a.registered ? '<button class="btn sub" id="acctDel" type="button">삭제</button>' : '') + '</div>' +
+      '<div id="delBox"></div>' +
+      (a.registered ? '<p class="muted">수정하거나 삭제하면 대표님은 다시 로그인해야 합니다.</p>' : '');
+    $('#acctSave').addEventListener('click', function () {
+      var id = $('#oid').value.trim(), p1 = $('#pw1').value, p2 = $('#pw2').value;
+      if (!id) { $('#acctErr').textContent = '아이디를 적어 주세요.'; return; }
+      var err = pwError(p1, p2);
+      if (err) { $('#acctErr').textContent = err; return; }
+      var btn = $('#acctSave');
+      busy(btn, true);
+      api('updateOwner', { id: id, password: p1, confirm: p2 }).then(function (res) { toast('저장했습니다'); drawAccount(res.account); }).catch(function (e) { busy(btn, false); $('#acctErr').textContent = e.message; if (e.code === 'auth') fail(e); });
+    });
+    var del = $('#acctDel');
+    if (del) del.addEventListener('click', function () {
+      $('#delBox').innerHTML = '<div class="banner">정말 삭제할까요? 삭제하면 대표님은 로그인할 수 없고, 로그인 화면의 “새 계정 만들기”가 다시 열립니다.</div>' +
+        '<div class="btns" style="margin-top:8px"><button class="btn" id="delYes" type="button">삭제 확인</button><button class="btn sub" id="delNo" type="button">취소</button></div>';
+      $('#delNo').addEventListener('click', function () { $('#delBox').innerHTML = ''; });
+      $('#delYes').addEventListener('click', function () {
+        api('deleteOwner').then(function (res) { toast('삭제했습니다'); drawAccount(res.account); }).catch(fail);
+      });
+    });
   }
 
   /* ───────── 목록 ───────── */
