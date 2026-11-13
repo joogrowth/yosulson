@@ -20,8 +20,8 @@
  *   '복기' 칸은 시트에서만 고른다(확정 / 보류 / 취소). 이 코드는 값을 지우지 않는다.
  *
  * 권한
- *   owner(대표님): 가안 저장, 견적대기 건의 가안 수정, 목록·최종 견적 글 보기
- *   admin(팀장님): 전부 + 제원 입력, 최종저장, 대표님 계정 보기·수정·삭제
+ *   owner(대표님): 가안 저장, 견적대기 건의 가안 수정·삭제, 목록·최종 견적 글 보기
+ *   admin(팀장님): 전부 + 제원 입력, 최종저장, 건 삭제, 대표님 계정 보기·수정·삭제
  */
 
 var TZ = 'Asia/Seoul';
@@ -117,6 +117,7 @@ function handle_(req) {
   var out;
   if (action === 'list') out = list_(role);
   else if (action === 'saveDraft') out = saveDraft_(role, req);
+  else if (action === 'deleteDraft') out = deleteDraft_(role, req);
   else if (action === 'finalize') {
     requireAdmin_(role, '제원은 팀장님만 입력할 수 있습니다.');
     out = finalize_(req);
@@ -643,6 +644,20 @@ function saveDraft_(role, req) {
     writeRow_(sh, row, obj);
     upsertCustomer_(d);
     return { row: role === 'admin' ? adminView_(obj) : ownerView_(obj) };
+  });
+}
+
+function deleteDraft_(role, req) {
+  var id = String(req.id || '');
+  if (!id) fail_('bad', '삭제할 건을 지정해 주세요.');
+  return withLock_(function () {
+    var loc = findRow_(id);
+    if (!loc) fail_('notfound', '해당 건을 찾을 수 없습니다.');
+    if (role === 'owner' && loc.obj.status !== STATUS_WAIT) {
+      fail_('forbidden', '이미 견적이 완료된 건은 삭제할 수 없습니다.');
+    }
+    loc.sheet.deleteRow(loc.row);
+    return { deletedId: id };
   });
 }
 

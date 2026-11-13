@@ -415,6 +415,17 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       out.row = demoView(row);
       return out;
     }
+    if (b.action === 'deleteDraft') {
+      var di = -1;
+      for (var i = 0; i < rows.length; i++) if (rows[i].id === b.id) di = i;
+      if (di < 0) return bad('notfound', '해당 건을 찾을 수 없습니다.');
+      if (role === 'owner' && rows[di].status !== '견적대기') return bad('forbidden', '이미 견적이 완료된 건은 삭제할 수 없습니다.');
+      var deletedId = rows[di].id;
+      rows.splice(di, 1);
+      demoSave();
+      out.deletedId = deletedId;
+      return out;
+    }
     if (b.action === 'finalize') {
       if (role !== 'admin') return bad('forbidden', '제원은 팀장님만 입력할 수 있습니다.');
       var r = rows.filter(function (x) { return x.id === b.id; })[0];
@@ -450,6 +461,33 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     S.rows.forEach(function (r, k) { if (r.id === row.id) i = k; });
     if (i >= 0) S.rows[i] = row; else S.rows.push(row);
     S.counts = { wait: S.rows.filter(function (r) { return r.status !== '견적완료'; }).length, done: S.rows.filter(function (r) { return r.status === '견적완료'; }).length };
+  }
+  function removeLocalRow(id) {
+    S.rows = S.rows.filter(function (r) { return r.id !== id; });
+    S.counts = { wait: S.rows.filter(function (r) { return r.status !== '견적완료'; }).length, done: S.rows.filter(function (r) { return r.status === '견적완료'; }).length };
+  }
+  function confirmDeleteDraft(row, btn) {
+    if (!row || !row.id) return;
+    if (S.role === 'owner' && row.status === '견적완료') { toast('이미 견적이 완료된 건은 삭제할 수 없습니다.'); return; }
+    var box = $('#delDraftBox');
+    if (!box) return;
+    box.innerHTML = '<div class="banner">이 건을 삭제할까요? 삭제하면 목록과 시트에서 사라집니다.</div>' +
+      '<div class="btns" style="margin-top:8px"><button class="btn" id="delDraftYes" type="button">삭제 확인</button><button class="btn sub" id="delDraftNo" type="button">취소</button></div>';
+    $('#delDraftNo').addEventListener('click', function () { box.innerHTML = ''; });
+    $('#delDraftYes').addEventListener('click', function () {
+      var yes = $('#delDraftYes');
+      busy(yes, true, '삭제 중…');
+      if (btn) busy(btn, true, '삭제 중…');
+      api('deleteDraft', { id: row.id }).then(function () {
+        removeLocalRow(row.id);
+        toast('삭제했습니다');
+        return refresh().then(viewList);
+      }).catch(function (e) {
+        busy(yes, false);
+        if (btn) busy(btn, false);
+        fail(e);
+      });
+    });
   }
   function refresh() {
     return api('list').then(function (res) { S.rows = res.rows; S.counts = res.counts; });
@@ -704,7 +742,9 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<div class="field"><label for="notes">품목·특이사항 <span class="muted">(적은 그대로 나옵니다)</span></label><textarea id="notes" rows="6">' + esc(d.notes) + '</textarea></div>' +
       '</div>' +
       '<div class="card"><h2>가안 글</h2><pre class="msg" id="preview"></pre>' +
-      '<div class="btns"><button class="btn sub" id="copy" type="button">가안 글 복사</button><button class="btn" id="save" type="button">저장</button></div></div>');
+      '<div class="btns"><button class="btn sub" id="copy" type="button">가안 글 복사</button><button class="btn" id="save" type="button">저장</button>' +
+      (row ? '<button class="btn sub" id="delDraft" type="button">삭제</button>' : '') + '</div>' +
+      '<div id="delDraftBox"></div></div>');
     bindTop();
     var upd = function () {
       var dd = readDraft();
@@ -734,6 +774,8 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
         back(res.row);
       }).catch(function (e) { busy(btn, false); fail(e); });
     });
+    var delBtn = $('#delDraft');
+    if (delBtn) delBtn.addEventListener('click', function () { confirmDeleteDraft(row, delBtn); });
   }
 
   /* ───────── 대표님: 완료된 견적 보기 ───────── */
@@ -809,8 +851,9 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     mount(topbar() +
       '<button class="ghost" id="back" type="button" style="align-self:flex-start">← 목록</button>' +
       '<h1>' + rowTitle(row) + ' <span id="stChip">' + statusChip(row.status) + '</span></h1>' +
-      '<div class="card"><div class="topbar"><h2>대표님 가안</h2><button class="ghost" id="editDraft" type="button">가안 수정</button></div>' +
-      '<pre class="msg" id="draftPre"></pre></div>' +
+      '<div class="card"><div class="topbar"><h2>대표님 가안</h2><span class="right"><button class="ghost" id="editDraft" type="button">가안 수정</button>' +
+      '<button class="ghost" id="delDraft" type="button">삭제</button></span></div>' +
+      '<pre class="msg" id="draftPre"></pre><div id="delDraftBox"></div></div>' +
       '<div class="card" id="specsCard"><h2>제원 입력</h2>' +
       '<div class="field"><label for="depart">출발</label><input id="depart" type="time" value="' + esc(row.depart || '') + '"></div>' +
       '<div class="field"><span class="lbl">도착 <span class="muted">(대표님이 넣은 값 · 고칠 수 있음 · 두 번째 칸은 비워도 됨)</span></span><div class="range"><input id="a1" type="time" value="' + esc(a[0]) + '" aria-label="도착"><span>~</span><input id="a2" type="time" value="' + esc(a[1]) + '" aria-label="도착 두 번째"></div></div>' +
@@ -852,6 +895,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     $('#editDraft').addEventListener('click', function () {
       viewDraft(row, function (updated) { viewSpecs(updated && updated.id ? findRow(updated.id) || updated : row); });
     });
+    $('#delDraft').addEventListener('click', function () { confirmDeleteDraft(row, $('#delDraft')); });
     $('#copy').addEventListener('click', function () {
       var r = recompute();
       if (!r) { toast(specError(readSpecs()) || '제원을 먼저 입력해 주세요.'); return; }
