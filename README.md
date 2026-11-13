@@ -1,6 +1,7 @@
 # 요술손
 
-공개 저장소: https://github.com/joogrowth/yosulson
+공개 저장소: https://github.com/joogrowth/yosulson  
+한번에 다 보는 메인(웹): https://joogrowth.github.io/yosulson/
 
 요술손은 **GitHub를 공통으로 공유**한다.
 Cursor, 클로드, 챗지피티, 제미나이 등 **어떤 AI를 써도** 이 저장소를 보고 같이 이어간다.

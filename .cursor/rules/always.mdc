@@ -23,3 +23,4 @@ alwaysApply: true
 - 비밀번호·PIN·개인 급여 상세는 파일에 쓰지 않는다
 - 네 영역을 하나로 묶는 원스톱 자동 연계는 만들지 않는다
 - GitHub 링크는 `#숫자`가 아니라 `https://github.com/...` 전체 주소를 쓴다
+- 웹·확인 링크를 줄 때는 **메인(한번에 다 보기)** 도 항상 같이 준다: https://joogrowth.github.io/yosulson/

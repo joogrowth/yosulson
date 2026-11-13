@@ -4,9 +4,11 @@
 Cursor, 클로드, 챗지피티, 제미나이 등 **어떤 AI를 써도** 이 저장소를 보고 같이 이어간다.
 채팅창끼리 기억이 이어지지 않아도, GitHub(그리고 실무 파일은 드라이브)로 공유한다.
 
-공개 저장소: https://github.com/joogrowth/yosulson
+공개 저장소: https://github.com/joogrowth/yosulson  
+한번에 다 보는 메인(웹): https://joogrowth.github.io/yosulson/
 
-영역마다 주소가 다르다.
+영역마다 주소가 다르다.  
+링크를 줄 때는 위 메인 주소도 항상 함께 준다.
 
 - 배송: https://github.com/joogrowth/yosulson/tree/main/배송
 - 급여: https://github.com/joogrowth/yosulson/tree/main/급여
