@@ -1,368 +1,1006 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>요술손 배송비 계산기</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>배송견적</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f7f6f2;color:#28251d;font-size:16px;line-height:1.6}
-header{background:#fff;border-bottom:1px solid #e0ddd8;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;color:#01696f}
-.logo-icon{width:32px;height:32px;background:#01696f;border-radius:8px;display:flex;align-items:center;justify-content:center}
-.hdr-actions{display:flex;align-items:center;gap:10px}
-.hdr-link{font-size:12px;color:#01696f;text-decoration:none;border-bottom:1px solid #01696f;font-weight:600}
-#theme-btn{background:none;border:1px solid #d4d1ca;border-radius:99px;padding:6px 14px;font-size:12px;color:#7a7974;cursor:pointer;font-family:inherit}
-main{max-width:640px;margin:0 auto;padding:28px 16px 80px}
-h1{font-size:26px;font-weight:700;margin-bottom:6px}
-.subtitle{font-size:14px;color:#7a7974;margin-bottom:24px}
-.type-tabs{display:flex;gap:8px;margin-bottom:20px}
-.type-tab{flex:1;padding:12px 8px;border:2px solid #d4d1ca;border-radius:12px;background:#fff;color:#7a7974;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;text-align:center}
-.type-tab.on{background:#01696f;color:#fff;border-color:#01696f}
-.card{background:#fff;border:1px solid #e0ddd8;border-radius:16px;padding:20px;margin-bottom:14px}
-.card-title{font-size:11px;font-weight:700;color:#7a7974;text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px}
-.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media(max-width:480px){.fg{grid-template-columns:1fr}}
-.fi{display:flex;flex-direction:column;gap:5px}
-.fi.full{grid-column:1/-1}
-label{font-size:12px;font-weight:600;color:#7a7974}
-input[type=text],input[type=number],input[type=date],input[type=time]{background:#f9f8f5;border:1px solid #d4d1ca;border-radius:8px;padding:10px 12px;font-size:16px;color:#28251d;font-family:inherit;width:100%}
-input:focus{outline:2px solid #01696f;outline-offset:1px}
-input::placeholder{color:#bab9b4}
-input:disabled{opacity:.4;cursor:not-allowed}
-.sur-info{font-size:12px;color:#7a7974;background:#f3f0ec;border-radius:8px;padding:8px 12px;margin-bottom:12px}
-.sur-list{display:flex;flex-direction:column;gap:8px}
-.sur-item{display:grid;grid-template-columns:1fr 110px 36px;gap:8px;align-items:center}
-.del-btn{width:36px;height:36px;background:#fff;border:1px solid #d4d1ca;border-radius:8px;cursor:pointer;font-size:15px;color:#7a7974;font-family:inherit}
-.add-btn{margin-top:10px;background:#fff;border:1px dashed #aaa;border-radius:8px;padding:10px;font-size:14px;color:#7a7974;cursor:pointer;width:100%;font-family:inherit}
-.tgl-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;gap:12px}
-.tgl-row+.tgl-row{border-top:1px solid #e8e6e1}
-.tgl-left{flex:1}
-.tgl-name{font-size:14px;color:#28251d}
-.tgl-sub{font-size:12px;color:#7a7974;margin-top:2px}
-.tgl-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.tgl-amt{width:90px !important}
-.sw{position:relative;width:44px;height:24px;flex-shrink:0}
-.sw input{position:absolute;opacity:0;width:0;height:0}
-.sw-sl{position:absolute;inset:0;background:#d4d1ca;border-radius:99px;cursor:pointer;transition:background .2s}
-.sw-sl:before{content:"";position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:transform .2s}
-.sw input:checked+.sw-sl{background:#01696f}
-.sw input:checked+.sw-sl:before{transform:translateX(20px)}
-#btn-calc{width:100%;background:#01696f;color:#fff;border:none;border-radius:12px;padding:16px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px}
-#btn-calc:active{opacity:.85}
-.result{display:none;background:#fff;border:1px solid #e0ddd8;border-radius:16px;overflow:hidden;margin-top:20px}
-.result.show{display:block}
-.r-head{background:#01696f;color:#fff;padding:18px 20px}
-.r-head h2{font-size:18px;font-weight:700;margin-bottom:4px}
-.r-meta{font-size:12px;opacity:.88;line-height:1.8}
-.r-body{padding:20px}
-.r-info{font-size:14px;color:#7a7974;line-height:2;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #e8e6e1}
-.r-row{display:flex;justify-content:space-between;align-items:flex-start;padding:11px 0;border-bottom:1px solid #e8e6e1;gap:12px}
-.r-row:last-of-type{border-bottom:none}
-.r-lbl{font-size:14px;font-weight:600;color:#28251d}
-.r-sub{font-size:12px;color:#7a7974;margin-top:3px;line-height:1.5;max-width:34ch}
-.r-val{font-size:14px;font-weight:700;color:#28251d;white-space:nowrap}
-.total-box{background:#d4e8e6;border-radius:12px;padding:16px;margin-top:16px}
-.total-box-t{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#01696f;margin-bottom:12px}
-.total-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.total-row:last-child{margin-bottom:0}
-.total-wl{font-size:14px;color:#7a7974}
-.total-wv{font-size:16px;font-weight:700;color:#01696f}
-#copy-btn{margin-top:14px;width:100%;background:#f9f8f5;border:1px solid #d4d1ca;border-radius:8px;padding:12px;font-size:14px;color:#7a7974;cursor:pointer;font-family:inherit}
+:root{
+  --bg:#f3f5f8;--card:#ffffff;--fg:#1b2430;--muted:#5a6676;--line:#d9dee6;
+  --accent:#0f766e;--accent-soft:#dff3f0;--accent-fg:#ffffff;--box:#f7f9fb;--btn:#e8edf3;
+  --warn:#9a5b00;--warn-soft:#fff1d6;--good:#0b6b3a;--good-soft:#dcf3e4;--danger:#b42318;
+  --font:'Noto Sans KR',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  --mono:ui-monospace,'SFMono-Regular',Menlo,Consolas,'Noto Sans KR',monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#10151c;--card:#19202a;--fg:#e8edf3;--muted:#9aa7b8;--line:#2b3542;
+    --accent:#2dd4bf;--accent-soft:#12312e;--accent-fg:#06201d;--box:#121820;--btn:#273241;
+    --warn:#f3b95a;--warn-soft:#3a2d12;--good:#6fd6a0;--good-soft:#123222;--danger:#ff8a80;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.55;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) 64px max(16px,env(safe-area-inset-left,0px));
+}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1{font-size:20px;margin:0;text-wrap:balance}
+h2{font-size:16px;margin:0}
+.muted{color:var(--muted);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.topbar .brand{font-weight:700;font-size:17px}
+.topbar .right{display:flex;align-items:center;gap:6px}
+.role{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:600;white-space:nowrap}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+.btn{background:var(--accent);color:var(--accent-fg);border:0;border-radius:10px;padding:11px 14px;font-weight:600;min-height:44px}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.sub{background:var(--btn);color:var(--fg)}
+.btn.small{min-height:36px;padding:6px 12px;font-size:13px}
+.ghost{background:transparent;border:1px solid var(--line);border-radius:10px;padding:6px 10px;min-height:36px;font-size:13px}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btns > *{flex:1;min-width:120px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field > label,.field > .lbl{font-size:13px;color:var(--muted)}
+input[type=text],input[type=password],input[type=number],input[type=date],input[type=time],input[type=search],input:not([type]),textarea{
+  width:100%;font:inherit;color:var(--fg);background:var(--box);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:42px;min-width:0;
+}
+textarea{resize:vertical;line-height:1.5}
+input:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.row2{display:flex;gap:10px;align-items:flex-end}
+.row2 > .grow{flex:1;min-width:0}
+.range{display:flex;align-items:center;gap:8px}
+.range > input{flex:1;min-width:0}
+.range > span{color:var(--muted)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cols > *{min-width:0}
+.sw{display:flex;align-items:center;gap:8px;min-height:42px;cursor:pointer;white-space:nowrap;font-size:14px}
+.sw input{position:absolute;opacity:0;width:1px;height:1px}
+.sw .track{width:42px;height:24px;border-radius:12px;background:var(--line);position:relative;flex:0 0 auto;transition:background .15s}
+.sw .track::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .15s}
+.sw input:checked + .track{background:var(--accent)}
+.sw input:checked + .track::after{transform:translateX(18px)}
+.sw input:focus-visible + .track{outline:3px solid var(--accent);outline-offset:2px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap;border:0}
+.chip.wait{background:var(--warn-soft);color:var(--warn)}
+.chip.done{background:var(--good-soft);color:var(--good)}
+.chipbtn{font-size:14px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);min-height:36px}
+.chipbtn.wait{color:var(--warn)}
+.chipbtn.done{color:var(--good)}
+.chipbtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.list{display:flex;flex-direction:column}
+.li{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--line);background:none;border-left:0;border-right:0;border-bottom:0;width:100%;text-align:left;color:inherit}
+.li:first-child{border-top:0}
+.li .t{min-width:0}
+.li .t b{display:block;overflow-wrap:anywhere}
+.li .t small{display:block;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radius:12px;padding:12px;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.dur{gap:6px}
+.dur .read{text-align:center;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.dur .read small{font-size:13px;font-weight:400;color:var(--muted);margin-left:6px}
+.dur .hm{display:flex;align-items:center;justify-content:center;gap:6px}
+.dur .hm input{width:76px;text-align:center}
+.dur .steps{display:flex;gap:6px}
+.dur .steps button{flex:1;min-width:0;height:44px;border:0;border-radius:10px;background:var(--btn);font-size:13px;font-weight:600}
+.dur .steps button:active{background:var(--accent);color:var(--accent-fg)}
+.past{display:flex;flex-direction:column}
+.past .p{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)}
+.past .p:first-child{border-top:0}
+.past .p div{min-width:0;overflow-wrap:anywhere}
+.past .p small{display:block;color:var(--muted);font-size:12px}
+.err{color:var(--danger);font-size:13px;min-height:1.2em}
+.login{margin-top:12vh}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;max-width:90vw;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
+#toast.on{opacity:1}
+.banner{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:8px 12px;font-size:13px}
 </style>
 </head>
 <body>
-<header>
-  <div class="logo">
-    <div class="logo-icon">
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <path d="M4 7c0-.8.7-1.5 1.5-1.5h2C8.3 5.5 9 6.2 9 7v1.5H4V7z" fill="white"/>
-        <path d="M11 7c0-.8.7-1.5 1.5-1.5h2C15.3 5.5 16 6.2 16 7v1.5h-5V7z" fill="white" opacity=".75"/>
-        <rect x="3.5" y="9.5" width="13" height="1.2" rx=".6" fill="white" opacity=".6"/>
-        <path d="M6 11.5v5a.8.8 0 001.6 0v-5H6z" fill="white"/>
-        <path d="M9.2 11.5v5a.8.8 0 001.6 0v-5H9.2z" fill="white" opacity=".8"/>
-        <path d="M12.4 11.5v5a.8.8 0 001.6 0v-5h-1.6z" fill="white" opacity=".65"/>
-      </svg>
-    </div>
-    요술손케이터링
-  </div>
-  <div class="hdr-actions">
-    <a class="hdr-link" href="../식자재/식재료시세분석/index.html">식재료 시세 분석</a>
-    <button id="theme-btn">다크모드</button>
-  </div>
-</header>
-
-<main>
-  <h1>배송비 계산기</h1>
-  <p class="subtitle">기본 정보를 입력하면 배송 세팅 시트가 자동으로 완성됨</p>
-
-  <div class="type-tabs">
-    <button class="type-tab on" data-v="배송">배송</button>
-    <button class="type-tab" data-v="배송세팅">배송세팅</button>
-    <button class="type-tab" data-v="출장">출장</button>
-  </div>
-
-  <div class="card">
-    <div class="card-title">기본 정보</div>
-    <div class="fg">
-      <div class="fi"><label>날짜</label><input type="date" id="f-date"></div>
-      <div class="fi"><label>이름</label><input type="text" id="f-name" placeholder="예) 홍길동"></div>
-      <div class="fi"><label>소속 / 행사명</label><input type="text" id="f-org" placeholder="예) 국가보훈부"></div>
-      <div class="fi"><label>연락처</label><input type="text" id="f-phone" placeholder="예) 010 0000 0000"></div>
-      <div class="fi full"><label>장소</label><input type="text" id="f-addr" placeholder="예) 서울 종로구 삼봉로 95 대성스카이렉스 3층"></div>
-      <div class="fi full"><label>품목</label><input type="text" id="f-items" placeholder="예) 도시락 50개"></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">시간 정보</div>
-    <div class="fg">
-      <div class="fi"><label>출발 시간</label><input type="time" id="f-dep" value="12:00"></div>
-      <div class="fi"><label>도착 시간</label><input type="time" id="f-arr" value="13:00"></div>
-      <div class="fi full"><label>행사 시간</label><input type="text" id="f-evt" placeholder="예) 13:00 또는 13:00~18:00"></div>
-      <div class="fi"><label>갈 때 (분)</label><input type="number" id="f-go" placeholder="예) 60" min="0"></div>
-      <div class="fi"><label>올 때 (분)</label><input type="number" id="f-bk" placeholder="예) 60" min="0"></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">거리 및 비용</div>
-    <div class="fg">
-      <div class="fi"><label>편도 거리 (km)</label><input type="number" id="f-dist" placeholder="예) 21" min="0" step="0.1"></div>
-      <div class="fi"><label>편도 연료비 (원)</label><input type="number" id="f-fuel" placeholder="예) 4158" min="0"></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">추가 비용 옵션</div>
-    <div class="tgl-row">
-      <div class="tgl-left">
-        <div class="tgl-name">통행료</div>
-        <div class="tgl-sub">편도 금액 입력 → 왕복 자동 계산</div>
-      </div>
-      <div class="tgl-right">
-        <label class="sw"><input type="checkbox" id="toll-on"><span class="sw-sl"></span></label>
-        <input type="number" id="toll-val" class="tgl-amt" placeholder="편도 원" min="0" disabled>
-      </div>
-    </div>
-    <div class="tgl-row">
-      <div class="tgl-left">
-        <div class="tgl-name">주차비</div>
-        <div class="tgl-sub">현장 실비</div>
-      </div>
-      <div class="tgl-right">
-        <label class="sw"><input type="checkbox" id="park-on"><span class="sw-sl"></span></label>
-        <input type="number" id="park-val" class="tgl-amt" placeholder="원" min="0" disabled>
-      </div>
-    </div>
-  </div>
-
-  <button id="btn-calc" type="button">계산하기</button>
-
-  <div class="result" id="result">
-    <div class="r-head">
-      <h2 id="r-title"></h2>
-      <div class="r-meta" id="r-meta"></div>
-    </div>
-    <div class="r-body">
-      <div class="r-info" id="r-info"></div>
-      <div id="r-rows"></div>
-      <div class="total-box">
-        <div class="total-box-t">합계</div>
-        <div id="r-totals"></div>
-      </div>
-      <button id="copy-btn">텍스트 복사</button>
-    </div>
-  </div>
-</main>
-
+<div class="wrap" id="app"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript>이 화면은 자바스크립트가 필요합니다.</noscript>
 <script>
-(function(){
-  var selectedType = '배송';
-  var copyLines = [];
-  var dark = false;
+(function () {
+  'use strict';
 
-  function q(id){ return document.getElementById(id); }
-  function val(id){ return (q(id).value||'').trim(); }
-  function num(id){ return parseFloat(q(id).value)||0; }
-  function chk(id){ return q(id).checked; }
-  function comma(n){ return n.toLocaleString('ko-KR'); }
-  function fmt(n){ return comma(n)+'원'; }
-  function up100(n){ return Math.ceil(n/100)*100; }
+  /* ───────── 연결 ─────────
+   * API_URL: 구글 연결 다리(Apps Script 웹앱)의 주소. 배포한 뒤 Cursor가 여기에 넣는다. (…/exec)
+   * 비워 두면 '미리보기 모드'로 동작한다: 가짜 예시 데이터로 화면만 써 볼 수 있고, 구글시트에는 아무것도 저장되지 않는다.
+   * 비밀번호는 이 파일에 없다. 비밀번호 확인은 구글 쪽에서만 한다.
+   */
+  var API_URL = 'https://script.google.com/macros/s/AKfycbwK1uXP1m0CYyb9cxTiRcDIIQVh3LJcPkWvg45gUn-GBkf7u6j_GGp7lxbGmFRy7goguw/exec';
+  var DEMO = !API_URL;
 
-  // 탭
-  var tabs = document.querySelectorAll('.type-tab');
-  for(var i=0;i<tabs.length;i++){
-    tabs[i].addEventListener('click', function(){
-      for(var j=0;j<tabs.length;j++) tabs[j].className='type-tab';
-      this.className='type-tab on';
-      selectedType = this.getAttribute('data-v');
+  var TYPES = ['배송', '배송세팅', '출장', '반출장', '픽업'];
+  var WAGES = [11000, 12000, 13000];
+  var WD = ['일', '월', '화', '수', '목', '금', '토'];
+  var TOKEN_KEY = 'bs_token';
+  var SEP = '--------------------------------';
+  var PW_MIN = 4;
+
+  var S = { token: '', role: '', rows: [], counts: { wait: 0, done: 0 }, filter: 'all', q: '', view: '' };
+
+  /* ───────── 작은 도구 ───────── */
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function $all(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
-
-  // 토글
-  q('toll-on').addEventListener('change', function(){
-    q('toll-val').disabled = !this.checked;
-    if(this.checked) q('toll-val').focus(); else q('toll-val').value='';
-  });
-  q('park-on').addEventListener('change', function(){
-    q('park-val').disabled = !this.checked;
-    if(this.checked) q('park-val').focus(); else q('park-val').value='';
-  });
-
-  // 다크모드
-  q('theme-btn').addEventListener('click', function(){
-    dark = !dark;
-    document.body.style.background = dark?'#131211':'#f7f6f2';
-    document.body.style.color = dark?'#d4d3d0':'#28251d';
-    this.textContent = dark?'라이트모드':'다크모드';
-    var cards = document.querySelectorAll('.card,.result');
-    for(var c=0;c<cards.length;c++){
-      cards[c].style.background = dark?'#1c1b19':'#fff';
-      cards[c].style.borderColor = dark?'#353330':'#e0ddd8';
-    }
-    var hdr = document.querySelector('header');
-    hdr.style.background = dark?'#1c1b19':'#fff';
-    hdr.style.borderColor = dark?'#353330':'#e0ddd8';
-    var inputs = document.querySelectorAll('input[type=text],input[type=number],input[type=date],input[type=time]');
-    for(var inp=0;inp<inputs.length;inp++){
-      inputs[inp].style.background = dark?'#242321':'#f9f8f5';
-      inputs[inp].style.borderColor = dark?'#353330':'#d4d1ca';
-      inputs[inp].style.color = dark?'#d4d3d0':'#28251d';
-    }
-  });
-
-  // 계산
-  q('btn-calc').addEventListener('click', function(){
-    if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
-    var name    = val('f-name');
-    var org     = val('f-org');
-    var date    = val('f-date');
-    var address = val('f-addr');
-    var phone   = val('f-phone');
-    var items   = val('f-items');
-    var dep     = val('f-dep');
-    var arr     = val('f-arr');
-    var evt     = val('f-evt');
-    var goMin   = parseInt(q('f-go').value)||0;
-    var bkMin   = parseInt(q('f-bk').value)||0;
-    var dist    = num('f-dist');
-    var fuel    = num('f-fuel');
-    var tollOn  = chk('toll-on');
-    var tollVal = tollOn?(parseInt(q('toll-val').value)||0):0;
-    var parkOn  = chk('park-on');
-    var parkVal = parkOn?(parseInt(q('park-val').value)||0):0;
-
-    var totalMin = goMin+bkMin;
-    var wages    = [11000,12000,13000];
-    var labors   = wages.map(function(w){ return Math.round(w*totalMin/60); });
-    var roundKm  = dist*2;
-    var vehCost  = Math.round(roundKm*222);
-    var fuelCost = up100(fuel*2);
-    var totalSur = 0; // 수고비 금지(구간·추가 모두)
-    var tollCost = tollOn?tollVal*2:0;
-
-    var dateStr='';
-    if(date){
-      var p=date.split('-');
-      var dy=new Date(+p[0],+p[1]-1,+p[2]).getDay();
-      dateStr=p[0].slice(2)+'.'+p[1]+'.'+p[2]+'('+'일월화수목금토'[dy]+')';
-    }
-
-    var titleName = name+(org?' / '+org:'');
-    q('r-title').textContent = '['+selectedType+'] '+titleName;
-
-    var meta=[];
-    if(dateStr) meta.push('일시: '+dateStr);
-    if(dep) meta.push('출발: '+dep);
-    if(arr) meta.push('도착: '+arr);
-    if(evt) meta.push('행사시간: '+evt);
-    q('r-meta').textContent = meta.join(' / ');
-
-    var info=[];
-    if(address) info.push('장소: '+address);
-    if(phone)   info.push('연락처: '+phone);
-    if(items)   info.push('품목: '+items);
-    q('r-info').innerHTML = info.join('<br>');
-
-    var hStr=Math.floor(totalMin/60)+'시간'+(totalMin%60?' '+(totalMin%60)+'분':'');
-    var laborStr=labors.map(fmt).join(' / ');
-    var laborSub=wages.map(function(w){ return '시급 '+comma(w)+'원 × 왕복 '+hStr; }).join(' / ');
-    var vehSub='왕복 '+roundKm+'km × 222원/km / 감가상각·소모품·유지비 포함 / 유류비 제외';
-    var fuelSub='편도 '+comma(fuel)+'원 × 왕복 2 = '+comma(fuel*2)+'원 → 100단위 올림';
-
-    var rows=[
-      {l:'배송 인건비', v:laborStr,    s:laborSub},
-      {l:'차량 운영비', v:fmt(vehCost), s:vehSub},
-      {l:'유류비',      v:fmt(fuelCost),s:fuelSub}
-    ];
-    if(tollOn&&tollVal>0) rows.push({l:'통행료',v:fmt(tollCost),s:'편도 '+fmt(tollVal)+' × 왕복 2'});
-    if(parkOn&&parkVal>0) rows.push({l:'주차비',v:fmt(parkVal),s:'현장 실비 / 실정산 시 조정'});
-
-    var rEl=q('r-rows'); rEl.innerHTML='';
-    rows.forEach(function(r){
-      rEl.innerHTML+='<div class="r-row"><div><div class="r-lbl">'+r.l+'</div><div class="r-sub">'+r.s+'</div></div><div class="r-val">'+r.v+'</div></div>';
-    });
-
-    var base=vehCost+fuelCost+totalSur+tollCost;
-    var totals=wages.map(function(w,i){ return base+labors[i]+(parkOn?parkVal:0); });
-    var tEl=q('r-totals'); tEl.innerHTML='';
-    wages.forEach(function(w,i){
-      tEl.innerHTML+='<div class="total-row"><span class="total-wl">시급 '+comma(w)+'원 기준</span><span class="total-wv">'+fmt(totals[i])+'</span></div>';
-    });
-
-    copyLines=[];
-    copyLines.push('['+selectedType+'] '+titleName);
-    if(meta.length) copyLines.push(meta.join(' / '));
-    if(address) copyLines.push('장소: '+address);
-    if(phone)   copyLines.push('연락처: '+phone);
-    if(items)   copyLines.push('품목: '+items);
-    copyLines.push('');
-    copyLines.push('•배송 인건비 '+laborStr); copyLines.push('('+laborSub+')');
-    copyLines.push('•차량 운영비 '+fmt(vehCost)); copyLines.push('('+vehSub+')');
-    copyLines.push('•유류비 '+fmt(fuelCost)); copyLines.push('('+fuelSub+')');
-    if(tollOn&&tollVal>0){ copyLines.push('•통행료 '+fmt(tollCost)); copyLines.push('(편도 '+fmt(tollVal)+' × 왕복 2)'); }
-    if(parkOn&&parkVal>0){ copyLines.push('•주차비 '+fmt(parkVal)); copyLines.push('(현장 실비 / 실정산 시 조정)'); }
-    copyLines.push('');
-    copyLines.push('•합계 '+totals.map(fmt).join(' / '));
-    copyLines.push('(시급 11,000 / 12,000 / 13,000원 기준)');
-    if(parkOn&&parkVal>0) copyLines.push('•주차비 제외 '+wages.map(function(w,i){ return fmt(base+labors[i]); }).join(' / '));
-
-    var rc=q('result');
-    rc.className='result show';
-    setTimeout(function(){
-      var top=rc.getBoundingClientRect().top+window.pageYOffset-8;
-      window.scrollTo(0, Math.max(0, top));
-    }, 300);
-  });
-
-  // 복사
-  q('copy-btn').addEventListener('click', function(){
-    var text=copyLines.join('\n');
-    var btn=this;
-    function done(){ btn.textContent='복사됨'; setTimeout(function(){ btn.textContent='텍스트 복사'; },2000); }
-    function fallback(){
-      var ta=document.createElement('textarea');
-      ta.value=text;
-      ta.readOnly=true;
-      ta.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px';
+  function lsGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  function lsSet(k, v) { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) { /* 저장 불가 */ } }
+  var app = document.getElementById('app');
+  function mount(html) { app.innerHTML = html; window.scrollTo(0, 0); }
+  var toastTimer = 0;
+  function toast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'on';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.className = ''; }, 2800);
+  }
+  function copyText(text) {
+    function ok() { toast('복사했습니다'); }
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
       document.body.appendChild(ta);
       ta.focus();
       ta.select();
-      var ok=false;
-      try{ ok=document.execCommand('copy'); }catch(e){}
-      ta.blur();
+      var done = false;
+      try { done = document.execCommand('copy'); } catch (e) { done = false; }
       document.body.removeChild(ta);
-      if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
-      if(ok) done();
+      if (done) ok(); else toast('복사하지 못했습니다. 글을 길게 눌러 복사해 주세요.');
     }
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(text).then(done).catch(fallback);
-    } else {
-      fallback();
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(ok, fallback);
+    else fallback();
+  }
+
+  /* ───────── 글·계산 (순수 함수) ───────── */
+  function dateLabel(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+    if (!m) return '';
+    var d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return m[1].slice(2) + '.' + m[2] + '.' + m[3] + '(' + WD[d.getDay()] + ')';
+  }
+  function money(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function numStr(n) { return String(Math.round(n * 10) / 10); }
+  function fmtHM(min) {
+    var h = Math.floor(min / 60), m = min % 60;
+    if (h && m) return h + '시간 ' + m + '분';
+    if (h) return h + '시간';
+    return m + '분';
+  }
+  function rangeJoin(a, b) { return a ? (b ? a + ' ~ ' + b : a) : ''; }
+  function rangeSplit(s) { var p = String(s || '').split(' ~ '); return [(p[0] || '').trim(), (p[1] || '').trim()]; }
+  function titleLine(d) { return '[' + (d.sang === '예' ? '상담' : '') + d.type + '] ' + d.name + (d.org ? ' / ' + d.org : ''); }
+
+  function calc(sp) {
+    var total = sp.goMin + sp.backMin;
+    var round = sp.km * 2;
+    var labor = WAGES.map(function (w) { return Math.round(w * total / 60); });
+    var vehicle = Math.round(round * 222);
+    var fuelCost = Math.ceil((sp.fuel * 2) / 100) * 100;
+    var tollTotal = (sp.toll || 0) * 2;
+    var upkeep = vehicle + fuelCost + tollTotal;
+    return {
+      total: total, round: round, labor: labor, vehicle: vehicle, fuelCost: fuelCost, tollTotal: tollTotal, upkeep: upkeep,
+      totals: labor.map(function (l) { return upkeep + l; })
+    };
+  }
+
+  // 대표님 견적문의 글
+  function draftText(d) {
+    var L = [];
+    L.push(titleLine(d));
+    L.push(d.date ? dateLabel(d.date) : '날짜 미정');
+    L.push('');
+    L.push('출발 : ');
+    L.push('도착 : ' + (d.arrive || ''));
+    L.push('행사시간 : ' + (d.eventTime || ''));
+    L.push('');
+    if (d.place) { L.push(d.place); L.push(''); }
+    var who = [d.contactName, d.phone].filter(Boolean).join(' ');
+    if (who) { L.push('담당자 : ' + who); L.push(''); }
+    if (d.notes) L.push(d.notes);
+    return L.join('\n').replace(/\n+$/, '');
+  }
+
+  // 최종 견적 글 (빈 줄 위치까지 정해진 틀)
+  function finalText(d, sp, c) {
+    var L = [];
+    L.push(titleLine(d));
+    L.push('일자: ' + (d.date ? dateLabel(d.date) : '미정'));
+    L.push('');
+    L.push('출발: ' + (sp.depart || '미정'));
+    if (d.arrive) L.push('도착: ' + d.arrive);
+    if (d.eventTime) L.push('행사시간: ' + d.eventTime);
+    L.push('');
+    if (d.place) { L.push('장소: ' + d.place); L.push(''); }
+    var contact;
+    if (d.contactName) contact = d.contactName + ' (' + (d.phone || '연락처 확인중') + ')';
+    else contact = d.phone || '연락처 확인중';
+    L.push('담당자: ' + contact);
+    L.push('');
+    if (d.notes) { L.push(d.notes); L.push(''); }
+    L.push(SEP);
+    L.push('');
+    L.push('편도거리: ' + numStr(sp.km) + 'km (왕복 ' + numStr(c.round) + 'km)');
+    L.push('편도 연료비: ' + money(sp.fuel) + '원');
+    L.push('편도 통행료: ' + money(sp.toll || 0) + '원');
+    L.push('도착소요시간: ' + fmtHM(sp.goMin) + ' (' + sp.goMin + '분)');
+    L.push('복귀소요시간: ' + fmtHM(sp.backMin) + ' (' + sp.backMin + '분)');
+    L.push('총소요시간: ' + c.total + '분 (' + fmtHM(c.total) + ')');
+    L.push('•인건비 ' + c.labor.map(function (v) { return money(v) + '원'; }).join(' / '));
+    L.push('(시급 11,000 / 12,000 / 13,000원 × ' + c.total + '분)');
+    L.push('•차량 운영비 ' + money(c.vehicle) + '원');
+    L.push('(왕복 ' + numStr(c.round) + 'km × 222원/km, 유류비 제외)');
+    L.push('•유류비 ' + money(c.fuelCost) + '원');
+    L.push('(편도 ' + money(sp.fuel) + '원 × 왕복 2)');
+    L.push('•통행료 ' + money(c.tollTotal) + '원');
+    L.push('•인건비 제외 차량유지비 ' + money(c.upkeep) + '원');
+    L.push('•합계 ' + c.totals.map(function (v) { return money(v) + '원'; }).join(' / '));
+    L.push('(시급 11,000 / 12,000 / 13,000원 기준)');
+    L.push(sp.park ? '주차비 ' + money(sp.park) + '원 (별도)' : '주차비 별도');
+    return L.join('\n');
+  }
+
+  function rowToDraft(r) {
+    return {
+      sang: r.sang || '예', type: r.type || '', name: r.name || '', org: r.org || '', date: r.date || '',
+      arrive: r.arrive || '', eventTime: r.eventTime || '', place: r.place || '', contactName: r.contactName || '',
+      phone: r.phone || '', notes: r.notes || ''
+    };
+  }
+  function calcPayload(c) {
+    return {
+      labor11: c.labor[0], labor12: c.labor[1], labor13: c.labor[2], vehicle: c.vehicle, fuelCost: c.fuelCost,
+      tollTotal: c.tollTotal, upkeep: c.upkeep, total11: c.totals[0], total12: c.totals[1], total13: c.totals[2]
+    };
+  }
+
+  /* ───────── 서버 요청 ───────── */
+  function api(action, data) {
+    var body = { action: action, token: S.token };
+    Object.keys(data || {}).forEach(function (k) { body[k] = data[k]; });
+    var p = DEMO ? demoApi(body) : realApi(body);
+    return p.then(function (res) {
+      if (res && res.token) { S.token = res.token; lsSet(TOKEN_KEY, res.token); }
+      if (res && res.role) S.role = res.role;
+      if (!res || !res.ok) {
+        var err = new Error((res && res.message) || '요청을 처리하지 못했습니다.');
+        err.code = res && res.error;
+        if (err.code === 'auth') { S.token = ''; lsSet(TOKEN_KEY, ''); }
+        throw err;
+      }
+      return res;
+    });
+  }
+  // 구글 웹앱은 text/plain 으로 보내야 브라우저의 사전 확인(preflight) 없이 통과한다.
+  function realApi(body) {
+    var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = ctl ? setTimeout(function () { ctl.abort(); }, 30000) : 0;
+    return fetch(API_URL, {
+      method: 'POST', redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(body), signal: ctl ? ctl.signal : undefined
+    }).then(function (r) { return r.json(); }).then(function (j) { clearTimeout(timer); return j; }, function () {
+      clearTimeout(timer);
+      var e = new Error('서버에 연결하지 못했습니다. 잠시 후 다시 해 주세요.');
+      e.code = 'network';
+      throw e;
+    });
+  }
+
+  /* ───────── 미리보기 모드 (연결 전, 가짜 데이터) ───────── */
+  var demoMem = null, demoAcctMem = null;
+  function demoLoad() {
+    if (demoMem) return demoMem;
+    var s = lsGet('bs_demo_rows');
+    if (s) { try { demoMem = JSON.parse(s); return demoMem; } catch (e) { /* 새로 만든다 */ } }
+    demoMem = demoSeed();
+    return demoMem;
+  }
+  function demoSave() { lsSet('bs_demo_rows', JSON.stringify(demoMem)); }
+  function demoSeed() {
+    var d1 = { sang: '아니오', type: '배송', name: '김예시', org: '샘플회사', date: '2026-11-20', arrive: '12:00', eventTime: '13:00 ~ 15:00', place: '샘플센터\n서울 어딘가 1', contactName: '김예시', phone: '010 0000 0000', notes: '*샘플 도시락 30개' };
+    var sp = { depart: '10:30', km: 20, fuel: 3000, toll: 0, park: '', goMin: 80, backMin: 80 };
+    var c = calc(sp);
+    var r1 = Object.assign({ id: '26-001', status: '견적완료', review: '' }, d1, sp, calcPayload(c), { text: finalText(d1, sp, c) });
+    var d2 = { sang: '예', type: '출장', name: '박샘플', org: '예시상회', date: '', arrive: '16:30 ~ 17:00', eventTime: '18:00 ~ 21:00', place: '예시홀\n서울 어딘가 2', contactName: '', phone: '', notes: '*샘플 케이터링 40명' };
+    var r2 = Object.assign({ id: '26-002', status: '견적대기', review: '' }, d2);
+    return [r1, r2];
+  }
+  function demoView(r) {
+    if (S.role === 'admin') return JSON.parse(JSON.stringify(r));
+    var o = { id: r.id, status: r.status };
+    ['sang', 'type', 'name', 'org', 'date', 'arrive', 'eventTime', 'place', 'contactName', 'phone', 'notes'].forEach(function (k) { o[k] = r[k] || ''; });
+    if (r.status === '견적완료') o.text = r.text;
+    return o;
+  }
+  function demoAcct() {
+    if (demoAcctMem) return demoAcctMem;
+    var t = lsGet('bs_demo_acct');
+    if (t) { try { demoAcctMem = JSON.parse(t); return demoAcctMem; } catch (e) { /* 새로 만든다 */ } }
+    demoAcctMem = { adminPw: '', ownerId: '', ownerPw: '', epoch: 0 };
+    return demoAcctMem;
+  }
+  function demoAcctSave() { lsSet('bs_demo_acct', JSON.stringify(demoAcctMem)); }
+  function demoReset() { demoMem = null; demoAcctMem = null; lsSet('bs_demo_rows', ''); lsSet('bs_demo_acct', ''); lsSet(TOKEN_KEY, ''); S.token = ''; S.role = ''; }
+  function demoPwError(pw, confirm) {
+    if (String(pw || '').length < PW_MIN) return '비밀번호는 ' + PW_MIN + '글자 이상으로 해 주세요.';
+    if (pw !== confirm) return '비밀번호와 비밀번호 확인이 같지 않습니다.';
+    return '';
+  }
+  function demoIdError(id) {
+    id = String(id || '').trim();
+    if (!id) return '아이디를 적어 주세요.';
+    if (/\s/.test(id)) return '아이디에는 띄어쓰기를 쓸 수 없습니다.';
+    if (id.toLowerCase() === 'admin') return '이 아이디는 쓸 수 없습니다.';
+    return '';
+  }
+  function demoApi(b) {
+    return new Promise(function (resolve) {
+      setTimeout(function () { resolve(demoHandle(b)); }, 150);
+    });
+  }
+  function demoHandle(b) {
+    var rows = demoLoad();
+    var a = demoAcct();
+    var owner = !!(a.ownerId && a.ownerPw);
+    var bad = function (code, msg) { return { ok: false, error: code, message: msg }; };
+    if (b.action === 'status') return { ok: true, adminRegistered: !!a.adminPw, ownerRegistered: owner };
+    if (b.action === 'registerAdmin') {
+      if (a.adminPw) return bad('exists', '관리자가 이미 등록되어 있습니다.');
+      var e1 = demoPwError(b.password, b.confirm);
+      if (e1) return bad('bad', e1);
+      a.adminPw = b.password; demoAcctSave();
+      return { ok: true, role: 'admin', token: 'demo-admin' };
+    }
+    if (b.action === 'registerOwner') {
+      if (!a.adminPw) return bad('setup', '먼저 관리자를 등록해 주세요.');
+      if (owner) return bad('exists', '대표님 계정이 이미 등록되어 있습니다.');
+      var e2 = demoIdError(b.id) || demoPwError(b.password, b.confirm);
+      if (e2) return bad('bad', e2);
+      a.ownerId = String(b.id).trim(); a.ownerPw = b.password; a.epoch++; demoAcctSave();
+      return { ok: true, role: 'owner', token: 'demo-owner-' + a.epoch };
+    }
+    if (b.action === 'login') {
+      if (!a.adminPw) return bad('setup', '먼저 관리자를 등록해 주세요.');
+      var id = String(b.id || '').trim().toLowerCase();
+      if (id === 'admin' && b.password === a.adminPw) return { ok: true, role: 'admin', token: 'demo-admin' };
+      if (owner && id === a.ownerId.toLowerCase() && b.password === a.ownerPw) return { ok: true, role: 'owner', token: 'demo-owner-' + a.epoch };
+      return bad('password', '아이디 또는 비밀번호가 맞지 않습니다.');
+    }
+    var role = b.token === 'demo-admin' && a.adminPw ? 'admin' : (b.token === 'demo-owner-' + a.epoch && owner ? 'owner' : '');
+    if (!role) return bad('auth', '로그인이 필요합니다.');
+    S.role = role;
+    var out = { ok: true, role: role, token: b.token };
+    if (b.action === 'ownerAccount' || b.action === 'updateOwner' || b.action === 'deleteOwner') {
+      if (role !== 'admin') return bad('forbidden', '팀장님만 할 수 있습니다.');
+      if (b.action === 'updateOwner') {
+        var e3 = demoIdError(b.id) || demoPwError(b.password, b.confirm);
+        if (e3) return bad('bad', e3);
+        a.ownerId = String(b.id).trim(); a.ownerPw = b.password; a.epoch++; demoAcctSave();
+      } else if (b.action === 'deleteOwner') {
+        a.ownerId = ''; a.ownerPw = ''; a.epoch++; demoAcctSave();
+      }
+      out.account = (a.ownerId && a.ownerPw) ? { registered: true, id: a.ownerId, password: a.ownerPw } : { registered: false };
+      return out;
+    }
+    if (b.action === 'list') {
+      out.rows = rows.map(demoView);
+      out.counts = { wait: rows.filter(function (r) { return r.status !== '견적완료'; }).length, done: rows.filter(function (r) { return r.status === '견적완료'; }).length };
+      return out;
+    }
+    if (b.action === 'saveDraft') {
+      var row;
+      if (b.id) {
+        row = rows.filter(function (r) { return r.id === b.id; })[0];
+        if (!row) return bad('notfound', '해당 건을 찾을 수 없습니다.');
+        if (role === 'owner' && row.status !== '견적대기') return bad('forbidden', '이미 견적이 완료된 건은 수정할 수 없습니다.');
+      } else {
+        row = { id: '26-' + ('000' + (rows.length + 1)).slice(-3), status: '견적대기', review: '' };
+        rows.push(row);
+      }
+      Object.assign(row, b.draft);
+      demoSave();
+      out.row = demoView(row);
+      return out;
+    }
+    if (b.action === 'deleteDraft') {
+      var di = -1;
+      for (var i = 0; i < rows.length; i++) if (rows[i].id === b.id) di = i;
+      if (di < 0) return bad('notfound', '해당 건을 찾을 수 없습니다.');
+      if (role === 'owner' && rows[di].status !== '견적대기') return bad('forbidden', '이미 견적이 완료된 건은 삭제할 수 없습니다.');
+      var deletedId = rows[di].id;
+      rows.splice(di, 1);
+      demoSave();
+      out.deletedId = deletedId;
+      return out;
+    }
+    if (b.action === 'finalize') {
+      if (role !== 'admin') return bad('forbidden', '제원은 팀장님만 입력할 수 있습니다.');
+      var r = rows.filter(function (x) { return x.id === b.id; })[0];
+      if (!r) return bad('notfound', '해당 건을 찾을 수 없습니다.');
+      Object.assign(r, b.draft, b.specs, b.calc, { text: b.text, status: '견적완료' });
+      demoSave();
+      out.row = demoView(r);
+      return out;
+    }
+    return bad('bad', '알 수 없는 요청입니다.');
+  }
+
+  /* ───────── 공통 화면 조각 ───────── */
+  function roleName() { return S.role === 'admin' ? '팀장님' : '대표님'; }
+  function topbar() {
+    return '<div class="topbar"><span class="brand">배송견적</span><span class="right">' +
+      '<span class="role">' + roleName() + '</span>' +
+      (S.role === 'admin' ? '<button class="ghost" id="acct" type="button">대표님 계정</button>' : '') +
+      '<button class="ghost" id="logout" type="button">로그아웃</button></span></div>' +
+      (DEMO ? '<div class="banner">미리보기 모드입니다. 예시 데이터이고 구글시트에는 저장되지 않습니다.</div>' : '');
+  }
+  function bindTop() {
+    var b = $('#logout');
+    if (b) b.addEventListener('click', function () { S.token = ''; S.role = ''; lsSet(TOKEN_KEY, ''); viewLogin(); });
+    var c = $('#acct');
+    if (c) c.addEventListener('click', viewOwnerAccount);
+  }
+  function statusChip(st) { return '<span class="chip ' + (st === '견적완료' ? 'done' : 'wait') + '">' + esc(st || '견적대기') + '</span>'; }
+  function firstLine(s) { return String(s || '').split('\n')[0]; }
+  function rowTitle(r) { return esc(r.name) + (r.org ? ' / ' + esc(r.org) : ''); }
+  function upsertRow(row) {
+    var i = -1;
+    S.rows.forEach(function (r, k) { if (r.id === row.id) i = k; });
+    if (i >= 0) S.rows[i] = row; else S.rows.push(row);
+    S.counts = { wait: S.rows.filter(function (r) { return r.status !== '견적완료'; }).length, done: S.rows.filter(function (r) { return r.status === '견적완료'; }).length };
+  }
+  function removeLocalRow(id) {
+    S.rows = S.rows.filter(function (r) { return r.id !== id; });
+    S.counts = { wait: S.rows.filter(function (r) { return r.status !== '견적완료'; }).length, done: S.rows.filter(function (r) { return r.status === '견적완료'; }).length };
+  }
+  function confirmDeleteDraft(row, btn) {
+    if (!row || !row.id) return;
+    if (S.role === 'owner' && row.status === '견적완료') { toast('이미 견적이 완료된 건은 삭제할 수 없습니다.'); return; }
+    var box = $('#delDraftBox');
+    if (!box) return;
+    box.innerHTML = '<div class="banner">이 건을 삭제할까요? 삭제하면 목록과 시트에서 사라집니다.</div>' +
+      '<div class="btns" style="margin-top:8px"><button class="btn" id="delDraftYes" type="button">삭제 확인</button><button class="btn sub" id="delDraftNo" type="button">취소</button></div>';
+    $('#delDraftNo').addEventListener('click', function () { box.innerHTML = ''; });
+    $('#delDraftYes').addEventListener('click', function () {
+      var yes = $('#delDraftYes');
+      busy(yes, true, '삭제 중…');
+      if (btn) busy(btn, true, '삭제 중…');
+      api('deleteDraft', { id: row.id }).then(function () {
+        removeLocalRow(row.id);
+        toast('삭제했습니다');
+        return refresh().then(viewList);
+      }).catch(function (e) {
+        busy(yes, false);
+        if (btn) busy(btn, false);
+        fail(e);
+      });
+    });
+  }
+  function refresh() {
+    return api('list').then(function (res) { S.rows = res.rows; S.counts = res.counts; });
+  }
+  function busy(btn, on, label) {
+    if (!btn) return;
+    if (on) { btn.dataset.label = btn.textContent; btn.textContent = label || '저장 중…'; btn.disabled = true; }
+    else { btn.textContent = btn.dataset.label || btn.textContent; btn.disabled = false; }
+  }
+  function fail(e) {
+    toast(e.message || '처리하지 못했습니다.');
+    if (e.code === 'auth') viewLogin(e.message);
+  }
+
+  /* ───────── 로그인 · 계정 ───────── */
+  function authCard(title, body) { return '<div class="card login"><h1>' + title + '</h1>' + body + '</div>'; }
+  function pwFieldsHTML(first, second) {
+    return '<div class="field"><label for="pw1">' + first + '</label><input id="pw1" type="password" autocomplete="new-password"></div>' +
+      '<div class="field"><label for="pw2">' + second + '</label><input id="pw2" type="password" autocomplete="new-password"></div>';
+  }
+  function pwError(pw1, pw2) {
+    if (pw1.length < PW_MIN) return '비밀번호는 ' + PW_MIN + '글자 이상으로 해 주세요.';
+    if (pw1 !== pw2) return '비밀번호와 비밀번호 확인이 같지 않습니다.';
+    return '';
+  }
+  function viewLogin(msg) {
+    S.view = 'login';
+    mount(authCard('배송견적', '<p class="muted">확인하는 중…</p>'));
+    api('status').then(function (st) {
+      if (!st.adminRegistered) viewRegisterAdmin();
+      else renderLogin(msg, st);
+    }).catch(function (e) {
+      mount(authCard('배송견적', '<div class="err">' + esc(e.message) + '</div><button class="btn" id="retry" type="button">다시 시도</button>'));
+      $('#retry').addEventListener('click', function () { viewLogin(); });
+    });
+  }
+  function renderLogin(msg, st) {
+    mount(authCard('배송견적',
+      '<div class="field"><label for="uid">아이디</label><input id="uid" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"></div>' +
+      '<div class="field"><label for="pw">비밀번호</label><input id="pw" type="password" autocomplete="current-password"></div>' +
+      '<div class="err" id="loginErr">' + esc(msg || '') + '</div>' +
+      '<button class="btn" id="loginBtn" type="button">로그인</button>' +
+      (st.ownerRegistered ? '' : '<button class="btn sub" id="newAcct" type="button">새 계정 만들기</button>') +
+      (DEMO ? '<p class="muted">미리보기 모드입니다. 예시 데이터이고 구글시트에는 저장되지 않습니다.</p><button class="ghost" id="demoReset" type="button">미리보기 처음부터 다시</button>' : '')));
+    var go = function () {
+      var uid = $('#uid').value.trim(), pw = $('#pw').value;
+      if (!uid || !pw) { $('#loginErr').textContent = '아이디와 비밀번호를 입력해 주세요.'; return; }
+      var btn = $('#loginBtn');
+      busy(btn, true, '확인 중…');
+      api('login', { id: uid, password: pw }).then(function () { return refresh(); }).then(viewList).catch(function (e) {
+        busy(btn, false);
+        $('#loginErr').textContent = e.message;
+      });
+    };
+    $('#loginBtn').addEventListener('click', go);
+    $('#pw').addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+    var n = $('#newAcct');
+    if (n) n.addEventListener('click', viewRegisterOwner);
+    var r = $('#demoReset');
+    if (r) r.addEventListener('click', function () { demoReset(); viewLogin(); });
+  }
+  function viewRegisterAdmin() {
+    S.view = 'register';
+    mount(authCard('관리자 등록',
+      '<p class="muted">처음 한 번만 하는 등록입니다. 아이디는 admin 으로 정해져 있습니다.</p>' +
+      '<div class="field"><label for="uid">아이디</label><input id="uid" value="admin" readonly></div>' +
+      pwFieldsHTML('비밀번호 (' + PW_MIN + '글자 이상)', '비밀번호 확인') +
+      '<div class="err" id="regErr"></div><button class="btn" id="regBtn" type="button">등록</button>'));
+    var go = function () {
+      var p1 = $('#pw1').value, p2 = $('#pw2').value;
+      var err = pwError(p1, p2);
+      if (err) { $('#regErr').textContent = err; return; }
+      var btn = $('#regBtn');
+      busy(btn, true, '등록 중…');
+      api('registerAdmin', { password: p1, confirm: p2 }).then(function () { return refresh(); }).then(function () { toast('관리자로 등록했습니다'); viewList(); }).catch(function (e) {
+        busy(btn, false);
+        $('#regErr').textContent = e.message;
+        if (e.code === 'exists') viewLogin();
+      });
+    };
+    $('#regBtn').addEventListener('click', go);
+    $('#pw2').addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+  }
+  function viewRegisterOwner() {
+    S.view = 'register';
+    mount(authCard('새 계정 만들기',
+      '<p class="muted">원하는 아이디와 비밀번호를 정해 주세요.</p>' +
+      '<div class="field"><label for="uid">아이디</label><input id="uid" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"></div>' +
+      pwFieldsHTML('비밀번호 (' + PW_MIN + '글자 이상)', '비밀번호 확인') +
+      '<div class="err" id="regErr"></div><button class="btn" id="regBtn" type="button">등록</button>' +
+      '<button class="ghost" id="toLogin" type="button">← 로그인으로</button>'));
+    var go = function () {
+      var uid = $('#uid').value.trim(), p1 = $('#pw1').value, p2 = $('#pw2').value;
+      if (!uid) { $('#regErr').textContent = '아이디를 적어 주세요.'; return; }
+      var err = pwError(p1, p2);
+      if (err) { $('#regErr').textContent = err; return; }
+      var btn = $('#regBtn');
+      busy(btn, true, '등록 중…');
+      api('registerOwner', { id: uid, password: p1, confirm: p2 }).then(function () { return refresh(); }).then(function () { toast('등록했습니다'); viewList(); }).catch(function (e) {
+        busy(btn, false);
+        $('#regErr').textContent = e.message;
+        if (e.code === 'exists') viewLogin();
+      });
+    };
+    $('#regBtn').addEventListener('click', go);
+    $('#pw2').addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+    $('#toLogin').addEventListener('click', function () { viewLogin(); });
+  }
+  // 팀장님 전용: 대표님 계정 보기 · 수정 · 삭제
+  function viewOwnerAccount() {
+    S.view = 'account';
+    mount(topbar() +
+      '<button class="ghost" id="back" type="button" style="align-self:flex-start">← 목록</button>' +
+      '<h1>대표님 계정</h1><div class="card" id="acctBox"><p class="muted">불러오는 중…</p></div>');
+    bindTop();
+    $('#back').addEventListener('click', viewList);
+    api('ownerAccount').then(function (res) { drawAccount(res.account); }).catch(fail);
+  }
+  function drawAccount(a) {
+    var box = $('#acctBox');
+    box.innerHTML =
+      (a.registered
+        ? '<div class="field"><span class="lbl">현재 아이디</span><b>' + esc(a.id) + '</b></div>' +
+          '<div class="field"><span class="lbl">현재 비밀번호</span><b>' + esc(a.password) + '</b></div>'
+        : '<p>대표님 계정이 아직 없습니다. 대표님이 로그인 화면에서 “새 계정 만들기”로 등록하거나, 아래에서 직접 만들 수 있습니다.</p>') +
+      '<h2>' + (a.registered ? '수정' : '직접 만들기') + '</h2>' +
+      '<div class="field"><label for="oid">아이디</label><input id="oid" autocomplete="off" autocapitalize="none" value="' + esc(a.registered ? a.id : '') + '"></div>' +
+      pwFieldsHTML('새 비밀번호 (' + PW_MIN + '글자 이상)', '새 비밀번호 확인') +
+      '<div class="err" id="acctErr"></div>' +
+      '<div class="btns"><button class="btn" id="acctSave" type="button">저장</button>' +
+      (a.registered ? '<button class="btn sub" id="acctDel" type="button">삭제</button>' : '') + '</div>' +
+      '<div id="delBox"></div>' +
+      (a.registered ? '<p class="muted">수정하거나 삭제하면 대표님은 다시 로그인해야 합니다.</p>' : '');
+    $('#acctSave').addEventListener('click', function () {
+      var id = $('#oid').value.trim(), p1 = $('#pw1').value, p2 = $('#pw2').value;
+      if (!id) { $('#acctErr').textContent = '아이디를 적어 주세요.'; return; }
+      var err = pwError(p1, p2);
+      if (err) { $('#acctErr').textContent = err; return; }
+      var btn = $('#acctSave');
+      busy(btn, true);
+      api('updateOwner', { id: id, password: p1, confirm: p2 }).then(function (res) { toast('저장했습니다'); drawAccount(res.account); }).catch(function (e) { busy(btn, false); $('#acctErr').textContent = e.message; if (e.code === 'auth') fail(e); });
+    });
+    var del = $('#acctDel');
+    if (del) del.addEventListener('click', function () {
+      $('#delBox').innerHTML = '<div class="banner">정말 삭제할까요? 삭제하면 대표님은 로그인할 수 없고, 로그인 화면의 “새 계정 만들기”가 다시 열립니다.</div>' +
+        '<div class="btns" style="margin-top:8px"><button class="btn" id="delYes" type="button">삭제 확인</button><button class="btn sub" id="delNo" type="button">취소</button></div>';
+      $('#delNo').addEventListener('click', function () { $('#delBox').innerHTML = ''; });
+      $('#delYes').addEventListener('click', function () {
+        api('deleteOwner').then(function (res) { toast('삭제했습니다'); drawAccount(res.account); }).catch(fail);
+      });
+    });
+  }
+
+  /* ───────── 목록 ───────── */
+  function viewList() {
+    S.view = 'list';
+    mount(topbar() +
+      '<div class="chips" id="chips"></div>' +
+      '<div class="btns"><button class="btn" id="newDraft" type="button">+ 견적문의</button>' +
+      '<button class="btn sub" id="reload" type="button">새로고침</button></div>' +
+      '<div class="card"><input id="q" type="search" placeholder="이름 또는 전화번호로 검색" autocomplete="off" value="' + esc(S.q) + '">' +
+      '<div class="list" id="list"></div></div>');
+    bindTop();
+    $('#newDraft').addEventListener('click', function () { viewDraft(null); });
+    $('#reload').addEventListener('click', function () {
+      var b = $('#reload'); busy(b, true, '불러오는 중…');
+      refresh().then(function () { viewList(); toast('새로고침했습니다'); }).catch(function (e) { busy(b, false); fail(e); });
+    });
+    $('#q').addEventListener('input', function (e) { S.q = e.target.value; drawList(); });
+    drawList();
+  }
+  function matches(r, q) {
+    q = q.trim().toLowerCase();
+    if (!q) return true;
+    var digits = q.replace(/\D/g, '');
+    var text = [r.name, r.org, r.contactName].join(' ').toLowerCase();
+    if (text.indexOf(q) >= 0) return true;
+    if (digits.length >= 3 && String(r.phone || '').replace(/\D/g, '').indexOf(digits) >= 0) return true;
+    return false;
+  }
+  function drawList() {
+    var c = S.counts;
+    $('#chips').innerHTML =
+      '<button class="chipbtn wait" type="button" data-f="wait" aria-pressed="' + (S.filter === 'wait') + '">견적대기 ' + c.wait + '건</button>' +
+      '<button class="chipbtn done" type="button" data-f="done" aria-pressed="' + (S.filter === 'done') + '">견적완료 ' + c.done + '건</button>';
+    $all('#chips button').forEach(function (b) {
+      b.addEventListener('click', function () { S.filter = S.filter === b.dataset.f ? 'all' : b.dataset.f; drawList(); });
+    });
+    var waits = S.rows.filter(function (r) { return r.status !== '견적완료'; }).sort(function (a, b) { return a.id < b.id ? -1 : 1; });
+    var dones = S.rows.filter(function (r) { return r.status === '견적완료'; }).sort(function (a, b) { return a.id < b.id ? 1 : -1; });
+    var rows = (S.filter === 'wait' ? waits : S.filter === 'done' ? dones : waits.concat(dones)).filter(function (r) { return matches(r, S.q); });
+    var el = $('#list');
+    if (!rows.length) { el.innerHTML = '<p class="muted">' + (S.rows.length ? '찾는 건이 없습니다.' : '아직 건이 없습니다. “+ 견적문의”로 시작하세요.') + '</p>'; return; }
+    el.innerHTML = rows.map(function (r) {
+      var sub = [(r.sang === '예' ? '상담' : '') + r.type, r.date ? dateLabel(r.date) : '날짜 미정', firstLine(r.place)].filter(Boolean).join(' · ');
+      var canDelete = S.role === 'admin' || r.status !== '견적완료';
+      return '<div class="li" data-id="' + esc(r.id) + '"><button class="ghost" type="button" data-open="' + esc(r.id) + '" style="flex:1;min-width:0;justify-content:flex-start;text-align:left;border:0;padding:0"><span class="t"><b>' + rowTitle(r) + '</b><small>' + esc(sub) + '</small></span></button>' +
+        statusChip(r.status) +
+        (canDelete ? '<button class="ghost" type="button" data-del="' + esc(r.id) + '">삭제</button>' : '') +
+        '</div><div id="delBox-' + esc(r.id) + '"></div>';
+    }).join('');
+    $all('#list [data-open]').forEach(function (b) {
+      b.addEventListener('click', function () { openRow(b.dataset.open); });
+    });
+    $all('#list [data-del]').forEach(function (b) {
+      b.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var r = findRow(b.dataset.del);
+        if (!r) return;
+        var box = $('#delBox-' + r.id);
+        if (!box) return;
+        box.innerHTML = '<div class="banner">이 건을 삭제할까요? 삭제하면 목록과 시트에서 사라집니다.</div>' +
+          '<div class="btns" style="margin-top:8px"><button class="btn" type="button" data-delyes="' + esc(r.id) + '">삭제 확인</button><button class="btn sub" type="button" data-delno="' + esc(r.id) + '">취소</button></div>';
+        var no = $('[data-delno="' + r.id + '"]', box);
+        if (no) no.addEventListener('click', function () { box.innerHTML = ''; });
+        var yes = $('[data-delyes="' + r.id + '"]', box);
+        if (yes) yes.addEventListener('click', function () {
+          busy(yes, true, '삭제 중…');
+          busy(b, true, '삭제 중…');
+          api('deleteDraft', { id: r.id }).then(function () {
+            removeLocalRow(r.id);
+            toast('삭제했습니다');
+            return refresh().then(viewList);
+          }).catch(function (err) {
+            busy(yes, false);
+            busy(b, false);
+            fail(err);
+          });
+        });
+      });
+    });
+  }
+  function findRow(id) { return S.rows.filter(function (r) { return r.id === id; })[0]; }
+  function openRow(id) {
+    var r = findRow(id);
+    if (!r) return;
+    if (S.role === 'admin') viewSpecs(r);
+    else if (r.status === '견적완료') viewDone(r);
+    else viewDraft(r);
+  }
+
+  /* ───────── 견적문의 입력 ───────── */
+  function readDraft() {
+    return {
+      sang: $('#sang').checked ? '예' : '아니오',
+      type: $('#type').value.trim(),
+      name: $('#name').value.trim(),
+      org: $('#org').value.trim(),
+      date: $('#date').value,
+      arrive: rangeJoin($('#a1').value, $('#a2').value),
+      eventTime: rangeJoin($('#e1').value, $('#e2').value),
+      place: $('#place').value,
+      contactName: $('#cname').value.trim(),
+      phone: $('#phone').value.trim(),
+      notes: $('#notes').value
+    };
+  }
+  function draftError(d) {
+    if (TYPES.indexOf(d.type) < 0) return '종류를 목록에서 골라 주세요.';
+    if (!d.name) return '이름을 적어 주세요.';
+    if (!$('#a1').value && $('#a2').value) return '도착은 첫 번째 칸부터 채워 주세요.';
+    if (!$('#e1').value && $('#e2').value) return '행사시간은 첫 번째 칸부터 채워 주세요.';
+    return '';
+  }
+  function viewDraft(row, back) {
+    S.view = 'draft';
+    var d = row ? rowToDraft(row) : { sang: '예', type: '', name: '', org: '', date: '', arrive: '', eventTime: '', place: '', contactName: '', phone: '', notes: '' };
+    var a = rangeSplit(d.arrive), e = rangeSplit(d.eventTime);
+    back = back || viewList;
+    mount(topbar() +
+      '<button class="ghost" id="back" type="button" style="align-self:flex-start">← 돌아가기</button>' +
+      '<h1>' + (row ? '견적문의 수정' : '견적문의') + '</h1>' +
+      '<div class="card">' +
+      '<div class="row2"><label class="sw"><input type="checkbox" id="sang"' + (d.sang === '예' ? ' checked' : '') + '><span class="track"></span><span>상담</span></label>' +
+      '<div class="field grow"><label for="type">종류</label><input id="type" list="typeList" autocomplete="off" placeholder="검색해서 고르기" value="' + esc(d.type) + '">' +
+      '<datalist id="typeList">' + TYPES.map(function (t) { return '<option value="' + t + '">'; }).join('') + '</datalist></div></div>' +
+      '<div class="cols"><div class="field"><label for="name">이름</label><input id="name" autocomplete="off" value="' + esc(d.name) + '"></div>' +
+      '<div class="field"><label for="org">소속</label><input id="org" autocomplete="off" value="' + esc(d.org) + '"></div></div>' +
+      '<div class="field"><label for="date">날짜 <span id="wd" class="muted"></span></label><input id="date" type="date" value="' + esc(d.date) + '"><span class="muted">아직 정해지지 않았으면 비워 두세요.</span></div>' +
+      '<div class="field"><span class="lbl">도착 <span class="muted">(두 번째 칸은 비워도 됨)</span></span><div class="range"><input id="a1" type="time" value="' + esc(a[0]) + '" aria-label="도착"><span>~</span><input id="a2" type="time" value="' + esc(a[1]) + '" aria-label="도착 두 번째"></div></div>' +
+      '<div class="field"><span class="lbl">행사시간 <span class="muted">(두 번째 칸은 비워도 됨)</span></span><div class="range"><input id="e1" type="time" value="' + esc(e[0]) + '" aria-label="행사시간"><span>~</span><input id="e2" type="time" value="' + esc(e[1]) + '" aria-label="행사시간 두 번째"></div></div>' +
+      '<div class="field"><label for="place">장소</label><textarea id="place" rows="3">' + esc(d.place) + '</textarea></div>' +
+      '<div class="cols"><div class="field"><label for="cname">담당자 이름</label><input id="cname" autocomplete="off" value="' + esc(d.contactName) + '"></div>' +
+      '<div class="field"><label for="phone">연락처 <span class="muted">(글도 가능)</span></label><input id="phone" autocomplete="off" value="' + esc(d.phone) + '"></div></div>' +
+      '<div class="field"><label for="notes">품목·특이사항 <span class="muted">(적은 그대로 나옵니다)</span></label><textarea id="notes" rows="6">' + esc(d.notes) + '</textarea></div>' +
+      '</div>' +
+      '<div class="card"><h2>견적문의 글</h2><pre class="msg" id="preview"></pre>' +
+      '<div class="btns"><button class="btn sub" id="copy" type="button">견적문의 글 복사</button><button class="btn" id="save" type="button">저장</button>' +
+      (row ? '<button class="btn sub" id="delDraft" type="button">삭제</button>' : '') + '</div>' +
+      '<div id="delDraftBox"></div></div>');
+    bindTop();
+    var upd = function () {
+      var dd = readDraft();
+      var w = dateLabel(dd.date);
+      $('#wd').textContent = w ? '· ' + w : '';
+      $('#preview').textContent = dd.type && dd.name ? draftText(dd) : '종류와 이름을 입력하면 견적문의 글이 나옵니다.';
+    };
+    $all('input,textarea').forEach(function (el) { el.addEventListener('input', upd); el.addEventListener('change', upd); });
+    upd();
+    $('#back').addEventListener('click', function () { back(); });
+    $('#copy').addEventListener('click', function () {
+      var dd = readDraft();
+      var err = draftError(dd);
+      if (err) { toast(err); return; }
+      copyText(draftText(dd));
+    });
+    $('#save').addEventListener('click', function () {
+      var dd = readDraft();
+      var err = draftError(dd);
+      if (err) { toast(err); return; }
+      var btn = $('#save');
+      busy(btn, true);
+      api('saveDraft', { id: row ? row.id : '', draft: dd }).then(function (res) {
+        upsertRow(res.row);
+        toast('저장했습니다');
+        if (back === viewList) return refresh().then(function () { viewList(); });
+        back(res.row);
+      }).catch(function (e) { busy(btn, false); fail(e); });
+    });
+    var delBtn = $('#delDraft');
+    if (delBtn) delBtn.addEventListener('click', function () { confirmDeleteDraft(row, delBtn); });
+  }
+
+  /* ───────── 대표님: 완료된 견적 보기 ───────── */
+  function viewDone(r) {
+    S.view = 'done';
+    mount(topbar() +
+      '<button class="ghost" id="back" type="button" style="align-self:flex-start">← 목록</button>' +
+      '<h1>' + rowTitle(r) + ' ' + statusChip(r.status) + '</h1>' +
+      '<div class="card"><pre class="msg" id="finalPre"></pre>' +
+      '<button class="btn" id="copy" type="button">복사</button></div>');
+    bindTop();
+    $('#finalPre').textContent = r.text || '';
+    $('#back').addEventListener('click', viewList);
+    $('#copy').addEventListener('click', function () { copyText(r.text || ''); });
+  }
+
+  /* ───────── 팀장님: 제원 입력 ───────── */
+  function durHTML(name, label) {
+    return '<div class="field dur" data-dur="' + name + '"><span class="lbl">' + label + '</span>' +
+      '<div class="read"><span data-read>0분</span></div>' +
+      '<div class="hm"><input type="number" min="0" max="24" inputmode="numeric" data-h aria-label="' + label + ' 시간"> 시간 ' +
+      '<input type="number" min="0" max="59" inputmode="numeric" data-m aria-label="' + label + ' 분"> 분</div>' +
+      '<div class="steps"><button type="button" data-d="-60">-1시간</button><button type="button" data-d="-10">-10분</button>' +
+      '<button type="button" data-d="10">+10분</button><button type="button" data-d="60">+1시간</button></div></div>';
+  }
+  function durEl(name) { return $('[data-dur="' + name + '"]'); }
+  function getDur(name) {
+    var el = durEl(name);
+    var h = Number($('[data-h]', el).value) || 0, m = Number($('[data-m]', el).value) || 0;
+    return Math.max(0, Math.round(h * 60 + m));
+  }
+  function setDur(name, total, keepInputs) {
+    var el = durEl(name);
+    total = Math.max(0, Math.min(1440, Math.round(total)));
+    if (!keepInputs) {
+      $('[data-h]', el).value = total ? Math.floor(total / 60) : '';
+      $('[data-m]', el).value = total ? total % 60 : '';
+    }
+    $('[data-read]', el).innerHTML = total ? esc(fmtHM(total)) + '<small>(' + total + '분)</small>' : '시간을 입력하세요';
+  }
+  function initDur(name, total) {
+    var el = durEl(name);
+    setDur(name, total || 0);
+    $all('[data-d]', el).forEach(function (b) {
+      b.addEventListener('click', function () { setDur(name, getDur(name) + Number(b.dataset.d)); });
+    });
+    $all('input', el).forEach(function (i) {
+      i.addEventListener('input', function () { setDur(name, getDur(name), true); });
+      i.addEventListener('change', function () { setDur(name, getDur(name)); });
+    });
+  }
+  function numVal(id) {
+    var v = $('#' + id).value.trim();
+    return v === '' ? null : Number(v);
+  }
+  function readSpecs() {
+    return { depart: $('#depart').value, km: numVal('km'), fuel: numVal('fuel'), toll: numVal('toll'), park: numVal('park'), goMin: getDur('go'), backMin: getDur('back') };
+  }
+  function specError(sp) {
+    if (sp.km === null || !isFinite(sp.km) || sp.km < 0) return '편도거리를 입력해 주세요.';
+    if (sp.fuel === null || !isFinite(sp.fuel) || sp.fuel < 0) return '편도 연료비를 입력해 주세요.';
+    if (sp.toll !== null && (!isFinite(sp.toll) || sp.toll < 0)) return '편도 통행료 값이 맞지 않습니다.';
+    if (sp.park !== null && (!isFinite(sp.park) || sp.park < 0)) return '주차비 값이 맞지 않습니다.';
+    if (sp.goMin <= 0) return '도착소요시간을 입력해 주세요.';
+    if (sp.backMin <= 0) return '복귀소요시간을 입력해 주세요.';
+    return '';
+  }
+  function viewSpecs(row) {
+    S.view = 'specs';
+    var d = rowToDraft(row);
+    var a = rangeSplit(d.arrive);
+    var n = function (v) { return v === '' || v === undefined || v === null ? '' : String(v); };
+    mount(topbar() +
+      '<button class="ghost" id="back" type="button" style="align-self:flex-start">← 목록</button>' +
+      '<h1>' + rowTitle(row) + ' <span id="stChip">' + statusChip(row.status) + '</span></h1>' +
+      '<div class="card"><div class="topbar"><h2>대표님 견적문의</h2><span class="right"><button class="ghost" id="editDraft" type="button">견적문의 수정</button>' +
+      '<button class="ghost" id="delDraft" type="button">삭제</button></span></div>' +
+      '<pre class="msg" id="draftPre"></pre><div id="delDraftBox"></div></div>' +
+      '<div class="card" id="specsCard"><h2>제원 입력</h2>' +
+      '<div class="field"><label for="depart">출발</label><input id="depart" type="time" value="' + esc(row.depart || '') + '"></div>' +
+      '<div class="field"><span class="lbl">도착 <span class="muted">(대표님이 넣은 값 · 고칠 수 있음 · 두 번째 칸은 비워도 됨)</span></span><div class="range"><input id="a1" type="time" value="' + esc(a[0]) + '" aria-label="도착"><span>~</span><input id="a2" type="time" value="' + esc(a[1]) + '" aria-label="도착 두 번째"></div></div>' +
+      '<div class="cols"><div class="field"><label for="km">편도거리 (km)</label><input id="km" type="number" min="0" step="any" inputmode="decimal" value="' + esc(n(row.km)) + '"></div>' +
+      '<div class="field"><label for="fuel">편도 연료비 (원)</label><input id="fuel" type="number" min="0" step="any" inputmode="numeric" value="' + esc(n(row.fuel)) + '"></div></div>' +
+      '<div class="cols"><div class="field"><label for="toll">편도 통행료 (원)</label><input id="toll" type="number" min="0" step="any" inputmode="numeric" placeholder="0" value="' + esc(n(row.toll)) + '"></div>' +
+      '<div class="field"><label for="park">주차비 (원)</label><input id="park" type="number" min="0" step="any" inputmode="numeric" value="' + esc(n(row.park)) + '"></div></div>' +
+      durHTML('go', '도착소요시간') + durHTML('back', '복귀소요시간') + '</div>' +
+      '<div class="card"><h2>지난 건에서 불러오기</h2>' +
+      '<input id="pq" type="search" placeholder="이름 또는 전화번호" autocomplete="off">' +
+      '<div class="past" id="past"></div></div>' +
+      '<div class="card"><h2>최종 견적 글</h2><pre class="msg" id="finalPre"></pre>' +
+      '<div class="btns"><button class="btn sub" id="copy" type="button">카톡용 복사</button><button class="btn" id="save" type="button">최종저장</button></div></div>');
+    bindTop();
+    $('#draftPre').textContent = draftText(d);
+    initDur('go', row.goMin || 0);
+    initDur('back', row.backMin || 0);
+
+    var recompute = function () {
+      var sp = readSpecs();
+      var err = specError(sp);
+      var dd = rowToDraft(row);
+      dd.arrive = rangeJoin($('#a1').value, $('#a2').value);
+      var pre = $('#finalPre');
+      if (err) { pre.textContent = '거리, 연료비, 소요시간을 입력하면 견적 글이 나옵니다.'; return null; }
+      var spn = { depart: sp.depart, km: sp.km, fuel: sp.fuel, toll: sp.toll || 0, park: sp.park || 0, goMin: sp.goMin, backMin: sp.backMin };
+      var c = calc(spn);
+      var text = finalText(dd, spn, c);
+      pre.textContent = text;
+      return { d: dd, sp: spn, c: c, text: text };
+    };
+    var card = $('#specsCard');
+    card.addEventListener('input', recompute);
+    card.addEventListener('click', function () { setTimeout(recompute, 0); });
+    card.addEventListener('change', recompute);
+    recompute();
+
+    $('#back').addEventListener('click', viewList);
+    $('#editDraft').addEventListener('click', function () {
+      viewDraft(row, function (updated) { viewSpecs(updated && updated.id ? findRow(updated.id) || updated : row); });
+    });
+    $('#delDraft').addEventListener('click', function () { confirmDeleteDraft(row, $('#delDraft')); });
+    $('#copy').addEventListener('click', function () {
+      var r = recompute();
+      if (!r) { toast(specError(readSpecs()) || '제원을 먼저 입력해 주세요.'); return; }
+      copyText(r.text);
+    });
+    $('#save').addEventListener('click', function () {
+      var sp = readSpecs();
+      var err = specError(sp);
+      if (err) { toast(err); return; }
+      var r = recompute();
+      var btn = $('#save');
+      busy(btn, true);
+      api('finalize', {
+        id: row.id, draft: r.d,
+        specs: { depart: sp.depart, km: sp.km, fuel: sp.fuel, toll: sp.toll === null ? 0 : sp.toll, park: sp.park === null ? '' : sp.park, goMin: sp.goMin, backMin: sp.backMin },
+        calc: calcPayload(r.c), text: r.text
+      }).then(function (res) {
+        upsertRow(res.row);
+        row = res.row;
+        busy(btn, false);
+        $('#stChip').innerHTML = statusChip(row.status);
+        toast('최종저장했습니다. 카톡용 복사를 눌러 보내세요.');
+      }).catch(function (e) { busy(btn, false); fail(e); });
+    });
+
+    // 지난 건에서 불러오기
+    var drawPast = function () {
+      var q = $('#pq').value;
+      var box = $('#past');
+      if (!q.trim()) { box.innerHTML = '<p class="muted">이름이나 전화번호를 입력하면 지난 건이 나옵니다.</p>'; return; }
+      var rows = S.rows.filter(function (x) { return x.id !== row.id && x.status === '견적완료' && x.km !== '' && matches(x, q); }).slice(0, 8);
+      if (!rows.length) { box.innerHTML = '<p class="muted">찾는 지난 건이 없습니다.</p>'; return; }
+      box.innerHTML = rows.map(function (x) {
+        return '<div class="p"><div><b>' + rowTitle(x) + '</b><small>' + esc([x.date ? dateLabel(x.date) : '날짜 미정', firstLine(x.place)].filter(Boolean).join(' · ')) + '</small>' +
+          '<small>편도 ' + esc(numStr(x.km)) + 'km · 연료비 ' + esc(money(x.fuel)) + '원 · 통행료 ' + esc(money(x.toll || 0)) + '원 · 도착 ' + x.goMin + '분 / 복귀 ' + x.backMin + '분</small></div>' +
+          '<button class="btn small" type="button" data-load="' + esc(x.id) + '">불러오기</button></div>';
+      }).join('');
+      $all('[data-load]', box).forEach(function (b) {
+        b.addEventListener('click', function () {
+          var x = findRow(b.dataset.load);
+          if (!x) return;
+          $('#km').value = n(x.km);
+          $('#fuel').value = n(x.fuel);
+          $('#toll').value = n(x.toll);
+          setDur('go', x.goMin || 0);
+          setDur('back', x.backMin || 0);
+          recompute();
+          toast('불러왔습니다. 값을 확인하고 고쳐 주세요.');
+        });
+      });
+    };
+    $('#pq').addEventListener('input', drawPast);
+    drawPast();
+  }
+
+  /* ───────── 시작 ───────── */
+  window.__BS = { calc: calc, finalText: finalText, draftText: draftText, fmtHM: fmtHM, dateLabel: dateLabel, money: money };
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && S.token && S.view === 'list') {
+      refresh().then(function () { if (S.view === 'list') drawList(); }).catch(function () { /* 조용히 넘어간다 */ });
     }
   });
 
+  var saved = lsGet(TOKEN_KEY);
+  if (saved) {
+    S.token = saved;
+    refresh().then(viewList).catch(function () { viewLogin(); });
+  } else {
+    viewLogin();
+  }
 })();
 </script>
 </body>
