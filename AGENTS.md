@@ -15,6 +15,10 @@ Cursor, 클로드, 챗지피티, 제미나이 등 **누가 하든** 같다.
 - 배송: https://github.com/joogrowth/yosulson/tree/main/배송
 - 급여: https://github.com/joogrowth/yosulson/tree/main/급여
 - 근퇴: https://github.com/joogrowth/yosulson/tree/main/근퇴
+  - 링크는 사용자가 요청할 때만 준다. 요청하면 아래 셋을 함께 준다.
+  - 로그인창: https://script.google.com/macros/s/AKfycbzEEnzF019IyqOCB6RF-gcJXMPuEmcHnXpcKERaTyJx7H0pTFZxXwg8u8Rbyo53ekku/exec
+  - 근무기록 구글시트: https://docs.google.com/spreadsheets/d/1WO7kMn7Hm5CACOj0WthlIpDA2KB-wHZ5bWwiJmPs7qk/edit
+  - 구글드라이브 근퇴 폴더: https://drive.google.com/drive/folders/1qX132AZcDi09ymhKeSzGE4yyh38NgbRe
 - 식자재: https://github.com/joogrowth/yosulson/tree/main/식자재
 
 Cursor는 루트 `AGENTS.md`, `.cursor/rules/`, 각 영역 `AGENTS.md`·`기억.md`를 보고 역할을 잡는다.
