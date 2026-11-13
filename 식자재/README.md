@@ -6,6 +6,7 @@
 
 - 운영 기억: `기억.md`
 - 작업 지침: `지침.md`
+- API(다른 AI 공통): `API.md`
 - 월 목록: `식재료시세분석/index.html`
 - 달별 보고: `식재료시세분석/YYYY-MM/index.html`
 - 시세 조회: `시세/index.html`
