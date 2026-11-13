@@ -16,10 +16,85 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REPO = os.path.dirname(ROOT)
-OUT = os.path.join(REPO, "식재료시세분석", "index.html")
+DASH_DIR = os.path.join(REPO, "식재료시세분석")
 DATA = os.path.join(ROOT, "data", "latest.json")
 SHOPPING = os.path.join(ROOT, "data", "shopping_buy.json")
 OUTLOOK = os.path.join(ROOT, "전망", "index.html")
+
+
+def month_out_path(year, month):
+    return os.path.join(DASH_DIR, "{:04d}-{:02d}".format(year, month), "index.html")
+
+
+def write_month_index():
+    """식재료시세분석/index.html — 월별 대시보드 목록."""
+    months = []
+    if os.path.isdir(DASH_DIR):
+        for name in os.listdir(DASH_DIR):
+            path = os.path.join(DASH_DIR, name, "index.html")
+            if len(name) == 7 and name[4] == "-" and os.path.isfile(path):
+                months.append(name)
+    months.sort(reverse=True)
+    links = []
+    for m in months:
+        y, mo = m.split("-")
+        label = "{}년 {}월".format(int(y), int(mo))
+        links.append(
+            '<a class="month" href="{}/index.html">{}'
+            '<span>시세 동향 대시보드 · PDF로 저장 가능</span></a>'.format(m, label)
+        )
+    body = "\n  ".join(links) if links else '<p class="sub">아직 월간 보고가 없습니다.</p>'
+    page = """<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>요술손 · 식재료 시세 월간 보고</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f7f6f2;color:#28251d;line-height:1.6}
+header{background:#fff;border-bottom:1px solid #e0ddd8;padding:14px 20px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;color:#01696f;text-decoration:none}
+.logo-icon{width:32px;height:32px;background:#01696f;border-radius:8px;display:flex;align-items:center;justify-content:center}
+main{max-width:640px;margin:0 auto;padding:36px 16px 80px}
+h1{font-size:26px;margin-bottom:8px}
+.sub{color:#7a7974;font-size:14px;margin-bottom:24px}
+a.month{display:block;background:#fff;border:1px solid #e0ddd8;border-radius:16px;padding:18px 20px;margin-bottom:12px;color:#01696f;text-decoration:none;font-weight:700}
+a.month span{display:block;font-weight:400;color:#7a7974;font-size:14px;margin-top:4px}
+.links{margin-top:28px;font-size:13px}
+.links a{color:#01696f;margin-right:14px}
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="./index.html">
+    <div class="logo-icon">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M4 12l3-8 3 8" stroke="white" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M10 12l3-8 3 8" stroke="white" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>
+        <rect x="3.5" y="13" width="13" height="1.6" rx=".8" fill="white" opacity=".7"/>
+      </svg>
+    </div>
+    요술손케이터링
+  </a>
+</header>
+<main>
+  <h1>식재료 시세 월간 보고</h1>
+  <p class="sub">달을 고르면 그달 대시보드가 열립니다. PDF는 각 화면에서 필요할 때 저장하면 됩니다.</p>
+  """ + body + """
+  <div class="links">
+    <a href="../시세/index.html">시세 조회</a>
+    <a href="../시세/전망/index.html">다음 달 제철</a>
+  </div>
+</main>
+</body>
+</html>
+"""
+    os.makedirs(DASH_DIR, exist_ok=True)
+    index_path = os.path.join(DASH_DIR, "index.html")
+    with open(index_path, "w", encoding="utf-8") as f:
+        f.write(page)
+    print("월 목록 → {}".format(index_path))
 
 ALERT = 15
 CAT_ORDER = ["채소", "과일", "곡물", "축산물", "수산물"]
@@ -238,7 +313,7 @@ def main():
     parser.add_argument("--month", default="", help="보고 월 YYYY-MM. 기본은 오늘이 속한 달")
     parser.add_argument("--as-of", default="", help="이번 달 평균의 마지막 날 YYYY-MM-DD")
     parser.add_argument("--data", default=DATA)
-    parser.add_argument("--out", default=OUT)
+    parser.add_argument("--out", default="", help="출력 HTML. 비우면 식재료시세분석/YYYY-MM/index.html")
     args = parser.parse_args()
 
     today = datetime.date.today()
@@ -246,6 +321,8 @@ def main():
         year, month = parse_month(args.month)
     else:
         year, month = today.year, today.month
+    if not args.out:
+        args.out = month_out_path(year, month)
     cur_start, cur_last = month_span(year, month)
     as_of = datetime.date.fromisoformat(args.as_of) if args.as_of else min(today, cur_last)
     if as_of < cur_start or as_of > cur_last:
@@ -612,7 +689,7 @@ caption.cat-h{display:table-caption;caption-side:top;text-align:left;margin:0 0 
 </head>
 <body>
 <header>
-  <a class="logo" href="./index.html">
+  <a class="logo" href="../index.html">
     <div class="logo-icon">
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
         <path d="M4 12l3-8 3 8" stroke="white" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
@@ -623,8 +700,9 @@ caption.cat-h{display:table-caption;caption-side:top;text-align:left;margin:0 0 
     요술손케이터링
   </a>
   <div class="hdr-actions no-print">
-    <a class="hdr-link" href="../시세/index.html">시세 조회</a>
-    <a class="hdr-link" href="../시세/전망/index.html">다음 달 제철</a>
+    <a class="hdr-link" href="../index.html">월 목록</a>
+    <a class="hdr-link" href="../../시세/index.html">시세 조회</a>
+    <a class="hdr-link" href="../../시세/전망/index.html">다음 달 제철</a>
     <button class="btn" type="button" id="btn-print">PDF로 저장</button>
   </div>
 </header>
@@ -726,6 +804,7 @@ caption.cat-h{display:table-caption;caption-side:top;text-align:left;margin:0 0 
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:
         f.write(page)
+    write_month_index()
     ny, nm = next_month(year, month)
     write_outlook(rows, cur_label, "{}년 {}월".format(ny, nm), as_of, partial, compare)
     print("시세 {}개 표시 → {}".format(len(visible), args.out))
