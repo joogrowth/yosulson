@@ -1010,9 +1010,11 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<input id="pq" type="search" placeholder="이름 또는 전화번호" autocomplete="off">' +
       '<div class="past" id="past"></div></div>' +
       '<div class="card"><h2>최종 견적 글</h2><pre class="msg" id="finalPre"></pre>' +
-      '<div class="btns"><button class="btn sub" id="copy" type="button">카톡용 복사</button>' +
-      '<button class="btn sub" id="saveWaitHere" type="button">견적대기로 저장</button>' +
-      '<button class="btn" id="save" type="button">견적완료 저장</button></div></div>');
+      '<div class="btns"><button class="btn sub" id="copy" type="button">복사</button>' +
+      (row.status === STATUS_DONE
+        ? '<button class="btn sub" id="midStatus" type="button">대기 돌리기</button>'
+        : '<button class="btn sub" id="midStatus" type="button">문의로 돌리기</button>') +
+      '<button class="btn" id="save" type="button">완료</button></div></div>');
     bindTop();
     initDur('go', row.goMin || 0);
     initDur('back', row.backMin || 0);
@@ -1048,16 +1050,24 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       if (!r) { toast(specError(readSpecs()) || draftError(readDraft()) || '제원을 먼저 입력해 주세요.'); return; }
       copyText(r.text);
     });
-    $('#saveWaitHere').addEventListener('click', function () {
+    // 대기 화면: 문의(작성중)로 돌리기 / 완료에서 수정 중: 대기로 돌리기. 문의·제원 값은 남긴다.
+    $('#midStatus').addEventListener('click', function () {
       var dd = readDraft();
-      var err = draftError(dd);
-      if (err) { toast(err); return; }
-      var btn = $('#saveWaitHere');
+      var toWriting = row.status !== STATUS_DONE;
+      var status = toWriting ? STATUS_WRITING : STATUS_WAIT;
+      if (toWriting) {
+        var terr = draftTimeError();
+        if (terr) { toast(terr); return; }
+      } else {
+        var err = draftError(dd);
+        if (err) { toast(err); return; }
+      }
+      var btn = $('#midStatus');
       busy(btn, true);
-      api('saveDraft', { id: row.id, draft: dd, status: STATUS_WAIT }).then(function (res) {
+      api('saveDraft', { id: row.id, draft: dd, status: status }).then(function (res) {
         upsertRow(res.row);
-        toast('견적대기로 저장했습니다');
-        return refresh().then(function () { viewList(); });
+        toast(toWriting ? '견적문의(작성중)로 돌렸습니다' : '견적대기로 돌렸습니다');
+        return refresh().then(function () { openRow(row.id); });
       }).catch(function (e) { busy(btn, false); fail(e); });
     });
     $('#save').addEventListener('click', function () {
@@ -1078,7 +1088,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
         row = res.row;
         busy(btn, false);
         $('#stChip').innerHTML = statusChip(row.status);
-        toast('견적완료로 저장했습니다. 카톡용 복사를 눌러 보내세요.');
+        toast('견적완료로 저장했습니다. 복사를 눌러 보내세요.');
       }).catch(function (e) { busy(btn, false); fail(e); });
     });
 
