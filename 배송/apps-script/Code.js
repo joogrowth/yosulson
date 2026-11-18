@@ -16,7 +16,7 @@
  *
  * 시트 구조
  *   연도 탭 '2026', '2027' …  한 탭에 그 해에 받은 주문 전부 (1행 묶음 이름, 2행 칸 이름, 3행부터 데이터)
- *   '고객리스트' 탭            이름 · 소속 · 연락처 · 메모
+ *   '고객리스트' 탭            이름 · 소속 · 연락처 · 주소 · 메모
  *   '복기' 칸은 시트에서만 고른다(확정 / 보류 / 취소). 이 코드는 값을 지우지 않는다.
  *
  * 권한
@@ -34,7 +34,7 @@ var STATUS_WAIT = '견적대기';
 var STATUS_DONE = '견적완료';
 var STATUSES = [STATUS_WRITING, STATUS_WAIT, STATUS_DONE];
 var CUSTOMER_SHEET = '고객리스트';
-var CUSTOMER_HEADERS = ['이름', '소속', '연락처', '메모'];
+var CUSTOMER_HEADERS = ['이름', '소속', '연락처', '주소', '메모'];
 
 // 칸 정의 (시트의 왼쪽부터 순서대로)
 var COLUMNS = [
@@ -448,16 +448,30 @@ function colIndex_(key) {
 function ensureCustomerSheet_() {
   var ss = ss_();
   var sh = ss.getSheetByName(CUSTOMER_SHEET);
-  if (sh) return sh;
-  sh = ss.insertSheet(CUSTOMER_SHEET);
+  if (!sh) {
+    sh = ss.insertSheet(CUSTOMER_SHEET);
+  }
+  ensureCustomerHeaders_(sh);
+  return sh;
+}
+
+// 헤더를 이름·소속·연락처·주소·메모로 맞춘다. 예전(주소 없음) 시트면 연락처 다음에 주소 칸을 끼운다.
+function ensureCustomerHeaders_(sh) {
+  ensureCols_(sh, CUSTOMER_HEADERS.length);
+  var width = Math.max(sh.getLastColumn(), 1);
+  var headers = sh.getRange(1, 1, 1, width).getValues()[0].map(function (v) { return String(v || ''); });
+  var hasAddr = false;
+  for (var i = 0; i < headers.length; i++) if (headers[i] === '주소') hasAddr = true;
+  if (!hasAddr && headers[0] === '이름' && headers[3] === '메모') {
+    try { sh.insertColumnAfter(3); } catch (err) { /* 건너뜀 */ }
+  }
   ensureCols_(sh, CUSTOMER_HEADERS.length);
   sh.getRange(1, 1, 1, CUSTOMER_HEADERS.length).setValues([CUSTOMER_HEADERS]);
   try {
     sh.setFrozenRows(1);
     sh.getRange(1, 1, 1, CUSTOMER_HEADERS.length).setFontWeight('bold').setBackground('#e3e6ea');
     sh.getRange(2, 1, Math.max(sh.getMaxRows() - 1, 1), CUSTOMER_HEADERS.length).setNumberFormat('@');
-  } catch (err) { /* 건너뜀 */ }
-  return sh;
+  } catch (err2) { /* 건너뜀 */ }
 }
 
 // 처음 한 번, 편집기에서 직접 실행하는 준비 함수
@@ -749,21 +763,31 @@ function setStatus_(req) {
   });
 }
 
-// 고객리스트: 이름 + 소속이 같으면 같은 고객. 연락처가 있으면 최신 값으로 고친다. 메모는 건드리지 않는다.
+// 고객리스트: 이름 + 소속이 같으면 같은 고객. 연락처·주소가 있으면 최신 값으로 고친다. 메모는 건드리지 않는다.
+// 주소는 견적문의의 장소(place)를 그대로 넣는다.
 function upsertCustomer_(d) {
   if (!d || !d.name) return; // 작성중 빈 이름은 고객목록에 넣지 않는다
   var sh = ensureCustomerSheet_();
   var last = sh.getLastRow();
   var rows = last >= 2 ? sh.getRange(2, 1, last - 1, CUSTOMER_HEADERS.length).getValues() : [];
+  var safe = function (s) {
+    s = String(s == null ? '' : s);
+    return s.charAt(0) === '=' ? "'" + s : s;
+  };
+  var addr = String(d.place || '');
   for (var i = 0; i < rows.length; i++) {
     if (String(rows[i][0]) === d.name && String(rows[i][1]) === d.org) {
       if (d.phone && String(rows[i][2]) !== d.phone) {
-        sh.getRange(i + 2, 3, 1, 1).setValues([[d.phone.charAt(0) === '=' ? "'" + d.phone : d.phone]]);
+        sh.getRange(i + 2, 3, 1, 1).setValues([[safe(d.phone)]]);
+      }
+      if (addr && String(rows[i][3]) !== addr) {
+        sh.getRange(i + 2, 4, 1, 1).setValues([[safe(addr)]]);
       }
       return;
     }
   }
   ensureRows_(sh, last + 1);
-  var safe = function (s) { return s.charAt(0) === '=' ? "'" + s : s; };
-  sh.getRange(last + 1, 1, 1, CUSTOMER_HEADERS.length).setValues([[safe(d.name), safe(d.org || ''), safe(d.phone || ''), '']]);
+  sh.getRange(last + 1, 1, 1, CUSTOMER_HEADERS.length).setValues([[
+    safe(d.name), safe(d.org || ''), safe(d.phone || ''), safe(addr), ''
+  ]]);
 }
