@@ -67,12 +67,19 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-vis
 .sw input:focus-visible + .track{outline:3px solid var(--accent);outline-offset:2px}
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .chip{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap;border:0}
+.chip.writing{background:#e8eaed;color:#5f6368}
 .chip.wait{background:var(--warn-soft);color:var(--warn)}
 .chip.done{background:var(--good-soft);color:var(--good)}
 .chipbtn{font-size:14px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);min-height:36px}
+.chipbtn.writing{color:#5f6368}
 .chipbtn.wait{color:var(--warn)}
 .chipbtn.done{color:var(--good)}
 .chipbtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.chipbtn.writing[aria-pressed="true"]{background:#5f6368;color:#fff;border-color:#5f6368}
+.chipbtn.wait[aria-pressed="true"]{background:var(--warn);color:#fff;border-color:var(--warn)}
+.chipbtn.done[aria-pressed="true"]{background:var(--good);color:#fff;border-color:var(--good)}
+.range.timefb{align-items:stretch}
+.range.timefb select{flex:1;min-width:0}
 .list{display:flex;flex-direction:column}
 .li{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--line);background:none;border-left:0;border-right:0;border-bottom:0;width:100%;text-align:left;color:inherit}
 .li:first-child{border-top:0}
@@ -117,13 +124,17 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
   var DEMO = !API_URL;
 
   var TYPES = ['배송', '배송세팅', '출장', '반출장', '픽업'];
+  var STATUS_WRITING = '견적작성중';
+  var STATUS_WAIT = '견적대기';
+  var STATUS_DONE = '견적완료';
   var WAGES = [11000, 12000, 13000];
   var WD = ['일', '월', '화', '수', '목', '금', '토'];
   var TOKEN_KEY = 'bs_token';
   var SEP = '--------------------------------';
   var PW_MIN = 4;
+  var TIME_MINS = ['00', '10', '20', '30', '40', '50'];
 
-  var S = { token: '', role: '', rows: [], counts: { wait: 0, done: 0 }, filter: 'all', q: '', view: '' };
+  var S = { token: '', role: '', rows: [], counts: { writing: 0, wait: 0, done: 0 }, filter: 'all', q: '', view: '' };
 
   /* ───────── 작은 도구 ───────── */
   function $(sel, root) { return (root || document).querySelector(sel); }
@@ -181,7 +192,51 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
   }
   function rangeJoin(a, b) { return a ? (b ? a + ' ~ ' + b : a) : ''; }
   function rangeSplit(s) { var p = String(s || '').split(' ~ '); return [(p[0] || '').trim(), (p[1] || '').trim()]; }
-  function titleLine(d) { return '[' + (d.sang === '예' ? '상담' : '') + d.type + '] ' + d.name + (d.org ? ' / ' + d.org : ''); }
+  function titleLine(d) {
+    var typePart = d.type ? '[' + (d.sang === '예' ? '상담' : '') + d.type + '] ' : '';
+    var name = d.name || '(이름 없음)';
+    return typePart + name + (d.org ? ' / ' + d.org : '');
+  }
+  function needsTimeFallback() {
+    var ua = navigator.userAgent || '';
+    if (/iP(hone|od|ad)/.test(ua)) return true;
+    if (/Macintosh/.test(ua) && typeof document !== 'undefined' && 'ontouchend' in document) return true;
+    return false;
+  }
+  function pad2(n) { n = String(n); return n.length < 2 ? '0' + n : n; }
+  function timeInputHTML(id, value, aria) {
+    value = value || '';
+    if (!needsTimeFallback()) {
+      return '<input id="' + id + '" type="time" step="600" value="' + esc(value) + '"' + (aria ? ' aria-label="' + esc(aria) + '"' : '') + '>';
+    }
+    var hm = /^(\d{1,2}):(\d{2})$/.exec(value);
+    var h = hm ? pad2(Number(hm[1])) : '';
+    var m = hm ? hm[2] : '';
+    var mins = TIME_MINS.slice();
+    if (m && mins.indexOf(m) < 0) mins.push(m);
+    mins.sort();
+    var ho = '<option value="">시</option>';
+    for (var i = 0; i < 24; i++) {
+      var hv = pad2(i);
+      ho += '<option value="' + hv + '"' + (h === hv ? ' selected' : '') + '>' + hv + '</option>';
+    }
+    var mo = '<option value="">분</option>';
+    mins.forEach(function (mv) {
+      mo += '<option value="' + mv + '"' + (m === mv ? ' selected' : '') + '>' + mv + '</option>';
+    });
+    return '<span class="range timefb" data-time="' + id + '">' +
+      '<select id="' + id + '_h" aria-label="' + esc((aria || '시각') + ' 시') + '">' + ho + '</select>' +
+      '<span>:</span>' +
+      '<select id="' + id + '_m" aria-label="' + esc((aria || '시각') + ' 분') + '">' + mo + '</select></span>';
+  }
+  function readTime(id) {
+    var el = $('#' + id);
+    if (el) return el.value || '';
+    var h = $('#' + id + '_h'), m = $('#' + id + '_m');
+    if (!h || !m) return '';
+    if (!h.value || !m.value) return '';
+    return h.value + ':' + m.value;
+  }
 
   function calc(sp) {
     var total = sp.goMin + sp.backMin;
@@ -314,17 +369,24 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     var d1 = { sang: '아니오', type: '배송', name: '김예시', org: '샘플회사', date: '2026-11-20', arrive: '12:00', eventTime: '13:00 ~ 15:00', place: '샘플센터\n서울 어딘가 1', contactName: '김예시', phone: '010 0000 0000', notes: '*샘플 도시락 30개' };
     var sp = { depart: '10:30', km: 20, fuel: 3000, toll: 0, park: '', goMin: 80, backMin: 80 };
     var c = calc(sp);
-    var r1 = Object.assign({ id: '26-001', status: '견적완료', review: '' }, d1, sp, calcPayload(c), { text: finalText(d1, sp, c) });
+    var r1 = Object.assign({ id: '26-001', status: STATUS_DONE, review: '' }, d1, sp, calcPayload(c), { text: finalText(d1, sp, c) });
     var d2 = { sang: '예', type: '출장', name: '박샘플', org: '예시상회', date: '', arrive: '16:30 ~ 17:00', eventTime: '18:00 ~ 21:00', place: '예시홀\n서울 어딘가 2', contactName: '', phone: '', notes: '*샘플 케이터링 40명' };
-    var r2 = Object.assign({ id: '26-002', status: '견적대기', review: '' }, d2);
-    return [r1, r2];
+    var r2 = Object.assign({ id: '26-002', status: STATUS_WAIT, review: '' }, d2);
+    var d3 = { sang: '예', type: '출장', name: '이작성', org: '작성중회사', date: '', arrive: '', eventTime: '', place: '', contactName: '', phone: '', notes: '' };
+    var r3 = Object.assign({ id: '26-003', status: STATUS_WRITING, review: '' }, d3);
+    return [r1, r2, r3];
   }
   function demoView(r) {
-    if (S.role === 'admin') return JSON.parse(JSON.stringify(r));
-    var o = { id: r.id, status: r.status };
-    ['sang', 'type', 'name', 'org', 'date', 'arrive', 'eventTime', 'place', 'contactName', 'phone', 'notes'].forEach(function (k) { o[k] = r[k] || ''; });
-    if (r.status === '견적완료') o.text = r.text;
-    return o;
+    return JSON.parse(JSON.stringify(r));
+  }
+  function countStatus(rows) {
+    var counts = { writing: 0, wait: 0, done: 0 };
+    rows.forEach(function (r) {
+      if (r.status === STATUS_DONE) counts.done++;
+      else if (r.status === STATUS_WAIT) counts.wait++;
+      else if (r.status === STATUS_WRITING) counts.writing++;
+    });
+    return counts;
   }
   function demoAcct() {
     if (demoAcctMem) return demoAcctMem;
@@ -398,20 +460,27 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     }
     if (b.action === 'list') {
       out.rows = rows.map(demoView);
-      out.counts = { wait: rows.filter(function (r) { return r.status !== '견적완료'; }).length, done: rows.filter(function (r) { return r.status === '견적완료'; }).length };
+      out.counts = countStatus(rows);
       return out;
     }
     if (b.action === 'saveDraft') {
+      var st = b.status === STATUS_WRITING || b.status === STATUS_WAIT ? b.status : '';
+      if (!st) return bad('bad', '저장 상태가 맞지 않습니다.');
+      if (st === STATUS_WAIT) {
+        if (TYPES.indexOf((b.draft && b.draft.type) || '') < 0) return bad('bad', '종류를 목록에서 골라 주세요.');
+        if (!(b.draft && b.draft.name)) return bad('bad', '이름을 적어 주세요.');
+      } else if (b.draft && b.draft.type && TYPES.indexOf(b.draft.type) < 0) {
+        return bad('bad', '종류를 목록에서 골라 주세요.');
+      }
       var row;
       if (b.id) {
         row = rows.filter(function (r) { return r.id === b.id; })[0];
         if (!row) return bad('notfound', '해당 건을 찾을 수 없습니다.');
-        if (role === 'owner' && row.status !== '견적대기') return bad('forbidden', '이미 견적이 완료된 건은 수정할 수 없습니다.');
       } else {
-        row = { id: '26-' + ('000' + (rows.length + 1)).slice(-3), status: '견적대기', review: '' };
+        row = { id: '26-' + ('000' + (rows.length + 1)).slice(-3), review: '' };
         rows.push(row);
       }
-      Object.assign(row, b.draft);
+      Object.assign(row, b.draft, { status: st });
       demoSave();
       out.row = demoView(row);
       return out;
@@ -420,7 +489,6 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       var di = -1;
       for (var i = 0; i < rows.length; i++) if (rows[i].id === b.id) di = i;
       if (di < 0) return bad('notfound', '해당 건을 찾을 수 없습니다.');
-      if (role === 'owner' && rows[di].status !== '견적대기') return bad('forbidden', '이미 견적이 완료된 건은 삭제할 수 없습니다.');
       var deletedId = rows[di].id;
       rows.splice(di, 1);
       demoSave();
@@ -428,12 +496,20 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       return out;
     }
     if (b.action === 'finalize') {
-      if (role !== 'admin') return bad('forbidden', '제원은 팀장님만 입력할 수 있습니다.');
       var r = rows.filter(function (x) { return x.id === b.id; })[0];
       if (!r) return bad('notfound', '해당 건을 찾을 수 없습니다.');
-      Object.assign(r, b.draft, b.specs, b.calc, { text: b.text, status: '견적완료' });
+      Object.assign(r, b.draft, b.specs, b.calc, { text: b.text, status: STATUS_DONE });
       demoSave();
       out.row = demoView(r);
+      return out;
+    }
+    if (b.action === 'setStatus') {
+      if ([STATUS_WRITING, STATUS_WAIT, STATUS_DONE].indexOf(b.status) < 0) return bad('bad', '상태가 맞지 않습니다.');
+      var rs = rows.filter(function (x) { return x.id === b.id; })[0];
+      if (!rs) return bad('notfound', '해당 건을 찾을 수 없습니다.');
+      rs.status = b.status;
+      demoSave();
+      out.row = demoView(rs);
       return out;
     }
     return bad('bad', '알 수 없는 요청입니다.');
@@ -454,22 +530,26 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     var c = $('#acct');
     if (c) c.addEventListener('click', viewOwnerAccount);
   }
-  function statusChip(st) { return '<span class="chip ' + (st === '견적완료' ? 'done' : 'wait') + '">' + esc(st || '견적대기') + '</span>'; }
+  function statusChipClass(st) {
+    if (st === STATUS_DONE) return 'done';
+    if (st === STATUS_WAIT) return 'wait';
+    return 'writing';
+  }
+  function statusChip(st) { return '<span class="chip ' + statusChipClass(st) + '">' + esc(st || STATUS_WRITING) + '</span>'; }
   function firstLine(s) { return String(s || '').split('\n')[0]; }
-  function rowTitle(r) { return esc(r.name) + (r.org ? ' / ' + esc(r.org) : ''); }
+  function rowTitle(r) { return esc(titleLine(r)); }
   function upsertRow(row) {
     var i = -1;
     S.rows.forEach(function (r, k) { if (r.id === row.id) i = k; });
     if (i >= 0) S.rows[i] = row; else S.rows.push(row);
-    S.counts = { wait: S.rows.filter(function (r) { return r.status !== '견적완료'; }).length, done: S.rows.filter(function (r) { return r.status === '견적완료'; }).length };
+    S.counts = countStatus(S.rows);
   }
   function removeLocalRow(id) {
     S.rows = S.rows.filter(function (r) { return r.id !== id; });
-    S.counts = { wait: S.rows.filter(function (r) { return r.status !== '견적완료'; }).length, done: S.rows.filter(function (r) { return r.status === '견적완료'; }).length };
+    S.counts = countStatus(S.rows);
   }
   function confirmDeleteDraft(row, btn) {
     if (!row || !row.id) return;
-    if (S.role === 'owner' && row.status === '견적완료') { toast('이미 견적이 완료된 건은 삭제할 수 없습니다.'); return; }
     var box = $('#delDraftBox');
     if (!box) return;
     box.innerHTML = '<div class="banner">이 건을 삭제할까요? 삭제하면 목록과 시트에서 사라집니다.</div>' +
@@ -672,22 +752,23 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
   function drawList() {
     var c = S.counts;
     $('#chips').innerHTML =
-      '<button class="chipbtn wait" type="button" data-f="wait" aria-pressed="' + (S.filter === 'wait') + '">견적대기 ' + c.wait + '건</button>' +
-      '<button class="chipbtn done" type="button" data-f="done" aria-pressed="' + (S.filter === 'done') + '">견적완료 ' + c.done + '건</button>';
+      '<button class="chipbtn writing" type="button" data-f="writing" aria-pressed="' + (S.filter === 'writing') + '">견적작성중 ' + (c.writing || 0) + '건</button>' +
+      '<button class="chipbtn wait" type="button" data-f="wait" aria-pressed="' + (S.filter === 'wait') + '">견적대기 ' + (c.wait || 0) + '건</button>' +
+      '<button class="chipbtn done" type="button" data-f="done" aria-pressed="' + (S.filter === 'done') + '">견적완료 ' + (c.done || 0) + '건</button>';
     $all('#chips button').forEach(function (b) {
       b.addEventListener('click', function () { S.filter = S.filter === b.dataset.f ? 'all' : b.dataset.f; drawList(); });
     });
-    var waits = S.rows.filter(function (r) { return r.status !== '견적완료'; }).sort(function (a, b) { return a.id < b.id ? -1 : 1; });
-    var dones = S.rows.filter(function (r) { return r.status === '견적완료'; }).sort(function (a, b) { return a.id < b.id ? 1 : -1; });
-    var rows = (S.filter === 'wait' ? waits : S.filter === 'done' ? dones : waits.concat(dones)).filter(function (r) { return matches(r, S.q); });
+    var writings = S.rows.filter(function (r) { return r.status === STATUS_WRITING; }).sort(function (a, b) { return a.id < b.id ? -1 : 1; });
+    var waits = S.rows.filter(function (r) { return r.status === STATUS_WAIT; }).sort(function (a, b) { return a.id < b.id ? -1 : 1; });
+    var dones = S.rows.filter(function (r) { return r.status === STATUS_DONE; }).sort(function (a, b) { return a.id < b.id ? 1 : -1; });
+    var rows = (S.filter === 'writing' ? writings : S.filter === 'wait' ? waits : S.filter === 'done' ? dones : writings.concat(waits, dones)).filter(function (r) { return matches(r, S.q); });
     var el = $('#list');
     if (!rows.length) { el.innerHTML = '<p class="muted">' + (S.rows.length ? '찾는 건이 없습니다.' : '아직 건이 없습니다. “+ 견적문의”로 시작하세요.') + '</p>'; return; }
     el.innerHTML = rows.map(function (r) {
-      var sub = [(r.sang === '예' ? '상담' : '') + r.type, r.date ? dateLabel(r.date) : '날짜 미정', firstLine(r.place)].filter(Boolean).join(' · ');
-      var canDelete = S.role === 'admin' || r.status !== '견적완료';
+      var sub = [r.date ? dateLabel(r.date) : '날짜 미정', firstLine(r.place)].filter(Boolean).join(' · ');
       return '<div class="li" data-id="' + esc(r.id) + '"><button class="ghost" type="button" data-open="' + esc(r.id) + '" style="flex:1;min-width:0;justify-content:flex-start;text-align:left;border:0;padding:0"><span class="t"><b>' + rowTitle(r) + '</b><small>' + esc(sub) + '</small></span></button>' +
         statusChip(r.status) +
-        (canDelete ? '<button class="ghost" type="button" data-del="' + esc(r.id) + '">삭제</button>' : '') +
+        '<button class="ghost" type="button" data-del="' + esc(r.id) + '">삭제</button>' +
         '</div><div id="delBox-' + esc(r.id) + '"></div>';
     }).join('');
     $all('#list [data-open]').forEach(function (b) {
@@ -726,44 +807,15 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
   function openRow(id) {
     var r = findRow(id);
     if (!r) return;
-    if (S.role === 'admin') viewSpecs(r);
-    else if (r.status === '견적완료') viewDone(r);
+    if (r.status === STATUS_DONE) viewDone(r);
+    else if (r.status === STATUS_WAIT) viewSpecs(r);
     else viewDraft(r);
   }
 
   /* ───────── 견적문의 입력 ───────── */
-  function readDraft() {
-    return {
-      sang: $('#sang').checked ? '예' : '아니오',
-      type: $('#type').value.trim(),
-      name: $('#name').value.trim(),
-      org: $('#org').value.trim(),
-      date: $('#date').value,
-      arrive: rangeJoin($('#a1').value, $('#a2').value),
-      eventTime: rangeJoin($('#e1').value, $('#e2').value),
-      place: $('#place').value,
-      contactName: $('#cname').value.trim(),
-      phone: $('#phone').value.trim(),
-      notes: $('#notes').value
-    };
-  }
-  function draftError(d) {
-    if (TYPES.indexOf(d.type) < 0) return '종류를 목록에서 골라 주세요.';
-    if (!d.name) return '이름을 적어 주세요.';
-    if (!$('#a1').value && $('#a2').value) return '도착은 첫 번째 칸부터 채워 주세요.';
-    if (!$('#e1').value && $('#e2').value) return '행사시간은 첫 번째 칸부터 채워 주세요.';
-    return '';
-  }
-  function viewDraft(row, back) {
-    S.view = 'draft';
-    var d = row ? rowToDraft(row) : { sang: '예', type: '', name: '', org: '', date: '', arrive: '', eventTime: '', place: '', contactName: '', phone: '', notes: '' };
+  function draftFormHTML(d) {
     var a = rangeSplit(d.arrive), e = rangeSplit(d.eventTime);
-    back = back || viewList;
-    mount(topbar() +
-      '<button class="ghost" id="back" type="button" style="align-self:flex-start">← 돌아가기</button>' +
-      '<h1>' + (row ? '견적문의 수정' : '견적문의') + '</h1>' +
-      '<div class="card">' +
-      '<div class="row2"><label class="sw"><input type="checkbox" id="sang"' + (d.sang === '예' ? ' checked' : '') + '><span class="track"></span><span>상담</span></label>' +
+    return '<div class="row2"><label class="sw"><input type="checkbox" id="sang"' + (d.sang === '예' ? ' checked' : '') + '><span class="track"></span><span>상담</span></label>' +
       '<div class="field grow"><label for="type">종류</label><select id="type">' +
       '<option value=""' + (d.type ? '' : ' selected') + '>선택</option>' +
       TYPES.map(function (t) { return '<option value="' + t + '"' + (d.type === t ? ' selected' : '') + '>' + t + '</option>'; }).join('') +
@@ -771,15 +823,50 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<div class="cols"><div class="field"><label for="name">이름</label><input id="name" autocomplete="off" value="' + esc(d.name) + '"></div>' +
       '<div class="field"><label for="org">소속</label><input id="org" autocomplete="off" value="' + esc(d.org) + '"></div></div>' +
       '<div class="field"><label for="date">날짜 <span id="wd" class="muted"></span></label><input id="date" type="date" value="' + esc(d.date) + '"><span class="muted">아직 정해지지 않았으면 비워 두세요.</span></div>' +
-      '<div class="field"><span class="lbl">도착 <span class="muted">(두 번째 칸은 비워도 됨)</span></span><div class="range"><input id="a1" type="time" value="' + esc(a[0]) + '" aria-label="도착"><span>~</span><input id="a2" type="time" value="' + esc(a[1]) + '" aria-label="도착 두 번째"></div></div>' +
-      '<div class="field"><span class="lbl">행사시간 <span class="muted">(두 번째 칸은 비워도 됨)</span></span><div class="range"><input id="e1" type="time" value="' + esc(e[0]) + '" aria-label="행사시간"><span>~</span><input id="e2" type="time" value="' + esc(e[1]) + '" aria-label="행사시간 두 번째"></div></div>' +
+      '<div class="field"><span class="lbl">도착 <span class="muted">(두 번째 칸은 비워도 됨)</span></span><div class="range">' + timeInputHTML('a1', a[0], '도착') + '<span>~</span>' + timeInputHTML('a2', a[1], '도착 두 번째') + '</div></div>' +
+      '<div class="field"><span class="lbl">행사시간 <span class="muted">(두 번째 칸은 비워도 됨)</span></span><div class="range">' + timeInputHTML('e1', e[0], '행사시간') + '<span>~</span>' + timeInputHTML('e2', e[1], '행사시간 두 번째') + '</div></div>' +
       '<div class="field"><label for="place">장소</label><textarea id="place" rows="3">' + esc(d.place) + '</textarea></div>' +
       '<div class="cols"><div class="field"><label for="cname">담당자 이름</label><input id="cname" autocomplete="off" value="' + esc(d.contactName) + '"></div>' +
       '<div class="field"><label for="phone">연락처 <span class="muted">(글도 가능)</span></label><input id="phone" autocomplete="off" value="' + esc(d.phone) + '"></div></div>' +
-      '<div class="field"><label for="notes">품목·특이사항 <span class="muted">(적은 그대로 나옵니다)</span></label><textarea id="notes" rows="6">' + esc(d.notes) + '</textarea></div>' +
-      '</div>' +
+      '<div class="field"><label for="notes">품목·특이사항 <span class="muted">(적은 그대로 나옵니다)</span></label><textarea id="notes" rows="6">' + esc(d.notes) + '</textarea></div>';
+  }
+  function readDraft() {
+    return {
+      sang: $('#sang').checked ? '예' : '아니오',
+      type: $('#type').value.trim(),
+      name: $('#name').value.trim(),
+      org: $('#org').value.trim(),
+      date: $('#date').value,
+      arrive: rangeJoin(readTime('a1'), readTime('a2')),
+      eventTime: rangeJoin(readTime('e1'), readTime('e2')),
+      place: $('#place').value,
+      contactName: $('#cname').value.trim(),
+      phone: $('#phone').value.trim(),
+      notes: $('#notes').value
+    };
+  }
+  function draftTimeError() {
+    if (!readTime('a1') && readTime('a2')) return '도착은 첫 번째 칸부터 채워 주세요.';
+    if (!readTime('e1') && readTime('e2')) return '행사시간은 첫 번째 칸부터 채워 주세요.';
+    return '';
+  }
+  function draftError(d) {
+    if (TYPES.indexOf(d.type) < 0) return '종류를 목록에서 골라 주세요.';
+    if (!d.name) return '이름을 적어 주세요.';
+    return draftTimeError();
+  }
+  function viewDraft(row, back) {
+    S.view = 'draft';
+    var d = row ? rowToDraft(row) : { sang: '예', type: '', name: '', org: '', date: '', arrive: '', eventTime: '', place: '', contactName: '', phone: '', notes: '' };
+    back = back || viewList;
+    mount(topbar() +
+      '<button class="ghost" id="back" type="button" style="align-self:flex-start">← 돌아가기</button>' +
+      '<h1>' + (row ? '견적문의 수정' : '견적문의') + (row ? ' ' + statusChip(row.status) : '') + '</h1>' +
+      '<div class="card">' + draftFormHTML(d) + '</div>' +
       '<div class="card"><h2>견적문의 글</h2><pre class="msg" id="preview"></pre>' +
-      '<div class="btns"><button class="btn sub" id="copy" type="button">견적문의 글 복사</button><button class="btn" id="save" type="button">저장</button>' +
+      '<div class="btns"><button class="btn sub" id="copy" type="button">견적문의 글 복사</button>' +
+      '<button class="btn sub" id="saveWriting" type="button">견적작성중으로 저장</button>' +
+      '<button class="btn" id="saveWait" type="button">견적대기로 보내기</button>' +
       (row ? '<button class="btn sub" id="delDraft" type="button">삭제</button>' : '') + '</div>' +
       '<div id="delDraftBox"></div></div>');
     bindTop();
@@ -798,35 +885,55 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       if (err) { toast(err); return; }
       copyText(draftText(dd));
     });
-    $('#save').addEventListener('click', function () {
+    function saveAs(status, btnId, msg) {
       var dd = readDraft();
-      var err = draftError(dd);
+      var err = status === STATUS_WAIT ? draftError(dd) : draftTimeError();
       if (err) { toast(err); return; }
-      var btn = $('#save');
+      var btn = $('#' + btnId);
       busy(btn, true);
-      api('saveDraft', { id: row ? row.id : '', draft: dd }).then(function (res) {
+      api('saveDraft', { id: row ? row.id : '', draft: dd, status: status }).then(function (res) {
         upsertRow(res.row);
-        toast('저장했습니다');
+        toast(msg);
         if (back === viewList) return refresh().then(function () { viewList(); });
         back(res.row);
       }).catch(function (e) { busy(btn, false); fail(e); });
-    });
+    }
+    $('#saveWriting').addEventListener('click', function () { saveAs(STATUS_WRITING, 'saveWriting', '견적작성중으로 저장했습니다'); });
+    $('#saveWait').addEventListener('click', function () { saveAs(STATUS_WAIT, 'saveWait', '견적대기로 보냈습니다'); });
     var delBtn = $('#delDraft');
     if (delBtn) delBtn.addEventListener('click', function () { confirmDeleteDraft(row, delBtn); });
   }
 
-  /* ───────── 대표님: 완료된 견적 보기 ───────── */
+  /* ───────── 완료 건 보기 · 되돌리기 · 수정 · 삭제 ───────── */
   function viewDone(r) {
     S.view = 'done';
     mount(topbar() +
       '<button class="ghost" id="back" type="button" style="align-self:flex-start">← 목록</button>' +
       '<h1>' + rowTitle(r) + ' ' + statusChip(r.status) + '</h1>' +
       '<div class="card"><pre class="msg" id="finalPre"></pre>' +
-      '<button class="btn" id="copy" type="button">복사</button></div>');
+      '<div class="btns"><button class="btn" id="copy" type="button">복사</button>' +
+      '<button class="btn sub" id="editDone" type="button">수정</button>' +
+      '<button class="btn sub" id="toWait" type="button">견적대기로</button>' +
+      '<button class="btn sub" id="toWriting" type="button">견적작성중으로</button>' +
+      '<button class="btn sub" id="delDraft" type="button">삭제</button></div>' +
+      '<div id="delDraftBox"></div></div>');
     bindTop();
     $('#finalPre').textContent = r.text || '';
     $('#back').addEventListener('click', viewList);
     $('#copy').addEventListener('click', function () { copyText(r.text || ''); });
+    $('#editDone').addEventListener('click', function () { viewSpecs(r); });
+    function revert(status, btnId, msg) {
+      var btn = $('#' + btnId);
+      busy(btn, true);
+      api('setStatus', { id: r.id, status: status }).then(function (res) {
+        upsertRow(res.row);
+        toast(msg);
+        return refresh().then(function () { openRow(r.id); });
+      }).catch(function (e) { busy(btn, false); fail(e); });
+    }
+    $('#toWait').addEventListener('click', function () { revert(STATUS_WAIT, 'toWait', '견적대기로 되돌렸습니다'); });
+    $('#toWriting').addEventListener('click', function () { revert(STATUS_WRITING, 'toWriting', '견적작성중으로 되돌렸습니다'); });
+    $('#delDraft').addEventListener('click', function () { confirmDeleteDraft(r, $('#delDraft')); });
   }
 
   /* ───────── 팀장님: 제원 입력 ───────── */
@@ -869,7 +976,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     return v === '' ? null : Number(v);
   }
   function readSpecs() {
-    return { depart: $('#depart').value, km: numVal('km'), fuel: numVal('fuel'), toll: numVal('toll'), park: numVal('park'), goMin: getDur('go'), backMin: getDur('back') };
+    return { depart: readTime('depart'), km: numVal('km'), fuel: numVal('fuel'), toll: numVal('toll'), park: numVal('park'), goMin: getDur('go'), backMin: getDur('back') };
   }
   function specError(sp) {
     if (sp.km === null || !isFinite(sp.km) || sp.km < 0) return '편도거리를 입력해 주세요.';
@@ -883,17 +990,17 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
   function viewSpecs(row) {
     S.view = 'specs';
     var d = rowToDraft(row);
-    var a = rangeSplit(d.arrive);
     var n = function (v) { return v === '' || v === undefined || v === null ? '' : String(v); };
     mount(topbar() +
       '<button class="ghost" id="back" type="button" style="align-self:flex-start">← 목록</button>' +
       '<h1>' + rowTitle(row) + ' <span id="stChip">' + statusChip(row.status) + '</span></h1>' +
-      '<div class="card"><div class="topbar"><h2>대표님 견적문의</h2><span class="right"><button class="ghost" id="editDraft" type="button">견적문의 수정</button>' +
-      '<button class="ghost" id="delDraft" type="button">삭제</button></span></div>' +
-      '<pre class="msg" id="draftPre"></pre><div id="delDraftBox"></div></div>' +
+      '<div class="card" id="draftCard"><div class="topbar"><h2>견적문의</h2><span class="right"><button class="ghost" id="delDraft" type="button">삭제</button></span></div>' +
+      draftFormHTML(d) + '<div id="delDraftBox"></div></div>' +
       '<div class="card" id="specsCard"><h2>제원 입력</h2>' +
-      '<div class="field"><label for="depart">출발</label><input id="depart" type="time" value="' + esc(row.depart || '') + '"></div>' +
-      '<div class="field"><span class="lbl">도착 <span class="muted">(대표님이 넣은 값 · 고칠 수 있음 · 두 번째 칸은 비워도 됨)</span></span><div class="range"><input id="a1" type="time" value="' + esc(a[0]) + '" aria-label="도착"><span>~</span><input id="a2" type="time" value="' + esc(a[1]) + '" aria-label="도착 두 번째"></div></div>' +
+      '<div class="field"><label for="depart">출발</label>' + timeInputHTML('depart', row.depart || '', '출발') + '</div>' +
+      '<div class="field"><span class="lbl">도착 <span class="muted">(두 번째 칸은 비워도 됨)</span></span><div class="range">' +
+      // a1/a2 already in draft form — keep specs arrive synced via same fields
+      '<span class="muted">위 견적문의의 도착 시각을 씁니다.</span></div></div>' +
       '<div class="cols"><div class="field"><label for="km">편도거리 (km)</label><input id="km" type="number" min="0" step="any" inputmode="decimal" value="' + esc(n(row.km)) + '"></div>' +
       '<div class="field"><label for="fuel">편도 연료비 (원)</label><input id="fuel" type="number" min="0" step="any" inputmode="numeric" value="' + esc(n(row.fuel)) + '"></div></div>' +
       '<div class="cols"><div class="field"><label for="toll">편도 통행료 (원)</label><input id="toll" type="number" min="0" step="any" inputmode="numeric" placeholder="0" value="' + esc(n(row.toll)) + '"></div>' +
@@ -903,46 +1010,63 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<input id="pq" type="search" placeholder="이름 또는 전화번호" autocomplete="off">' +
       '<div class="past" id="past"></div></div>' +
       '<div class="card"><h2>최종 견적 글</h2><pre class="msg" id="finalPre"></pre>' +
-      '<div class="btns"><button class="btn sub" id="copy" type="button">카톡용 복사</button><button class="btn" id="save" type="button">최종저장</button></div></div>');
+      '<div class="btns"><button class="btn sub" id="copy" type="button">카톡용 복사</button>' +
+      '<button class="btn sub" id="saveWaitHere" type="button">견적대기로 저장</button>' +
+      '<button class="btn" id="save" type="button">견적완료 저장</button></div></div>');
     bindTop();
-    $('#draftPre').textContent = draftText(d);
     initDur('go', row.goMin || 0);
     initDur('back', row.backMin || 0);
 
     var recompute = function () {
       var sp = readSpecs();
-      var err = specError(sp);
-      var dd = rowToDraft(row);
-      dd.arrive = rangeJoin($('#a1').value, $('#a2').value);
+      var err = specError(sp) || draftError(readDraft());
+      var dd = readDraft();
       var pre = $('#finalPre');
-      if (err) { pre.textContent = '거리, 연료비, 소요시간을 입력하면 견적 글이 나옵니다.'; return null; }
+      var w = dateLabel(dd.date);
+      if ($('#wd')) $('#wd').textContent = w ? '· ' + w : '';
+      if (err) { pre.textContent = '종류·이름과 거리·연료비·소요시간을 입력하면 견적 글이 나옵니다.'; return null; }
       var spn = { depart: sp.depart, km: sp.km, fuel: sp.fuel, toll: sp.toll || 0, park: sp.park || 0, goMin: sp.goMin, backMin: sp.backMin };
       var c = calc(spn);
       var text = finalText(dd, spn, c);
       pre.textContent = text;
       return { d: dd, sp: spn, c: c, text: text };
     };
-    var card = $('#specsCard');
-    card.addEventListener('input', recompute);
-    card.addEventListener('click', function () { setTimeout(recompute, 0); });
-    card.addEventListener('change', recompute);
+    var onChange = function () { recompute(); };
+    ['#draftCard', '#specsCard'].forEach(function (sel) {
+      var card = $(sel);
+      if (!card) return;
+      card.addEventListener('input', onChange);
+      card.addEventListener('change', onChange);
+      card.addEventListener('click', function () { setTimeout(recompute, 0); });
+    });
     recompute();
 
     $('#back').addEventListener('click', viewList);
-    $('#editDraft').addEventListener('click', function () {
-      viewDraft(row, function (updated) { viewSpecs(updated && updated.id ? findRow(updated.id) || updated : row); });
-    });
     $('#delDraft').addEventListener('click', function () { confirmDeleteDraft(row, $('#delDraft')); });
     $('#copy').addEventListener('click', function () {
       var r = recompute();
-      if (!r) { toast(specError(readSpecs()) || '제원을 먼저 입력해 주세요.'); return; }
+      if (!r) { toast(specError(readSpecs()) || draftError(readDraft()) || '제원을 먼저 입력해 주세요.'); return; }
       copyText(r.text);
+    });
+    $('#saveWaitHere').addEventListener('click', function () {
+      var dd = readDraft();
+      var err = draftError(dd);
+      if (err) { toast(err); return; }
+      var btn = $('#saveWaitHere');
+      busy(btn, true);
+      api('saveDraft', { id: row.id, draft: dd, status: STATUS_WAIT }).then(function (res) {
+        upsertRow(res.row);
+        toast('견적대기로 저장했습니다');
+        return refresh().then(function () { viewList(); });
+      }).catch(function (e) { busy(btn, false); fail(e); });
     });
     $('#save').addEventListener('click', function () {
       var sp = readSpecs();
-      var err = specError(sp);
+      var derr = draftError(readDraft());
+      var err = derr || specError(sp);
       if (err) { toast(err); return; }
       var r = recompute();
+      if (!r) { toast('견적 글을 만들지 못했습니다.'); return; }
       var btn = $('#save');
       busy(btn, true);
       api('finalize', {
@@ -954,7 +1078,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
         row = res.row;
         busy(btn, false);
         $('#stChip').innerHTML = statusChip(row.status);
-        toast('최종저장했습니다. 카톡용 복사를 눌러 보내세요.');
+        toast('견적완료로 저장했습니다. 카톡용 복사를 눌러 보내세요.');
       }).catch(function (e) { busy(btn, false); fail(e); });
     });
 
@@ -963,7 +1087,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       var q = $('#pq').value;
       var box = $('#past');
       if (!q.trim()) { box.innerHTML = '<p class="muted">이름이나 전화번호를 입력하면 지난 건이 나옵니다.</p>'; return; }
-      var rows = S.rows.filter(function (x) { return x.id !== row.id && x.status === '견적완료' && x.km !== '' && matches(x, q); }).slice(0, 8);
+      var rows = S.rows.filter(function (x) { return x.id !== row.id && x.status === STATUS_DONE && x.km !== '' && matches(x, q); }).slice(0, 8);
       if (!rows.length) { box.innerHTML = '<p class="muted">찾는 지난 건이 없습니다.</p>'; return; }
       box.innerHTML = rows.map(function (x) {
         return '<div class="p"><div><b>' + rowTitle(x) + '</b><small>' + esc([x.date ? dateLabel(x.date) : '날짜 미정', firstLine(x.place)].filter(Boolean).join(' · ')) + '</small>' +
