@@ -479,11 +479,43 @@ function setup() {
   ensureYearSheet_(currentYear_());
   ensureCustomerSheet_();
   yearSheets_().forEach(function (sh) { writeHeaders_(sh); lookSheet_(sh); }); // 여러 번 실행해도 안전하다.
+  var filled = fillCustomerAddresses_();
   return {
     adminRegistered: adminRegistered_(),
     ownerRegistered: ownerRegistered_(),
-    sheets: ss_().getSheets().map(function (s) { return s.getName(); })
+    sheets: ss_().getSheets().map(function (s) { return s.getName(); }),
+    customerAddressesUpdated: filled.updated
   };
+}
+
+// 편집기에서 직접 실행: 연도 탭의 장소로 고객리스트 주소를 채운다.
+function fillCustomerAddresses() {
+  return fillCustomerAddresses_();
+}
+
+function fillCustomerAddresses_() {
+  var sh = ensureCustomerSheet_();
+  var byKey = {};
+  yearSheets_().forEach(function (ys) {
+    readRows_(ys).forEach(function (r) {
+      if (!r.name || !r.place) return;
+      byKey[String(r.name) + '\t' + String(r.org || '')] = String(r.place);
+    });
+  });
+  var last = sh.getLastRow();
+  var updated = 0;
+  if (last < 2) return { updated: 0, known: Object.keys(byKey).length };
+  var rows = sh.getRange(2, 1, last - 1, CUSTOMER_HEADERS.length).getValues();
+  for (var i = 0; i < rows.length; i++) {
+    var key = String(rows[i][0] || '') + '\t' + String(rows[i][1] || '');
+    var place = byKey[key];
+    if (!place) continue;
+    if (String(rows[i][3] || '') === place) continue;
+    var safe = place.charAt(0) === '=' ? "'" + place : place;
+    sh.getRange(i + 2, 4, 1, 1).setValues([[safe]]);
+    updated++;
+  }
+  return { updated: updated, known: Object.keys(byKey).length };
 }
 
 // ───────────────────────── 읽기 · 쓰기 ─────────────────────────
