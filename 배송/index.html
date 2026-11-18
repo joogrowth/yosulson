@@ -41,8 +41,8 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 .btn.sub{background:var(--btn);color:var(--fg)}
 .btn.small{min-height:36px;padding:6px 12px;font-size:13px}
 .ghost{background:transparent;border:1px solid var(--line);border-radius:10px;padding:6px 10px;min-height:36px;font-size:13px}
-.btns{display:flex;gap:8px;flex-wrap:wrap}
-.btns > *{flex:1;min-width:120px}
+.btns{display:flex;gap:6px;flex-wrap:nowrap}
+.btns > *{flex:1;min-width:0;padding-left:8px;padding-right:8px;font-size:13px;white-space:nowrap}
 .field{display:flex;flex-direction:column;gap:4px;min-width:0}
 .field > label,.field > .lbl{font-size:13px;color:var(--muted)}
 input[type=text],input[type=password],input[type=number],input[type=date],input[type=time],input[type=search],input:not([type]),select,textarea{
@@ -197,18 +197,10 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     var name = d.name || '(이름 없음)';
     return typePart + name + (d.org ? ' / ' + d.org : '');
   }
-  function needsTimeFallback() {
-    var ua = navigator.userAgent || '';
-    if (/iP(hone|od|ad)/.test(ua)) return true;
-    if (/Macintosh/.test(ua) && typeof document !== 'undefined' && 'ontouchend' in document) return true;
-    return false;
-  }
   function pad2(n) { n = String(n); return n.length < 2 ? '0' + n : n; }
+  // PC·모바일 모두 같은 24시 시·분 선택(10분 단위). 분은 00·10·20·30·40·50. 예전 값은 그대로 보여 준다.
   function timeInputHTML(id, value, aria) {
     value = value || '';
-    if (!needsTimeFallback()) {
-      return '<input id="' + id + '" type="time" step="600" value="' + esc(value) + '"' + (aria ? ' aria-label="' + esc(aria) + '"' : '') + '>';
-    }
     var hm = /^(\d{1,2}):(\d{2})$/.exec(value);
     var h = hm ? pad2(Number(hm[1])) : '';
     var m = hm ? hm[2] : '';
@@ -230,8 +222,6 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<select id="' + id + '_m" aria-label="' + esc((aria || '시각') + ' 분') + '">' + mo + '</select></span>';
   }
   function readTime(id) {
-    var el = $('#' + id);
-    if (el) return el.value || '';
     var h = $('#' + id + '_h'), m = $('#' + id + '_m');
     if (!h || !m) return '';
     if (!h.value || !m.value) return '';
@@ -864,9 +854,9 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<h1>' + (row ? '견적문의 수정' : '견적문의') + (row ? ' ' + statusChip(row.status) : '') + '</h1>' +
       '<div class="card">' + draftFormHTML(d) + '</div>' +
       '<div class="card"><h2>견적문의 글</h2><pre class="msg" id="preview"></pre>' +
-      '<div class="btns"><button class="btn sub" id="copy" type="button">견적문의 글 복사</button>' +
-      '<button class="btn sub" id="saveWriting" type="button">견적작성중으로 저장</button>' +
-      '<button class="btn" id="saveWait" type="button">견적대기로 보내기</button>' +
+      '<div class="btns"><button class="btn sub" id="copy" type="button">복사</button>' +
+      '<button class="btn sub" id="saveWriting" type="button">작성중 저장</button>' +
+      '<button class="btn" id="saveWait" type="button">대기 보내기</button>' +
       (row ? '<button class="btn sub" id="delDraft" type="button">삭제</button>' : '') + '</div>' +
       '<div id="delDraftBox"></div></div>');
     bindTop();
