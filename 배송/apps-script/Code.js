@@ -20,8 +20,8 @@
  *   '복기' 칸은 시트에서만 고른다(확정 / 보류 / 취소). 이 코드는 값을 지우지 않는다.
  *
  * 권한
- *   owner(대표님): 가안 저장, 견적대기 건의 가안 수정·삭제, 목록·최종 견적 글 보기
- *   admin(팀장님): 전부 + 제원 입력, 최종저장, 건 삭제, 대표님 계정 보기·수정·삭제
+ *   owner(대표님)·admin(팀장님): 견적문의·제원·최종저장·상태 변경·삭제 (견적 기능 동일)
+ *   admin(팀장님)만: 대표님 계정 보기·수정·삭제, 시트 `복기` 드롭다운은 시트에서만
  */
 
 var TZ = 'Asia/Seoul';
@@ -29,8 +29,10 @@ var TOKEN_HOURS = 24;          // 마지막으로 쓴 때부터 24시간
 var PW_MIN = 4;                // 비밀번호 최소 글자 수
 var DATA_START = 3;            // 3행부터 데이터
 var TYPES = ['배송', '배송세팅', '출장', '반출장', '픽업'];
+var STATUS_WRITING = '견적작성중';
 var STATUS_WAIT = '견적대기';
 var STATUS_DONE = '견적완료';
+var STATUSES = [STATUS_WRITING, STATUS_WAIT, STATUS_DONE];
 var CUSTOMER_SHEET = '고객리스트';
 var CUSTOMER_HEADERS = ['이름', '소속', '연락처', '메모'];
 
@@ -121,10 +123,9 @@ function handle_(req) {
   if (action === 'list') out = list_(role);
   else if (action === 'saveDraft') out = saveDraft_(role, req);
   else if (action === 'deleteDraft') out = deleteDraft_(role, req);
-  else if (action === 'finalize') {
-    requireAdmin_(role, '제원은 팀장님만 입력할 수 있습니다.');
-    out = finalize_(req);
-  } else if (action === 'ownerAccount') {
+  else if (action === 'finalize') out = finalize_(req);
+  else if (action === 'setStatus') out = setStatus_(req);
+  else if (action === 'ownerAccount') {
     requireAdmin_(role);
     out = { account: ownerAccount_() };
   } else if (action === 'updateOwner') {
@@ -569,29 +570,27 @@ function withLock_(fn) {
 
 // ───────────────────────── 동작 ─────────────────────────
 
-function ownerView_(r) {
-  var o = { id: r.id, status: r.status };
-  DRAFT_KEYS.forEach(function (k) { o[k] = r[k]; });
-  if (r.status === STATUS_DONE) o.text = r.text;
-  return o;
-}
-
 function adminView_(r) {
   var o = {};
   COLUMNS.forEach(function (c) { o[c.key] = r[c.key]; });
   return o;
 }
 
+function countStatus_(rows) {
+  var counts = { writing: 0, wait: 0, done: 0 };
+  rows.forEach(function (r) {
+    if (r.status === STATUS_DONE) counts.done++;
+    else if (r.status === STATUS_WAIT) counts.wait++;
+    else if (r.status === STATUS_WRITING) counts.writing++;
+  });
+  return counts;
+}
+
 function list_(role) {
   var rows = [];
   yearSheets_().forEach(function (sh) { rows = rows.concat(readRows_(sh)); });
-  var counts = { wait: 0, done: 0 };
-  var out = rows.map(function (r) {
-    if (r.status === STATUS_DONE) counts.done++;
-    else counts.wait++;
-    return role === 'admin' ? adminView_(r) : ownerView_(r);
-  });
-  return { rows: out, counts: counts };
+  var out = rows.map(function (r) { return adminView_(r); });
+  return { rows: out, counts: countStatus_(rows) };
 }
 
 function str_(v, max) {
@@ -613,13 +612,19 @@ function timeText_(v, label) {
   return s;
 }
 
-function cleanDraft_(d) {
+function cleanDraft_(d, opts) {
+  opts = opts || {};
+  var loose = !!opts.loose; // 견적작성중: 빈칸 허용
   var o = {};
   o.sang = d.sang === '예' ? '예' : '아니오';
   o.type = line_(d.type, 20);
-  if (TYPES.indexOf(o.type) < 0) fail_('bad', '종류를 목록에서 골라 주세요.');
+  if (o.type) {
+    if (TYPES.indexOf(o.type) < 0) fail_('bad', '종류를 목록에서 골라 주세요.');
+  } else if (!loose) {
+    fail_('bad', '종류를 목록에서 골라 주세요.');
+  }
   o.name = line_(d.name, 100);
-  if (!o.name) fail_('bad', '이름을 적어 주세요.');
+  if (!o.name && !loose) fail_('bad', '이름을 적어 주세요.');
   o.org = line_(d.org, 100);
   o.date = line_(d.date, 10);
   if (o.date && !/^\d{4}-\d{2}-\d{2}$/.test(o.date)) fail_('bad', '날짜 형식이 맞지 않습니다.');
@@ -664,17 +669,21 @@ function cleanCalc_(c) {
   return o;
 }
 
+function parseSaveStatus_(v) {
+  var s = String(v || '');
+  if (s === STATUS_WRITING || s === STATUS_WAIT) return s;
+  fail_('bad', '저장 상태가 맞지 않습니다.');
+}
+
 function saveDraft_(role, req) {
-  var d = cleanDraft_(req.draft || {});
+  var status = parseSaveStatus_(req.status || STATUS_WAIT);
+  var d = cleanDraft_(req.draft || {}, { loose: status === STATUS_WRITING });
   var id = req.id ? String(req.id) : '';
   return withLock_(function () {
     var sh, row, obj;
     if (id) {
       var loc = findRow_(id);
       if (!loc) fail_('notfound', '해당 건을 찾을 수 없습니다.');
-      if (role === 'owner' && loc.obj.status !== STATUS_WAIT) {
-        fail_('forbidden', '이미 견적이 완료된 건은 수정할 수 없습니다.');
-      }
       sh = loc.sheet;
       row = loc.row;
       obj = loc.obj;
@@ -683,12 +692,12 @@ function saveDraft_(role, req) {
       row = Math.max(sh.getLastRow() + 1, DATA_START);
       obj = {};
       obj.id = nextId_(sh, currentYear_());
-      obj.status = STATUS_WAIT;
     }
     DRAFT_KEYS.forEach(function (k) { obj[k] = d[k]; });
+    obj.status = status;
     writeRow_(sh, row, obj);
     upsertCustomer_(d);
-    return { row: role === 'admin' ? adminView_(obj) : ownerView_(obj) };
+    return { row: adminView_(obj) };
   });
 }
 
@@ -698,9 +707,6 @@ function deleteDraft_(role, req) {
   return withLock_(function () {
     var loc = findRow_(id);
     if (!loc) fail_('notfound', '해당 건을 찾을 수 없습니다.');
-    if (role === 'owner' && loc.obj.status !== STATUS_WAIT) {
-      fail_('forbidden', '이미 견적이 완료된 건은 삭제할 수 없습니다.');
-    }
     loc.sheet.deleteRow(loc.row);
     return { deletedId: id };
   });
@@ -728,8 +734,24 @@ function finalize_(req) {
   });
 }
 
+// 상태만 바꾼다. 제원·견적글·복기는 그대로 둔다. (완료↔대기/작성중 되돌리기)
+function setStatus_(req) {
+  var id = String(req.id || '');
+  var status = String(req.status || '');
+  if (!id) fail_('bad', '건을 지정해 주세요.');
+  if (STATUSES.indexOf(status) < 0) fail_('bad', '상태가 맞지 않습니다.');
+  return withLock_(function () {
+    var loc = findRow_(id);
+    if (!loc) fail_('notfound', '해당 건을 찾을 수 없습니다.');
+    loc.obj.status = status;
+    writeRow_(loc.sheet, loc.row, loc.obj);
+    return { row: adminView_(loc.obj) };
+  });
+}
+
 // 고객리스트: 이름 + 소속이 같으면 같은 고객. 연락처가 있으면 최신 값으로 고친다. 메모는 건드리지 않는다.
 function upsertCustomer_(d) {
+  if (!d || !d.name) return; // 작성중 빈 이름은 고객목록에 넣지 않는다
   var sh = ensureCustomerSheet_();
   var last = sh.getLastRow();
   var rows = last >= 2 ? sh.getRange(2, 1, last - 1, CUSTOMER_HEADERS.length).getValues() : [];
@@ -743,5 +765,5 @@ function upsertCustomer_(d) {
   }
   ensureRows_(sh, last + 1);
   var safe = function (s) { return s.charAt(0) === '=' ? "'" + s : s; };
-  sh.getRange(last + 1, 1, 1, CUSTOMER_HEADERS.length).setValues([[safe(d.name), safe(d.org), safe(d.phone), '']]);
+  sh.getRange(last + 1, 1, 1, CUSTOMER_HEADERS.length).setValues([[safe(d.name), safe(d.org || ''), safe(d.phone || ''), '']]);
 }
