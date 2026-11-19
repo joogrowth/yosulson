@@ -133,7 +133,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
 
   var TYPES = ['배송', '배송세팅', '출장', '반출장', '픽업'];
   var STATUS_WRITING = '견적작성중';
-  var STATUS_WAIT = '견적대기';
+  var STATUS_WAIT = '견적의뢰';
   var STATUS_DONE = '견적완료';
   var WAGES = [11000, 12000, 13000];
   var WD = ['일', '월', '화', '수', '목', '금', '토'];
@@ -381,7 +381,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     var counts = { writing: 0, wait: 0, done: 0 };
     rows.forEach(function (r) {
       if (r.status === STATUS_DONE) counts.done++;
-      else if (r.status === STATUS_WAIT) counts.wait++;
+      else if (canonStatus(r.status) === STATUS_WAIT) counts.wait++;
       else if (r.status === STATUS_WRITING) counts.writing++;
     });
     return counts;
@@ -528,12 +528,20 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     var c = $('#acct');
     if (c) c.addEventListener('click', viewOwnerAccount);
   }
+  function canonStatus(st) {
+    if (st === '견적대기' || st === STATUS_WAIT) return STATUS_WAIT;
+    return st || '';
+  }
   function statusChipClass(st) {
+    st = canonStatus(st);
     if (st === STATUS_DONE) return 'done';
     if (st === STATUS_WAIT) return 'wait';
     return 'writing';
   }
-  function statusChip(st) { return '<span class="chip ' + statusChipClass(st) + '">' + esc(st || STATUS_WRITING) + '</span>'; }
+  function statusChip(st) {
+    st = canonStatus(st) || STATUS_WRITING;
+    return '<span class="chip ' + statusChipClass(st) + '">' + esc(st) + '</span>';
+  }
   function firstLine(s) { return String(s || '').split('\n')[0]; }
   function rowTitle(r) { return esc(titleLine(r)); }
   function upsertRow(row) {
@@ -751,13 +759,13 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     var c = S.counts;
     $('#chips').innerHTML =
       '<button class="chipbtn writing" type="button" data-f="writing" aria-pressed="' + (S.filter === 'writing') + '">견적작성중 ' + (c.writing || 0) + '건</button>' +
-      '<button class="chipbtn wait" type="button" data-f="wait" aria-pressed="' + (S.filter === 'wait') + '">견적대기 ' + (c.wait || 0) + '건</button>' +
+      '<button class="chipbtn wait" type="button" data-f="wait" aria-pressed="' + (S.filter === 'wait') + '">견적의뢰 ' + (c.wait || 0) + '건</button>' +
       '<button class="chipbtn done" type="button" data-f="done" aria-pressed="' + (S.filter === 'done') + '">견적완료 ' + (c.done || 0) + '건</button>';
     $all('#chips button').forEach(function (b) {
       b.addEventListener('click', function () { S.filter = S.filter === b.dataset.f ? 'all' : b.dataset.f; drawList(); });
     });
     var writings = S.rows.filter(function (r) { return r.status === STATUS_WRITING; }).sort(function (a, b) { return a.id < b.id ? -1 : 1; });
-    var waits = S.rows.filter(function (r) { return r.status === STATUS_WAIT; }).sort(function (a, b) { return a.id < b.id ? -1 : 1; });
+    var waits = S.rows.filter(function (r) { return canonStatus(r.status) === STATUS_WAIT; }).sort(function (a, b) { return a.id < b.id ? -1 : 1; });
     var dones = S.rows.filter(function (r) { return r.status === STATUS_DONE; }).sort(function (a, b) { return a.id < b.id ? 1 : -1; });
     var rows = (S.filter === 'writing' ? writings : S.filter === 'wait' ? waits : S.filter === 'done' ? dones : writings.concat(waits, dones)).filter(function (r) { return matches(r, S.q); });
     var el = $('#list');
@@ -805,8 +813,8 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
   function openRow(id) {
     var r = findRow(id);
     if (!r) return;
-    if (r.status === STATUS_DONE) viewDone(r);
-    else if (r.status === STATUS_WAIT) viewSpecs(r);
+    if (canonStatus(r.status) === STATUS_DONE) viewDone(r);
+    else if (canonStatus(r.status) === STATUS_WAIT) viewSpecs(r);
     else viewDraft(r);
   }
 
@@ -911,9 +919,9 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<div class="card"><pre class="msg" id="finalPre"></pre>' +
       '<div class="btns"><button class="btn" id="copy" type="button">복사</button>' +
       '<button class="btn sub" id="editDone" type="button">수정</button>' +
-      '<button class="btn sub" id="toWait" type="button">견적대기로</button>' +
-      '<button class="btn sub" id="toWriting" type="button">견적작성중으로</button>' +
       '<button class="btn sub" id="delDraft" type="button">삭제</button></div>' +
+      '<div class="btns"><button class="btn sub" id="toWait" type="button">견적의뢰로</button>' +
+      '<button class="btn sub" id="toWriting" type="button">작성중으로</button></div>' +
       '<div id="delDraftBox"></div></div>');
     bindTop();
     $('#finalPre').textContent = r.text || '';
@@ -929,7 +937,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
         return refresh().then(function () { openRow(r.id); });
       }).catch(function (e) { busy(btn, false); fail(e); });
     }
-    $('#toWait').addEventListener('click', function () { revert(STATUS_WAIT, 'toWait', '견적대기로 되돌렸습니다'); });
+    $('#toWait').addEventListener('click', function () { revert(STATUS_WAIT, 'toWait', '견적의뢰로 되돌렸습니다'); });
     $('#toWriting').addEventListener('click', function () { revert(STATUS_WRITING, 'toWriting', '견적작성중으로 되돌렸습니다'); });
     $('#delDraft').addEventListener('click', function () { confirmDeleteDraft(r, $('#delDraft')); });
   }
@@ -1010,7 +1018,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<div class="card"><h2>최종 견적 글</h2><pre class="msg" id="finalPre"></pre>' +
       '<div class="btns"><button class="btn sub" id="copy" type="button">복사</button>' +
       (row.status === STATUS_DONE
-        ? '<button class="btn sub" id="midStatus" type="button">대기 돌리기</button>'
+        ? '<button class="btn sub" id="midStatus" type="button">의뢰로</button>'
         : '<button class="btn sub" id="midStatus" type="button">문의로 돌리기</button>') +
       '<button class="btn" id="save" type="button">완료</button></div></div>');
     bindTop();
@@ -1064,7 +1072,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       busy(btn, true);
       api('saveDraft', { id: row.id, draft: dd, status: status }).then(function (res) {
         upsertRow(res.row);
-        toast(toWriting ? '견적문의(작성중)로 돌렸습니다' : '견적대기로 돌렸습니다');
+        toast(toWriting ? '견적문의(작성중)로 돌렸습니다' : '견적의뢰로 돌렸습니다');
         return refresh().then(function () { openRow(row.id); });
       }).catch(function (e) { busy(btn, false); fail(e); });
     });

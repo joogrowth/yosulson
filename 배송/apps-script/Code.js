@@ -30,7 +30,8 @@ var PW_MIN = 4;                // 비밀번호 최소 글자 수
 var DATA_START = 3;            // 3행부터 데이터
 var TYPES = ['배송', '배송세팅', '출장', '반출장', '픽업'];
 var STATUS_WRITING = '견적작성중';
-var STATUS_WAIT = '견적대기';
+var STATUS_WAIT = '견적의뢰';
+var STATUS_WAIT_OLD = '견적대기';
 var STATUS_DONE = '견적완료';
 var STATUSES = [STATUS_WRITING, STATUS_WAIT, STATUS_DONE];
 var CUSTOMER_SHEET = '고객리스트';
@@ -480,12 +481,40 @@ function setup() {
   ensureCustomerSheet_();
   yearSheets_().forEach(function (sh) { writeHeaders_(sh); lookSheet_(sh); }); // 여러 번 실행해도 안전하다.
   var filled = fillCustomerAddresses_();
+  var renamed = renameWaitStatus_();
   return {
     adminRegistered: adminRegistered_(),
     ownerRegistered: ownerRegistered_(),
     sheets: ss_().getSheets().map(function (s) { return s.getName(); }),
-    customerAddressesUpdated: filled.updated
+    customerAddressesUpdated: filled.updated,
+    waitRenamed: renamed.renamed
   };
+}
+
+// 편집기에서 직접 실행: 시트에 남은 '견적대기'를 '견적의뢰'로 고친다.
+function renameWaitStatus() {
+  return renameWaitStatus_();
+}
+
+function renameWaitStatus_() {
+  var col = colIndex_('status') + 1;
+  var renamed = 0;
+  yearSheets_().forEach(function (sh) {
+    var last = sh.getLastRow();
+    if (last < DATA_START) return;
+    var vals = sh.getRange(DATA_START, col, last - DATA_START + 1, 1).getValues();
+    for (var i = 0; i < vals.length; i++) {
+      if (String(vals[i][0]) !== STATUS_WAIT_OLD) continue;
+      sh.getRange(DATA_START + i, col).setValue(STATUS_WAIT);
+      renamed++;
+    }
+  });
+  return { renamed: renamed };
+}
+
+function canonStatus_(st) {
+  if (st === STATUS_WAIT_OLD || st === STATUS_WAIT) return STATUS_WAIT;
+  return st;
 }
 
 // 편집기에서 직접 실행: 연도 탭의 장소로 고객리스트 주소를 채운다.
@@ -532,7 +561,7 @@ function rowToObj_(vals) {
     var c = COLUMNS[i];
     var v = vals[i];
     if (c.num) o[c.key] = (v === '' || v === null || v === undefined) ? '' : Number(v);
-    else o[c.key] = toStr_(v);
+    else o[c.key] = c.key === 'status' ? canonStatus_(toStr_(v)) : toStr_(v);
   }
   return o;
 }
@@ -716,7 +745,7 @@ function cleanCalc_(c) {
 }
 
 function parseSaveStatus_(v) {
-  var s = String(v || '');
+  var s = canonStatus_(String(v || ''));
   if (s === STATUS_WRITING || s === STATUS_WAIT) return s;
   fail_('bad', '저장 상태가 맞지 않습니다.');
 }
@@ -785,7 +814,8 @@ function setStatus_(req) {
   var id = String(req.id || '');
   var status = String(req.status || '');
   if (!id) fail_('bad', '건을 지정해 주세요.');
-  if (STATUSES.indexOf(status) < 0) fail_('bad', '상태가 맞지 않습니다.');
+  status = canonStatus_(status);
+  if (status !== STATUS_WRITING && status !== STATUS_WAIT && status !== STATUS_DONE) fail_('bad', '상태가 맞지 않습니다.');
   return withLock_(function () {
     var loc = findRow_(id);
     if (!loc) fail_('notfound', '해당 건을 찾을 수 없습니다.');
