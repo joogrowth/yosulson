@@ -864,7 +864,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<div class="card"><h2>견적문의 글</h2><pre class="msg" id="preview"></pre>' +
       '<div class="btns"><button class="btn sub" id="copy" type="button">복사</button>' +
       '<button class="btn sub" id="saveWriting" type="button">작성중 저장</button>' +
-      '<button class="btn" id="saveWait" type="button">대기 보내기</button>' +
+      '<button class="btn" id="saveWait" type="button">견적의뢰</button>' +
       (row ? '<button class="btn sub" id="delDraft" type="button">삭제</button>' : '') + '</div>' +
       '<div id="delDraftBox"></div></div>');
     bindTop();
@@ -897,7 +897,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       }).catch(function (e) { busy(btn, false); fail(e); });
     }
     $('#saveWriting').addEventListener('click', function () { saveAs(STATUS_WRITING, 'saveWriting', '견적작성중으로 저장했습니다'); });
-    $('#saveWait').addEventListener('click', function () { saveAs(STATUS_WAIT, 'saveWait', '견적대기로 보냈습니다'); });
+    $('#saveWait').addEventListener('click', function () { saveAs(STATUS_WAIT, 'saveWait', '견적의뢰로 보냈습니다'); });
     var delBtn = $('#delDraft');
     if (delBtn) delBtn.addEventListener('click', function () { confirmDeleteDraft(row, delBtn); });
   }
