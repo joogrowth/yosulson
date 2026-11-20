@@ -292,6 +292,8 @@ function naverPlace_(row) {
 }
 
 function naverDesc_(row) {
+  // 캘린더에는 견적문의 내용만 넣는다. 견적완료여도 출발 시각만 더한다.
+  // 최종 견적 글과 금액은 넣지 않는다. 그 글은 화면의 복사·카톡에만 있다.
   var L = [String(row.status || '') + ' ' + String(row.id || '')];
   if (row.depart) L.push('출발 ' + row.depart);
   if (row.arrive) L.push('도착 ' + row.arrive);
