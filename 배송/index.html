@@ -43,6 +43,8 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 .ghost{background:transparent;border:1px solid var(--line);border-radius:10px;padding:6px 10px;min-height:36px;font-size:13px}
 .btns{display:flex;gap:6px;flex-wrap:nowrap}
 .btns > *{flex:1;min-width:0;padding-left:8px;padding-right:8px;font-size:13px;white-space:nowrap}
+.btns.sharebtns{flex-wrap:wrap}
+.btns.sharebtns > *{flex:1 1 calc(50% - 6px)}
 .field{display:flex;flex-direction:column;gap:4px;min-width:0}
 .field > label,.field > .lbl{font-size:13px;color:var(--muted)}
 input[type=text],input[type=password],input[type=number],input[type=date],input[type=time],input[type=search],input:not([type]),select,textarea{
@@ -163,6 +165,30 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     t.className = 'on';
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { t.className = ''; }, 2800);
+  }
+  var PAGE_URL = 'https://joogrowth.github.io/yosulson/배송/';
+  function shareReady() {
+    return !!(navigator.share);
+  }
+  function kakaoShareBtn() {
+    return shareReady() ? '<button class="btn sub" id="kakaoShare" type="button">카톡 공유</button>' : '';
+  }
+  function requestShareText(d) {
+    var body = draftText(d).replace(/\n+$/, '');
+    return body ? body + '\n\n' + PAGE_URL : PAGE_URL;
+  }
+  function bindKakaoShare(getText) {
+    var btn = $('#kakaoShare');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var text = '';
+      try { text = getText() || ''; } catch (e) { return; }
+      if (!text) return;
+      var pending;
+      try { pending = navigator.share({ text: text }); }
+      catch (e) { return; }
+      if (pending && pending.catch) pending.catch(function () { /* 취소·실패는 조용히 넘어간다 */ });
+    });
   }
   function copyText(text) {
     function ok() { toast('복사했습니다'); }
@@ -917,7 +943,8 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<button class="ghost" id="back" type="button" style="align-self:flex-start">← 목록</button>' +
       '<h1>' + rowTitle(r) + ' ' + statusChip(r.status) + '</h1>' +
       '<div class="card"><pre class="msg" id="finalPre"></pre>' +
-      '<div class="btns"><button class="btn" id="copy" type="button">복사</button>' +
+      '<div class="btns' + (shareReady() ? ' sharebtns' : '') + '"><button class="btn" id="copy" type="button">복사</button>' +
+      kakaoShareBtn() +
       '<button class="btn sub" id="editDone" type="button">수정</button>' +
       '<button class="btn sub" id="delDraft" type="button">삭제</button></div>' +
       '<div class="btns"><button class="btn sub" id="toWait" type="button">견적의뢰로</button>' +
@@ -927,6 +954,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     $('#finalPre').textContent = r.text || '';
     $('#back').addEventListener('click', viewList);
     $('#copy').addEventListener('click', function () { copyText(r.text || ''); });
+    bindKakaoShare(function () { return r.text || ''; });
     $('#editDone').addEventListener('click', function () { viewSpecs(r); });
     function revert(status, btnId, msg) {
       var btn = $('#' + btnId);
@@ -1016,7 +1044,8 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<input id="pq" type="search" placeholder="이름 또는 전화번호" autocomplete="off">' +
       '<div class="past" id="past"></div></div>' +
       '<div class="card"><h2>최종 견적 글</h2><pre class="msg" id="finalPre"></pre>' +
-      '<div class="btns"><button class="btn sub" id="copy" type="button">복사</button>' +
+      '<div class="btns' + (canonStatus(row.status) === STATUS_WAIT && shareReady() ? ' sharebtns' : '') + '"><button class="btn sub" id="copy" type="button">복사</button>' +
+      (canonStatus(row.status) === STATUS_WAIT ? kakaoShareBtn() : '') +
       (row.status === STATUS_DONE
         ? '<button class="btn sub" id="midStatus" type="button">의뢰로</button>'
         : '<button class="btn sub" id="midStatus" type="button">문의로 돌리기</button>') +
@@ -1056,6 +1085,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       if (!r) { toast(specError(readSpecs()) || draftError(readDraft()) || '제원을 먼저 입력해 주세요.'); return; }
       copyText(r.text);
     });
+    bindKakaoShare(function () { return requestShareText(readDraft()); });
     // 대기 화면: 문의(작성중)로 돌리기 / 완료에서 수정 중: 대기로 돌리기. 문의·제원 값은 남긴다.
     $('#midStatus').addEventListener('click', function () {
       var dd = readDraft();
