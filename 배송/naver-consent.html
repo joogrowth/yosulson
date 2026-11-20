@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>네이버 동의</title>
+  <style>
+    body { font: 16px sans-serif; margin: 24px; }
+    button { font: inherit; padding: 12px 16px; }
+  </style>
+</head>
+<body>
+  <p>팀장님 네이버로 로그인된 창에서 아래 버튼을 누르세요.</p>
+  <button id="go" type="button">네이버 동의하기</button>
+  <p id="msg"></p>
+  <script>
+    var EXEC = 'https://script.google.com/macros/s/AKfycbwK1uXP1m0CYyb9cxTiRcDIIQVh3LJcPkWvg45gUn-GBkf7u6j_GGp7lxbGmFRy7goguw/exec';
+    var CLIENT = 'MV8P1WRui3N1uWfeyCCW';
+    document.getElementById('go').addEventListener('click', function () {
+      var btn = this;
+      btn.disabled = true;
+      document.getElementById('msg').textContent = '네이버로 이동합니다.';
+      var state = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      var prep = EXEC + '?naver=prep&state=' + encodeURIComponent(state);
+      var auth = 'https://nid.naver.com/oauth2.0/authorize?response_type=code'
+        + '&client_id=' + encodeURIComponent(CLIENT)
+        + '&redirect_uri=' + encodeURIComponent(EXEC)
+        + '&state=' + encodeURIComponent(state);
+      var img = new Image();
+      var left = false;
+      function go() {
+        if (left) return;
+        left = true;
+        location.href = auth;
+      }
+      img.onload = go;
+      img.onerror = go;
+      img.src = prep;
+      setTimeout(go, 4000);
+    });
+  </script>
+</body>
+</html>

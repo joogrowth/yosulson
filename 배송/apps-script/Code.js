@@ -12,6 +12,8 @@
  *                   관리자는 대표님 계정을 보고, 수정하고, 삭제할 수 있다. 삭제하면 등록이 다시 열린다.
  *   SHEET_ID       (시트에 묶이지 않은 스크립트일 때만) 데이터 구글시트의 ID
  *   TOKEN_SECRET 은 처음 로그인할 때 자동으로 만들어진다.
+ *   네이버 동의: NAVER_CLIENT_ID, NAVER_CLIENT_SECRET 은 스크립트 속성에만 둔다.
+ *   동의가 끝나면 NAVER_ACCESS_TOKEN, NAVER_REFRESH_TOKEN, NAVER_EXPIRES_AT 가 같은 곳에 저장된다.
  *   관리자 비밀번호를 잊었을 때: 프로젝트 설정 > 스크립트 속성에서 ADMIN_HASH, ADMIN_SALT 를 지우면 등록 화면이 다시 나온다.
  *
  * 시트 구조
@@ -83,7 +85,12 @@ var CALC_KEYS = ['labor11', 'labor12', 'labor13', 'vehicle', 'fuelCost', 'tollTo
 
 // ───────────────────────── 요청 입구 ─────────────────────────
 
-function doGet() {
+var NAVER_EXEC = 'https://script.google.com/macros/s/AKfycbwK1uXP1m0CYyb9cxTiRcDIIQVh3LJcPkWvg45gUn-GBkf7u6j_GGp7lxbGmFRy7goguw/exec';
+
+function doGet(e) {
+  var p = (e && e.parameter) || {};
+  if (p.naver === 'prep') return naverConsentPrep_(p);
+  if (p.naver === 'start' || p.code || p.error) return naverConsentPage_(p);
   return json_({ ok: true, service: 'baesong-estimate' });
 }
 
@@ -100,6 +107,71 @@ function doPost(e) {
 
 function json_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+// 네이버 동의 한 번. 견적 저장 요청은 이 함수를 타지 않는다.
+function naverConsentPage_(p) {
+  try {
+    if (p.naver === 'start' && !p.code) return naverConsentStart_();
+    return naverConsentFinish_(p);
+  } catch (err) {
+    return naverHtml_('동의 저장에 실패했습니다. 링크를 다시 열어 주세요.');
+  }
+}
+
+function naverConsentPrep_(p) {
+  var state = String(p.state || '');
+  if (!/^[A-Za-z0-9]+$/.test(state) || state.length < 8 || state.length > 80) {
+    return naverHtml_('동의 준비가 되지 않았습니다.');
+  }
+  props_().setProperty('NAVER_STATE', state);
+  return ContentService.createTextOutput('ok');
+}
+
+function naverConsentStart_() {
+  return naverHtml_('이 주소에서는 동의할 수 없습니다. 배송 화면의 네이버 동의 페이지를 여세요.');
+}
+
+function naverConsentFinish_(p) {
+  var props = props_();
+  var expected = props.getProperty('NAVER_STATE') || '';
+  props.deleteProperty('NAVER_STATE');
+  if (p.error) return naverHtml_('동의가 취소되었습니다.');
+  if (!p.code || !p.state || !expected || p.state !== expected) return naverHtml_('동의 확인에 실패했습니다. 링크를 다시 열어 주세요.');
+  var id = props.getProperty('NAVER_CLIENT_ID') || '';
+  var secret = props.getProperty('NAVER_CLIENT_SECRET') || '';
+  if (!id || !secret) return naverHtml_('Client ID가 스크립트 속성에 없습니다.');
+  var res = UrlFetchApp.fetch('https://nid.naver.com/oauth2.0/token', {
+    method: 'post',
+    payload: {
+      grant_type: 'authorization_code',
+      client_id: id,
+      client_secret: secret,
+      code: String(p.code),
+      state: String(p.state)
+    },
+    muteHttpExceptions: true
+  });
+  var body = {};
+  try { body = JSON.parse(res.getContentText() || '{}'); } catch (e) { body = {}; }
+  if (!body.access_token || !body.refresh_token) return naverHtml_('동의 저장에 실패했습니다. 링크를 다시 열어 주세요.');
+  props.setProperty('NAVER_ACCESS_TOKEN', String(body.access_token));
+  props.setProperty('NAVER_REFRESH_TOKEN', String(body.refresh_token));
+  var sec = Number(body.expires_in || 3600);
+  if (!sec || sec < 0) sec = 3600;
+  props.setProperty('NAVER_EXPIRES_AT', String(Date.now() + sec * 1000));
+  return naverHtml_('동의되었습니다.');
+}
+
+function naverHtml_(message) {
+  return HtmlService.createHtmlOutput(
+    '<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>배송견적</title></head>'
+    + '<body style="font:16px sans-serif;padding:24px"><p>' + naverEsc_(message) + '</p></body></html>'
+  );
+}
+
+function naverEsc_(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function fail_(code, message) {
