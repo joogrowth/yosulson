@@ -928,13 +928,14 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     back = back || viewList;
     mount(topbar() +
       '<button class="ghost" id="back" type="button" style="align-self:flex-start">← 돌아가기</button>' +
-      '<h1>' + (row ? '견적문의 수정' : '견적문의') + (row ? ' ' + statusChip(row.status) : '') + '</h1>' +
+      '<h1 id="draftTitle">견적문의' + (row ? ' 수정 ' + statusChip(row.status) : '') + '</h1>' +
       '<div class="card">' + draftFormHTML(d) + '</div>' +
-      '<div class="card"><h2>견적문의 글</h2><pre class="msg" id="preview"></pre>' +
+      '<div class="card" id="draftActions"><h2>견적문의 글</h2><pre class="msg" id="preview"></pre>' +
       '<div class="btns"><button class="btn sub" id="copy" type="button">복사</button>' +
-      '<button class="btn sub" id="saveWriting" type="button">작성중 저장</button>' +
-      '<button class="btn" id="saveWait" type="button">견적의뢰</button>' +
-      (row ? '<button class="btn sub" id="delDraft" type="button">삭제</button>' : '') + '</div>' +
+      kakaoShareBtn() + '</div>' +
+      '<div class="btns"><button class="btn sub" id="saveWriting" type="button">작성중 저장</button>' +
+      '<button class="btn" id="saveWait" type="button">견적의뢰</button></div>' +
+      (row ? '<div class="btns"><button class="btn sub" id="delDraft" type="button">삭제</button></div>' : '') +
       '<div id="delDraftBox"></div></div>');
     bindTop();
     var upd = function () {
@@ -952,7 +953,20 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       if (err) { toast(err); return; }
       copyText(draftText(dd));
     });
-    function saveAs(status, btnId, msg) {
+    bindKakaoShare(function () {
+      var dd = readDraft();
+      var err = draftError(dd);
+      if (err) { toast(err); return ''; }
+      return requestShareText(dd);
+    });
+    function showDelete() {
+      if ($('#delDraft')) return;
+      var box = $('#delDraftBox');
+      if (!box) return;
+      box.insertAdjacentHTML('beforebegin', '<div class="btns"><button class="btn sub" id="delDraft" type="button">삭제</button></div>');
+      $('#delDraft').addEventListener('click', function () { confirmDeleteDraft(row, $('#delDraft')); });
+    }
+    function saveAs(status, btnId, msg, stay) {
       var dd = readDraft();
       var err = status === STATUS_WAIT ? draftError(dd) : draftTimeError();
       if (err) { toast(err); return; }
@@ -961,12 +975,19 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       api('saveDraft', { id: row ? row.id : '', draft: dd, status: status }).then(function (res) {
         upsertRow(res.row);
         toast(msg);
+        if (stay) {
+          row = res.row;
+          busy(btn, false);
+          $('#draftTitle').innerHTML = '견적문의 수정 ' + statusChip(row.status);
+          showDelete();
+          return;
+        }
         if (back === viewList) return refresh().then(function () { viewList(); });
         back(res.row);
       }).catch(function (e) { busy(btn, false); fail(e); });
     }
     $('#saveWriting').addEventListener('click', function () { saveAs(STATUS_WRITING, 'saveWriting', '견적작성중으로 저장했습니다'); });
-    $('#saveWait').addEventListener('click', function () { saveAs(STATUS_WAIT, 'saveWait', '견적의뢰로 보냈습니다'); });
+    $('#saveWait').addEventListener('click', function () { saveAs(STATUS_WAIT, 'saveWait', '견적의뢰로 보냈습니다', true); });
     var delBtn = $('#delDraft');
     if (delBtn) delBtn.addEventListener('click', function () { confirmDeleteDraft(row, delBtn); });
   }
