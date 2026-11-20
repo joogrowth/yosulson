@@ -222,7 +222,8 @@ function naverAccess_(props) {
   return String(body.access_token);
 }
 
-// 견적의뢰·견적완료 건을 네이버 캘린더에 넣는다. 같은 번호는 같은 일정을 고친다.
+// 견적의뢰·견적완료 건을 네이버 캘린더에 넣는다.
+// 한 번 올라간 건은 다시 올리지 못한다. 고치려면 캘린더에서 지우고 다시 누른다.
 function naverCalendar_(req) {
   var id = String(req.id || '');
   if (!id) fail_('bad', '건을 지정해 주세요.');
@@ -235,7 +236,9 @@ function naverCalendar_(req) {
   var props = props_();
   var cal = String(props.getProperty('NAVER_CALENDAR_ID') || '');
   if (!cal || cal === 'defaultCalendarId') fail_('naver', '요술손일정 캘린더 번호가 없습니다.');
-  var access = naverAccess_(props);
+  var access;
+  try { access = naverAccess_(props); }
+  catch (e) { fail_('naver', '네이버 연결이 끊겼습니다. 팀장님이 네이버 동의를 다시 해 주세요.'); }
   var res = UrlFetchApp.fetch('https://openapi.naver.com/calendar/createSchedule.json', {
     method: 'post',
     headers: { Authorization: 'Bearer ' + access },
@@ -244,8 +247,45 @@ function naverCalendar_(req) {
   });
   var body = {};
   try { body = JSON.parse(res.getContentText() || '{}'); } catch (e) { body = {}; }
-  if (!body || body.result !== 'success') fail_('naver', '네이버 일정 등록에 실패했습니다.');
+  if (!body || body.result !== 'success') fail_('naver', naverFailText_(res.getResponseCode(), body));
   return { id: id };
+}
+
+// 화면에는 고정 문구만 보여 준다. 네이버가 돌려준 글·번호·토큰은 넣지 않는다.
+function naverFailText_(httpCode, body) {
+  var kind = naverFailKind_(httpCode, body);
+  if (kind === 'auth') return '네이버 연결이 끊겼습니다. 팀장님이 네이버 동의를 다시 해 주세요.';
+  if (kind === 'permission') return '요술손 일정에 넣을 권한이 없습니다.';
+  if (kind === 'missing') return '요술손 일정을 찾지 못했습니다.';
+  if (kind === 'again') return '이미 올라간 건입니다. 캘린더에서 지우고 다시 눌러 주세요.';
+  if (kind === 'later') return '네이버 일정 등록에 실패했습니다. 잠시 뒤에 다시 눌러 주세요.';
+  return '네이버 일정 등록에 실패했습니다. 이미 올라간 건입니다. 캘린더에서 지우고 다시 눌러 주세요.';
+}
+
+// 공개 오류표는 1403 권한, 1404 없는 캘린더, 1500 서버 오류뿐이다.
+// 같은 건을 다시 넣었을 때의 코드는 그 표에 없다. 글에 중복이 보이면 다시 누르기, 아니면 실패 문구에 같이 붙인다.
+function naverFailKind_(httpCode, body) {
+  var code = '';
+  var msg = '';
+  if (body && typeof body === 'object') {
+    code = String(body.errorCode || body.error_code || body.code || '');
+    msg = String(body.message || body.errorMessage || body.error_description || '');
+    if (body.returnValue && typeof body.returnValue === 'string') msg += ' ' + body.returnValue;
+  }
+  code = code.replace(/[^0-9A-Za-z]/g, '').slice(0, 8);
+  msg = msg.replace(/Bearer\s+\S+/gi, ' ').replace(/[A-Za-z0-9_-]{20,}/g, ' ').toLowerCase();
+  var http = Number(httpCode) || 0;
+  if (code === '024' || code === '028' || code === '003' || http === 401 ||
+      msg.indexOf('authentication') >= 0 || msg.indexOf('invalid_token') >= 0 ||
+      msg.indexOf('access token') >= 0 || msg.indexOf('expired') >= 0 ||
+      msg.indexOf('인증') >= 0) return 'auth';
+  if (code === '1403') return 'permission';
+  if (code === '1404' || http === 404) return 'missing';
+  if (code === '1500' || http >= 500) return 'later';
+  if (msg.indexOf('중복') >= 0 || msg.indexOf('duplicate') >= 0 || msg.indexOf('already') >= 0 ||
+      msg.indexOf('동일한') >= 0 || msg.indexOf('이미 존재') >= 0 || msg.indexOf('이미 등록') >= 0 ||
+      msg.indexOf('이미 있') >= 0) return 'again';
+  return 'unknown';
 }
 
 function naverIcal_(row) {
