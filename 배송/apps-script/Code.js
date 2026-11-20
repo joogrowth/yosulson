@@ -152,6 +152,49 @@ function naverTestMine() {
   return text;
 }
 
+// 요술손 일정(26년) 시험 1건. 내 캘린더에는 넣지 않는다.
+function naverTestShare() {
+  var props = props_();
+  var cal = String(props.getProperty('NAVER_CALENDAR_ID') || '');
+  if (!cal || cal === 'defaultCalendarId') throw new Error('요술손일정 캘린더 번호가 없습니다.');
+  var access = naverAccess_(props);
+  var ical = ''
+    + 'BEGIN:VCALENDAR\n'
+    + 'VERSION:2.0\n'
+    + 'PRODID:Naver Calendar\n'
+    + 'CALSCALE:GREGORIAN\n'
+    + 'BEGIN:VTIMEZONE\n'
+    + 'TZID:Asia/Seoul\n'
+    + 'BEGIN:STANDARD\n'
+    + 'DTSTART:19700101T000000\n'
+    + 'TZNAME:GMT+09:00\n'
+    + 'TZOFFSETFROM:+0900\n'
+    + 'TZOFFSETTO:+0900\n'
+    + 'END:STANDARD\n'
+    + 'END:VTIMEZONE\n'
+    + 'BEGIN:VEVENT\n'
+    + 'SEQUENCE:0\n'
+    + 'CLASS:PUBLIC\n'
+    + 'TRANSP:OPAQUE\n'
+    + 'UID:yosulson-test-share-20261121-2310\n'
+    + 'DTSTART;TZID=Asia/Seoul:20261121T231000\n'
+    + 'DTEND;TZID=Asia/Seoul:20261121T232000\n'
+    + 'SUMMARY:[시험] 요술손일정\n'
+    + 'DESCRIPTION:요술손 일정 시험 1건\n'
+    + 'LOCATION:시험\n'
+    + 'END:VEVENT\n'
+    + 'END:VCALENDAR';
+  var res = UrlFetchApp.fetch('https://openapi.naver.com/calendar/createSchedule.json', {
+    method: 'post',
+    headers: { Authorization: 'Bearer ' + access },
+    payload: { calendarId: cal, scheduleIcalString: ical },
+    muteHttpExceptions: true
+  });
+  var text = res.getContentText();
+  Logger.log(text);
+  return text;
+}
+
 function naverAccess_(props) {
   var exp = Number(props.getProperty('NAVER_EXPIRES_AT') || 0);
   var access = props.getProperty('NAVER_ACCESS_TOKEN') || '';
