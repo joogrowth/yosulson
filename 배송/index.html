@@ -214,10 +214,11 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     return done;
   }
   function writeClipboard(text) {
+    var legacy = execCopy(text);
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      return navigator.clipboard.writeText(text).then(function () { return true; }, function () { return execCopy(text); });
+      return navigator.clipboard.writeText(text).then(function () { return true; }, function () { return legacy; });
     }
-    return Promise.resolve(execCopy(text));
+    return Promise.resolve(legacy);
   }
   function openShare(text) {
     var pending;
@@ -1177,7 +1178,13 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       if (!r) { toast(specError(readSpecs()) || draftError(readDraft()) || '제원을 먼저 입력해 주세요.'); return; }
       copyText(r.text);
     });
-    bindKakaoShare(function () { return requestShareText(readDraft()); });
+    bindKakaoShare(function () {
+      if (canonStatus(row.status) === STATUS_DONE) {
+        var done = recompute();
+        return (done && done.text) || row.text || '';
+      }
+      return requestShareText(readDraft());
+    });
     bindNaverCal(function () { return row.id; });
     // 대기 화면: 문의(작성중)로 돌리기 / 완료에서 수정 중: 대기로 돌리기. 문의·제원 값은 남긴다.
     $('#midStatus').addEventListener('click', function () {
