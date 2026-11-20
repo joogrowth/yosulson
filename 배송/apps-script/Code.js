@@ -109,6 +109,73 @@ function json_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
+function naverTestMine() {
+  var props = props_();
+  var access = naverAccess_(props);
+  var ical = ''
+    + 'BEGIN:VCALENDAR\n'
+    + 'VERSION:2.0\n'
+    + 'PRODID:Naver Calendar\n'
+    + 'CALSCALE:GREGORIAN\n'
+    + 'BEGIN:VTIMEZONE\n'
+    + 'TZID:Asia/Seoul\n'
+    + 'BEGIN:STANDARD\n'
+    + 'DTSTART:19700101T000000\n'
+    + 'TZNAME:GMT+09:00\n'
+    + 'TZOFFSETFROM:+0900\n'
+    + 'TZOFFSETTO:+0900\n'
+    + 'END:STANDARD\n'
+    + 'END:VTIMEZONE\n'
+    + 'BEGIN:VEVENT\n'
+    + 'SEQUENCE:0\n'
+    + 'CLASS:PUBLIC\n'
+    + 'TRANSP:OPAQUE\n'
+    + 'UID:yosulson-test-20261121-1000\n'
+    + 'DTSTART;TZID=Asia/Seoul:20261121T100000\n'
+    + 'DTEND;TZID=Asia/Seoul:20261121T103000\n'
+    + 'SUMMARY:[시험] 배송견적\n'
+    + 'DESCRIPTION:내 캘린더 시험 1건\n'
+    + 'LOCATION:시험\n'
+    + 'END:VEVENT\n'
+    + 'END:VCALENDAR';
+  var res = UrlFetchApp.fetch('https://openapi.naver.com/calendar/createSchedule.json', {
+    method: 'post',
+    headers: { Authorization: 'Bearer ' + access },
+    payload: { calendarId: 'defaultCalendarId', scheduleIcalString: ical },
+    muteHttpExceptions: true
+  });
+  var text = res.getContentText();
+  Logger.log(text);
+  return text;
+}
+
+function naverAccess_(props) {
+  var exp = Number(props.getProperty('NAVER_EXPIRES_AT') || 0);
+  var access = props.getProperty('NAVER_ACCESS_TOKEN') || '';
+  if (access && exp > Date.now() + 60000) return access;
+  var id = props.getProperty('NAVER_CLIENT_ID') || '';
+  var secret = props.getProperty('NAVER_CLIENT_SECRET') || '';
+  var refresh = props.getProperty('NAVER_REFRESH_TOKEN') || '';
+  if (!id || !secret || !refresh) throw new Error('토큰이 없습니다.');
+  var res = UrlFetchApp.fetch('https://nid.naver.com/oauth2.0/token', {
+    method: 'post',
+    payload: {
+      grant_type: 'refresh_token',
+      client_id: id,
+      client_secret: secret,
+      refresh_token: refresh
+    },
+    muteHttpExceptions: true
+  });
+  var body = JSON.parse(res.getContentText() || '{}');
+  if (!body.access_token) throw new Error('토큰 갱신 실패');
+  props.setProperty('NAVER_ACCESS_TOKEN', String(body.access_token));
+  if (body.refresh_token) props.setProperty('NAVER_REFRESH_TOKEN', String(body.refresh_token));
+  var sec = Number(body.expires_in || 3600);
+  props.setProperty('NAVER_EXPIRES_AT', String(Date.now() + sec * 1000));
+  return String(body.access_token);
+}
+
 // 네이버 동의 한 번. 견적 저장 요청은 이 함수를 타지 않는다.
 function naverConsentPage_(p) {
   try {
