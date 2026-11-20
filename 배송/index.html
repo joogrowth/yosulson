@@ -166,7 +166,6 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { t.className = ''; }, 2800);
   }
-  var PAGE_URL = 'https://joogrowth.github.io/yosulson/배송/';
   function shareReady() {
     return !!(navigator.share);
   }
@@ -174,8 +173,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     return shareReady() ? '<button class="btn sub" id="kakaoShare" type="button">카톡 공유</button>' : '';
   }
   function requestShareText(d) {
-    var body = draftText(d).replace(/\n+$/, '');
-    return body ? body + '\n\n' + PAGE_URL : PAGE_URL;
+    return draftText(d).replace(/\n+$/, '');
   }
   function isHandheld() {
     var ua = navigator.userAgent || '';
@@ -931,10 +929,10 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<h1 id="draftTitle">견적문의' + (row ? ' 수정 ' + statusChip(row.status) : '') + '</h1>' +
       '<div class="card">' + draftFormHTML(d) + '</div>' +
       '<div class="card" id="draftActions"><h2>견적문의 글</h2><pre class="msg" id="preview"></pre>' +
-      '<div class="btns"><button class="btn sub" id="copy" type="button">복사</button>' +
-      kakaoShareBtn() + '</div>' +
       '<div class="btns"><button class="btn sub" id="saveWriting" type="button">작성중 저장</button>' +
       '<button class="btn" id="saveWait" type="button">견적의뢰</button></div>' +
+      '<div class="btns"><button class="btn sub" id="copy" type="button">복사</button>' +
+      kakaoShareBtn() + '</div>' +
       (row ? '<div class="btns"><button class="btn sub" id="delDraft" type="button">삭제</button></div>' : '') +
       '<div id="delDraftBox"></div></div>');
     bindTop();
@@ -1100,12 +1098,15 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<input id="pq" type="search" placeholder="이름 또는 전화번호" autocomplete="off">' +
       '<div class="past" id="past"></div></div>' +
       '<div class="card"><h2>최종 견적 글</h2><pre class="msg" id="finalPre"></pre>' +
-      '<div class="btns' + (canonStatus(row.status) === STATUS_WAIT && shareReady() ? ' sharebtns' : '') + '"><button class="btn sub" id="copy" type="button">복사</button>' +
-      (canonStatus(row.status) === STATUS_WAIT ? kakaoShareBtn() : '') +
-      (row.status === STATUS_DONE
-        ? '<button class="btn sub" id="midStatus" type="button">의뢰로</button>'
-        : '<button class="btn sub" id="midStatus" type="button">문의로 돌리기</button>') +
-      '<button class="btn" id="save" type="button">완료</button></div></div>');
+      (canonStatus(row.status) === STATUS_WAIT
+        ? '<div class="btns"><button class="btn sub" id="midStatus" type="button">문의로 돌리기</button>' +
+          '<button class="btn" id="save" type="button">완료</button></div>' +
+          '<div class="btns"><button class="btn sub" id="copy" type="button">복사</button>' +
+          kakaoShareBtn() + '</div>'
+        : '<div class="btns"><button class="btn sub" id="copy" type="button">복사</button>' +
+          '<button class="btn sub" id="midStatus" type="button">의뢰로</button>' +
+          '<button class="btn" id="save" type="button">완료</button></div>') +
+      '</div>');
     bindTop();
     initDur('go', row.goMin || 0);
     initDur('back', row.backMin || 0);
