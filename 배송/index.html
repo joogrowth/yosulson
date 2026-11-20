@@ -172,6 +172,23 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
   function kakaoShareBtn() {
     return shareReady() ? '<button class="btn sub" id="kakaoShare" type="button">카톡 공유</button>' : '';
   }
+  function naverCalBtn(show) {
+    return '<div class="btns" id="naverCalRow"' + (show ? '' : ' hidden') + '><button class="btn sub" id="naverCal" type="button">네이버 캘린더 등록</button></div>';
+  }
+  function bindNaverCal(getId) {
+    var btn = $('#naverCal');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var id = '';
+      try { id = getId() || ''; } catch (e) { id = ''; }
+      if (!id) { toast('먼저 저장해 주세요.'); return; }
+      busy(btn, true, '등록 중…');
+      api('naverCalendar', { id: id }).then(function (res) {
+        busy(btn, false);
+        toast(res && res.demo ? '미리보기라 네이버에는 들어가지 않습니다.' : '네이버 캘린더에 넣었습니다.');
+      }).catch(function (e) { busy(btn, false); fail(e); });
+    });
+  }
   function requestShareText(d) {
     return draftText(d).replace(/\n+$/, '');
   }
@@ -569,6 +586,14 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       out.row = demoView(rs);
       return out;
     }
+    if (b.action === 'naverCalendar') {
+      var nr = rows.filter(function (x) { return x.id === b.id; })[0];
+      if (!nr) return bad('notfound', '해당 건을 찾을 수 없습니다.');
+      if (canonStatus(nr.status) !== STATUS_WAIT && nr.status !== STATUS_DONE) return bad('bad', '견적의뢰 또는 견적완료에서만 넣을 수 있습니다.');
+      if (!nr.date) return bad('bad', '날짜를 먼저 적어 주세요.');
+      out.demo = true;
+      return out;
+    }
     return bad('bad', '알 수 없는 요청입니다.');
   }
 
@@ -933,6 +958,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<button class="btn" id="saveWait" type="button">견적의뢰</button></div>' +
       '<div class="btns"><button class="btn sub" id="copy" type="button">복사</button>' +
       kakaoShareBtn() + '</div>' +
+      naverCalBtn(row && canonStatus(row.status) === STATUS_WAIT) +
       (row ? '<div class="btns"><button class="btn sub" id="delDraft" type="button">삭제</button></div>' : '') +
       '<div id="delDraftBox"></div></div>');
     bindTop();
@@ -978,6 +1004,10 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
           busy(btn, false);
           $('#draftTitle').innerHTML = '견적문의 수정 ' + statusChip(row.status);
           showDelete();
+          if (canonStatus(row.status) === STATUS_WAIT) {
+            var nrow = $('#naverCalRow');
+            if (nrow) nrow.hidden = false;
+          }
           return;
         }
         if (back === viewList) return refresh().then(function () { viewList(); });
@@ -986,6 +1016,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     }
     $('#saveWriting').addEventListener('click', function () { saveAs(STATUS_WRITING, 'saveWriting', '견적작성중으로 저장했습니다'); });
     $('#saveWait').addEventListener('click', function () { saveAs(STATUS_WAIT, 'saveWait', '견적의뢰로 보냈습니다', true); });
+    bindNaverCal(function () { return row && row.id; });
     var delBtn = $('#delDraft');
     if (delBtn) delBtn.addEventListener('click', function () { confirmDeleteDraft(row, delBtn); });
   }
@@ -1003,6 +1034,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<button class="btn sub" id="delDraft" type="button">삭제</button></div>' +
       '<div class="btns"><button class="btn sub" id="toWait" type="button">견적의뢰로</button>' +
       '<button class="btn sub" id="toWriting" type="button">작성중으로</button></div>' +
+      naverCalBtn(true) +
       '<div id="delDraftBox"></div></div>');
     bindTop();
     $('#finalPre').textContent = r.text || '';
@@ -1022,6 +1054,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     $('#toWait').addEventListener('click', function () { revert(STATUS_WAIT, 'toWait', '견적의뢰로 되돌렸습니다'); });
     $('#toWriting').addEventListener('click', function () { revert(STATUS_WRITING, 'toWriting', '견적작성중으로 되돌렸습니다'); });
     $('#delDraft').addEventListener('click', function () { confirmDeleteDraft(r, $('#delDraft')); });
+    bindNaverCal(function () { return r.id; });
   }
 
   /* ───────── 팀장님: 제원 입력 ───────── */
@@ -1102,10 +1135,12 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
         ? '<div class="btns"><button class="btn sub" id="midStatus" type="button">문의로 돌리기</button>' +
           '<button class="btn" id="save" type="button">완료</button></div>' +
           '<div class="btns"><button class="btn sub" id="copy" type="button">복사</button>' +
-          kakaoShareBtn() + '</div>'
+          kakaoShareBtn() + '</div>' +
+          naverCalBtn(true)
         : '<div class="btns"><button class="btn sub" id="copy" type="button">복사</button>' +
           '<button class="btn sub" id="midStatus" type="button">의뢰로</button>' +
-          '<button class="btn" id="save" type="button">완료</button></div>') +
+          '<button class="btn" id="save" type="button">완료</button></div>' +
+          naverCalBtn(true)) +
       '</div>');
     bindTop();
     initDur('go', row.goMin || 0);
@@ -1143,6 +1178,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       copyText(r.text);
     });
     bindKakaoShare(function () { return requestShareText(readDraft()); });
+    bindNaverCal(function () { return row.id; });
     // 대기 화면: 문의(작성중)로 돌리기 / 완료에서 수정 중: 대기로 돌리기. 문의·제원 값은 남긴다.
     $('#midStatus').addEventListener('click', function () {
       var dd = readDraft();

@@ -14,6 +14,8 @@
  *   TOKEN_SECRET 은 처음 로그인할 때 자동으로 만들어진다.
  *   네이버 동의: NAVER_CLIENT_ID, NAVER_CLIENT_SECRET 은 스크립트 속성에만 둔다.
  *   동의가 끝나면 NAVER_ACCESS_TOKEN, NAVER_REFRESH_TOKEN, NAVER_EXPIRES_AT 가 같은 곳에 저장된다.
+ *   견적의뢰·견적완료의 네이버 버튼은 대표님·팀장님 모두 누른다. 대표님은 네이버에 로그인하지 않는다.
+ *   일정은 요술손일정(26년)에만 넣는다. 캘린더 번호는 스크립트 속성 NAVER_CALENDAR_ID. 없거나 내 캘린더 값이면 넣지 않는다.
  *   관리자 비밀번호를 잊었을 때: 프로젝트 설정 > 스크립트 속성에서 ADMIN_HASH, ADMIN_SALT 를 지우면 등록 화면이 다시 나온다.
  *
  * 시트 구조
@@ -109,6 +111,7 @@ function json_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
+// 내 캘린더 시험 1건. 화면 버튼은 이 함수를 쓰지 않는다.
 function naverTestMine() {
   var props = props_();
   var access = naverAccess_(props);
@@ -149,6 +152,49 @@ function naverTestMine() {
   return text;
 }
 
+// 요술손 일정(26년) 시험 1건. 내 캘린더에는 넣지 않는다.
+function naverTestShare() {
+  var props = props_();
+  var cal = String(props.getProperty('NAVER_CALENDAR_ID') || '');
+  if (!cal || cal === 'defaultCalendarId') throw new Error('요술손일정 캘린더 번호가 없습니다.');
+  var access = naverAccess_(props);
+  var ical = ''
+    + 'BEGIN:VCALENDAR\n'
+    + 'VERSION:2.0\n'
+    + 'PRODID:Naver Calendar\n'
+    + 'CALSCALE:GREGORIAN\n'
+    + 'BEGIN:VTIMEZONE\n'
+    + 'TZID:Asia/Seoul\n'
+    + 'BEGIN:STANDARD\n'
+    + 'DTSTART:19700101T000000\n'
+    + 'TZNAME:GMT+09:00\n'
+    + 'TZOFFSETFROM:+0900\n'
+    + 'TZOFFSETTO:+0900\n'
+    + 'END:STANDARD\n'
+    + 'END:VTIMEZONE\n'
+    + 'BEGIN:VEVENT\n'
+    + 'SEQUENCE:0\n'
+    + 'CLASS:PUBLIC\n'
+    + 'TRANSP:OPAQUE\n'
+    + 'UID:yosulson-test-share-20261121-2310\n'
+    + 'DTSTART;TZID=Asia/Seoul:20261121T231000\n'
+    + 'DTEND;TZID=Asia/Seoul:20261121T232000\n'
+    + 'SUMMARY:[시험] 요술손일정\n'
+    + 'DESCRIPTION:요술손 일정 시험 1건\n'
+    + 'LOCATION:시험\n'
+    + 'END:VEVENT\n'
+    + 'END:VCALENDAR';
+  var res = UrlFetchApp.fetch('https://openapi.naver.com/calendar/createSchedule.json', {
+    method: 'post',
+    headers: { Authorization: 'Bearer ' + access },
+    payload: { calendarId: cal, scheduleIcalString: ical },
+    muteHttpExceptions: true
+  });
+  var text = res.getContentText();
+  Logger.log(text);
+  return text;
+}
+
 function naverAccess_(props) {
   var exp = Number(props.getProperty('NAVER_EXPIRES_AT') || 0);
   var access = props.getProperty('NAVER_ACCESS_TOKEN') || '';
@@ -174,6 +220,132 @@ function naverAccess_(props) {
   var sec = Number(body.expires_in || 3600);
   props.setProperty('NAVER_EXPIRES_AT', String(Date.now() + sec * 1000));
   return String(body.access_token);
+}
+
+// 견적의뢰·견적완료 건을 네이버 캘린더에 넣는다. 같은 번호는 같은 일정을 고친다.
+function naverCalendar_(req) {
+  var id = String(req.id || '');
+  if (!id) fail_('bad', '건을 지정해 주세요.');
+  var loc = findRow_(id);
+  if (!loc) fail_('notfound', '해당 건을 찾을 수 없습니다.');
+  var row = loc.obj;
+  var st = canonStatus_(row.status);
+  if (st !== STATUS_WAIT && st !== STATUS_DONE) fail_('bad', '견적의뢰 또는 견적완료에서만 넣을 수 있습니다.');
+  if (!row.date || !/^\d{4}-\d{2}-\d{2}$/.test(String(row.date))) fail_('bad', '날짜를 먼저 적어 주세요.');
+  var props = props_();
+  var cal = String(props.getProperty('NAVER_CALENDAR_ID') || '');
+  if (!cal || cal === 'defaultCalendarId') fail_('naver', '요술손일정 캘린더 번호가 없습니다.');
+  var access = naverAccess_(props);
+  var res = UrlFetchApp.fetch('https://openapi.naver.com/calendar/createSchedule.json', {
+    method: 'post',
+    headers: { Authorization: 'Bearer ' + access },
+    payload: { calendarId: cal, scheduleIcalString: naverIcal_(row) },
+    muteHttpExceptions: true
+  });
+  var body = {};
+  try { body = JSON.parse(res.getContentText() || '{}'); } catch (e) { body = {}; }
+  if (!body || body.result !== 'success') fail_('naver', '네이버 일정 등록에 실패했습니다.');
+  return { id: id };
+}
+
+function naverIcal_(row) {
+  var uid = 'yosulson-' + String(row.id).replace(/[^A-Za-z0-9-]/g, '');
+  var ymd = String(row.date).replace(/-/g, '');
+  var span = naverSpan_(row);
+  var when = span
+    ? 'DTSTART;TZID=Asia/Seoul:' + naverStamp_(ymd, span.start) + '\n' + 'DTEND;TZID=Asia/Seoul:' + naverStamp_(ymd, span.end) + '\n'
+    : 'DTSTART;VALUE=DATE:' + ymd + '\n' + 'DTEND;VALUE=DATE:' + naverNextDay_(ymd) + '\n';
+  return ''
+    + 'BEGIN:VCALENDAR\n'
+    + 'VERSION:2.0\n'
+    + 'PRODID:Naver Calendar\n'
+    + 'CALSCALE:GREGORIAN\n'
+    + 'BEGIN:VTIMEZONE\n'
+    + 'TZID:Asia/Seoul\n'
+    + 'BEGIN:STANDARD\n'
+    + 'DTSTART:19700101T000000\n'
+    + 'TZNAME:GMT+09:00\n'
+    + 'TZOFFSETFROM:+0900\n'
+    + 'TZOFFSETTO:+0900\n'
+    + 'END:STANDARD\n'
+    + 'END:VTIMEZONE\n'
+    + 'BEGIN:VEVENT\n'
+    + 'SEQUENCE:0\n'
+    + 'CLASS:PUBLIC\n'
+    + 'TRANSP:OPAQUE\n'
+    + 'UID:' + uid + '\n'
+    + when
+    + 'SUMMARY:' + naverEscIcal_(naverTitle_(row)) + '\n'
+    + 'DESCRIPTION:' + naverEscIcal_(naverDesc_(row)) + '\n'
+    + 'LOCATION:' + naverEscIcal_(naverPlace_(row)) + '\n'
+    + 'END:VEVENT\n'
+    + 'END:VCALENDAR';
+}
+
+function naverTitle_(row) {
+  var typePart = row.type ? '[' + (row.sang === '예' ? '상담' : '') + row.type + '] ' : '';
+  return typePart + (row.name || '(이름 없음)') + (row.org ? ' / ' + row.org : '');
+}
+
+function naverPlace_(row) {
+  return String(row.place || '').split('\n')[0].trim();
+}
+
+function naverDesc_(row) {
+  // 캘린더에는 견적문의 내용만 넣는다. 견적완료여도 출발 시각만 더한다.
+  // 최종 견적 글과 금액은 넣지 않는다. 그 글은 화면의 복사·카톡에만 있다.
+  var L = [String(row.status || '') + ' ' + String(row.id || '')];
+  if (row.depart) L.push('출발 ' + row.depart);
+  if (row.arrive) L.push('도착 ' + row.arrive);
+  if (row.eventTime) L.push('행사시간 ' + row.eventTime);
+  var who = [row.contactName, row.phone].filter(Boolean).join(' ');
+  if (who) L.push('담당자 ' + who);
+  if (row.notes) L.push(String(row.notes).slice(0, 500));
+  return L.join('\n');
+}
+
+function naverSpan_(row) {
+  var points = [];
+  [row.depart, row.arrive, row.eventTime].forEach(function (s) {
+    String(s || '').split(' ~ ').forEach(function (part) {
+      var m = /^(\d{1,2}):(\d{2})$/.exec(String(part || '').trim());
+      if (!m) return;
+      var min = Number(m[1]) * 60 + Number(m[2]);
+      if (min >= 0 && min < 24 * 60) points.push(min);
+    });
+  });
+  if (!points.length) return null;
+  var start = Math.min.apply(null, points);
+  var end = Math.max.apply(null, points);
+  if (end <= start) end = start + 30;
+  if (end >= 24 * 60) end = 24 * 60 - 1;
+  if (end <= start) return null;
+  return { start: start, end: end };
+}
+
+function naverStamp_(ymd, min) {
+  var h = Math.floor(min / 60);
+  var m = min % 60;
+  if (h >= 24) { h = 23; m = 59; }
+  function p(n) { return (n < 10 ? '0' : '') + n; }
+  return ymd + 'T' + p(h) + p(m) + '00';
+}
+
+function naverNextDay_(ymd) {
+  var y = Number(ymd.slice(0, 4));
+  var mo = Number(ymd.slice(4, 6));
+  var d = Number(ymd.slice(6, 8));
+  var dt = new Date(Date.UTC(y, mo - 1, d + 1));
+  function p(n) { return (n < 10 ? '0' : '') + n; }
+  return dt.getUTCFullYear() + p(dt.getUTCMonth() + 1) + p(dt.getUTCDate());
+}
+
+function naverEscIcal_(s) {
+  return String(s || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/\r\n|\n|\r/g, '\\n')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,');
 }
 
 // 네이버 동의 한 번. 견적 저장 요청은 이 함수를 타지 않는다.
@@ -265,6 +437,7 @@ function handle_(req) {
   else if (action === 'deleteDraft') out = deleteDraft_(role, req);
   else if (action === 'finalize') out = finalize_(req);
   else if (action === 'setStatus') out = setStatus_(req);
+  else if (action === 'naverCalendar') out = naverCalendar_(req);
   else if (action === 'ownerAccount') {
     requireAdmin_(role);
     out = { account: ownerAccount_() };
