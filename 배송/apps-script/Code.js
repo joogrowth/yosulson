@@ -251,10 +251,7 @@ function naverCalendar_(req) {
 function naverIcal_(row) {
   var uid = 'yosulson-' + String(row.id).replace(/[^A-Za-z0-9-]/g, '');
   var ymd = String(row.date).replace(/-/g, '');
-  var span = naverSpan_(row);
-  var when = span
-    ? 'DTSTART;TZID=Asia/Seoul:' + naverStamp_(ymd, span.start) + '\n' + 'DTEND;TZID=Asia/Seoul:' + naverStamp_(ymd, span.end) + '\n'
-    : 'DTSTART;VALUE=DATE:' + ymd + '\n' + 'DTEND;VALUE=DATE:' + naverNextDay_(ymd) + '\n';
+  // 제목란에만 글을 넣는다. 시간·장소·메모 칸은 쓰지 않는다. 날짜만 잡아 일정이 그날에 있게 한다.
   return ''
     + 'BEGIN:VCALENDAR\n'
     + 'VERSION:2.0\n'
@@ -274,10 +271,9 @@ function naverIcal_(row) {
     + 'CLASS:PUBLIC\n'
     + 'TRANSP:OPAQUE\n'
     + 'UID:' + uid + '\n'
-    + when
-    + 'SUMMARY:' + naverEscIcal_(naverTitle_(row)) + '\n'
-    + 'DESCRIPTION:' + naverEscIcal_(naverDesc_(row)) + '\n'
-    + 'LOCATION:' + naverEscIcal_(naverPlace_(row)) + '\n'
+    + 'DTSTART;VALUE=DATE:' + ymd + '\n'
+    + 'DTEND;VALUE=DATE:' + naverNextDay_(ymd) + '\n'
+    + 'SUMMARY:' + naverEscIcal_(naverTitleText_(row)) + '\n'
     + 'END:VEVENT\n'
     + 'END:VCALENDAR';
 }
@@ -285,6 +281,38 @@ function naverIcal_(row) {
 function naverTitle_(row) {
   var typePart = row.type ? '[' + (row.sang === '예' ? '상담' : '') + row.type + '] ' : '';
   return typePart + (row.name || '(이름 없음)') + (row.org ? ' / ' + row.org : '');
+}
+
+function naverDateLabel_(iso) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+  if (!m) return '미정';
+  var dt = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  var wd = ['일', '월', '화', '수', '목', '금', '토'][dt.getUTCDay()];
+  return m[1].slice(2) + '.' + m[2] + '.' + m[3] + '(' + wd + ')';
+}
+
+function naverWho_(row) {
+  if (row.contactName) return row.contactName + ' (' + (row.phone || '연락처 확인중') + ')';
+  return row.phone || '';
+}
+
+// 제목란에 붙이는 글. 금액은 넣지 않는다.
+function naverTitleText_(row) {
+  var L = [];
+  L.push(naverTitle_(row));
+  L.push('일자: ' + naverDateLabel_(row.date));
+  L.push('');
+  L.push('출발: ' + (row.depart || ''));
+  if (row.arrive) L.push('도착: ' + row.arrive);
+  if (row.eventTime) L.push('행사시간: ' + row.eventTime);
+  L.push('');
+  if (row.place) {
+    L.push('장소: ' + String(row.place).replace(/^\s+/, ''));
+    L.push('');
+  }
+  var who = naverWho_(row);
+  if (who) L.push('담당자: ' + who);
+  return L.join('\n').replace(/\n+$/, '');
 }
 
 function naverPlace_(row) {
