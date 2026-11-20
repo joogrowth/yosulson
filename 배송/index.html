@@ -184,22 +184,31 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     try { if (navigator.userAgentData && navigator.userAgentData.mobile) return true; } catch (e) { /* 구형 브라우저 */ }
     return false;
   }
-  function copyNow(text) {
+  function execCopy(text) {
     var ta = document.createElement('textarea');
     ta.value = text;
     ta.setAttribute('readonly', '');
-    ta.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;padding:0;border:0;opacity:0';
+    ta.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;padding:0;border:0;outline:0;box-shadow:none;opacity:0';
     document.body.appendChild(ta);
     ta.focus();
     ta.select();
-    ta.setSelectionRange(0, text.length);
+    try { ta.setSelectionRange(0, text.length); } catch (e) { /* 일부 브라우저는 범위 선택을 막는다 */ }
     var done = false;
-    try { done = document.execCommand('copy'); } catch (e) { done = false; }
+    try { done = document.execCommand('copy'); } catch (e2) { done = false; }
     document.body.removeChild(ta);
-    if (!done && navigator.clipboard && navigator.clipboard.writeText) {
-      try { navigator.clipboard.writeText(text).catch(function () {}); } catch (e2) { /* 공유창은 그대로 연다 */ }
-    }
     return done;
+  }
+  function writeClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).then(function () { return true; }, function () { return execCopy(text); });
+    }
+    return Promise.resolve(execCopy(text));
+  }
+  function openShare(text) {
+    var pending;
+    try { pending = navigator.share({ text: text }); }
+    catch (e) { return; }
+    if (pending && pending.catch) pending.catch(function () { /* 취소·실패는 조용히 넘어간다 */ });
   }
   function bindKakaoShare(getText) {
     var btn = $('#kakaoShare');
@@ -208,11 +217,12 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       var text = '';
       try { text = getText() || ''; } catch (e) { return; }
       if (!text) return;
-      if (!isHandheld()) copyNow(text);
-      var pending;
-      try { pending = navigator.share({ text: text }); }
-      catch (e) { return; }
-      if (pending && pending.catch) pending.catch(function () { /* 취소·실패는 조용히 넘어간다 */ });
+      if (isHandheld()) { openShare(text); return; }
+      writeClipboard(text).then(function (ok) {
+        if (!ok) return;
+        toast('지금 글을 복사했습니다. 카톡에 붙여넣기 하세요.');
+        openShare(text);
+      });
     });
   }
   function copyText(text) {
