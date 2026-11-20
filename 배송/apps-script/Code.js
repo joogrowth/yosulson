@@ -89,6 +89,7 @@ var NAVER_EXEC = 'https://script.google.com/macros/s/AKfycbwK1uXP1m0CYyb9cxTiRcD
 
 function doGet(e) {
   var p = (e && e.parameter) || {};
+  if (p.naver === 'prep') return naverConsentPrep_(p);
   if (p.naver === 'start' || p.code || p.error) return naverConsentPage_(p);
   return json_({ ok: true, service: 'baesong-estimate' });
 }
@@ -118,17 +119,17 @@ function naverConsentPage_(p) {
   }
 }
 
+function naverConsentPrep_(p) {
+  var state = String(p.state || '');
+  if (!/^[A-Za-z0-9]+$/.test(state) || state.length < 8 || state.length > 80) {
+    return naverHtml_('동의 준비가 되지 않았습니다.');
+  }
+  props_().setProperty('NAVER_STATE', state);
+  return ContentService.createTextOutput('ok');
+}
+
 function naverConsentStart_() {
-  var props = props_();
-  var id = props.getProperty('NAVER_CLIENT_ID') || '';
-  if (!id || !props.getProperty('NAVER_CLIENT_SECRET')) return naverHtml_('Client ID가 스크립트 속성에 없습니다.');
-  var state = Utilities.getUuid().replace(/-/g, '');
-  props.setProperty('NAVER_STATE', state);
-  var url = 'https://nid.naver.com/oauth2.0/authorize?response_type=code'
-    + '&client_id=' + encodeURIComponent(id)
-    + '&redirect_uri=' + encodeURIComponent(NAVER_EXEC)
-    + '&state=' + encodeURIComponent(state);
-  return naverGo_(url);
+  return naverHtml_('이 주소에서는 동의할 수 없습니다. 배송 화면의 네이버 동의 페이지를 여세요.');
 }
 
 function naverConsentFinish_(p) {
@@ -160,16 +161,6 @@ function naverConsentFinish_(p) {
   if (!sec || sec < 0) sec = 3600;
   props.setProperty('NAVER_EXPIRES_AT', String(Date.now() + sec * 1000));
   return naverHtml_('동의되었습니다.');
-}
-
-function naverGo_(url) {
-  var esc = naverEsc_(url).replace(/"/g, '&quot;');
-  return HtmlService.createHtmlOutput(
-    '<!doctype html><html lang="ko"><head><meta charset="utf-8">'
-    + '<meta http-equiv="refresh" content="0;url=' + esc + '">'
-    + '<title>네이버 동의</title></head><body style="font:16px sans-serif;padding:24px">'
-    + '<p><a href="' + esc + '">네이버 동의 화면으로 이동</a></p></body></html>'
-  );
 }
 
 function naverHtml_(message) {
