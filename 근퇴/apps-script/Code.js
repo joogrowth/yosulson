@@ -878,12 +878,7 @@ function saveDayUnlocked(name, password, subjectName, dateText, day) {
       return { ok: false, message: "날짜를 확인해 주세요." };
     }
     var clean = sortDay(day);
-    var values = readReadyValues(date);
-    var next = mergeDayRows(values, subject.name, date, rowsFromDay(subject.name, date, clean));
-    writeWorkValues(next, date);
-    cachePut("tidy:" + workNames(date).sheet, "1", 300);
-    noteLastMove(actor.name);
-    syncAttendance(date, subject.name, next);
+    writePersonDay(date, subject.name, date, rowsFromDay(subject.name, date, clean));
     return {
       ok: true,
       name: subject.name,
@@ -898,15 +893,11 @@ function saveDayUnlocked(name, password, subjectName, dateText, day) {
 
 function requireActor(name, password) {
   prepareBase();
-  var person = findPerson(name);
-  if (!person) {
+  var person = peopleAuthMap()[cleanLabel(name)];
+  if (!person || !person.password || person.password !== passwordText(password)) {
     return null;
   }
-  var saved = savedPassword(person.name);
-  if (!saved || saved !== passwordText(password)) {
-    return null;
-  }
-  return person;
+  return { name: person.name, role: person.role || "직원" };
 }
 
 function resolveSubject(actor, subjectName) {
@@ -1088,6 +1079,14 @@ function columnList(sheetName) {
 function workSheet(dateText) {
   var names = workNames(dateText);
   var book = sheetBook();
+  var readyKey = "sheetReady:" + names.sheet;
+  var styleCacheKey = "workStyle:" + names.sheet;
+  if (cacheGet(readyKey) === "1" && cacheGet(styleCacheKey) === "1") {
+    var readySheet = book.getSheetByName(names.sheet);
+    if (readySheet) {
+      return readySheet;
+    }
+  }
   var sheet = book.getSheetByName(names.sheet);
   var created = false;
   if (!sheet) {
@@ -1114,7 +1113,8 @@ function workSheet(dateText) {
     applyWorkStyle(sheet, names.title);
     props.setProperty(styleKey, "lines-v1");
   }
-  cachePut("sheetReady:" + names.sheet, "1", 300);
+  cachePut(readyKey, "1", 300);
+  cachePut(styleCacheKey, "1", 300);
   return sheet;
 }
 
@@ -1311,26 +1311,104 @@ function paintExistingRows(sheet) {
   paintWorkRows(sheet, values);
 }
 
-function writeWorkValues(values, dateText) {
+function personDaySpans(labels, name, date, startRow) {
+  var spans = [];
+  var inside = false;
+  var spanStart = 0;
+  for (var i = 0; i < labels.length; i++) {
+    var rowName = String(labels[i][0] || "").trim();
+    var sheetRow = startRow + i;
+    if (rowName) {
+      if (inside) {
+        spans.push([spanStart, sheetRow - 1]);
+        inside = false;
+      }
+      if (rowName === name && dateCellToText(labels[i][1]) === date) {
+        inside = true;
+        spanStart = sheetRow;
+      }
+    }
+  }
+  if (inside) {
+    spans.push([spanStart, startRow + labels.length - 1]);
+  }
+  return spans;
+}
+
+function writePersonDay(dateText, name, date, bodyRows) {
   var sheet = workSheet(dateText);
   var width = WORK_WIDTH;
   var headerRow = 2;
-  sheet.getRange(headerRow, 1, 1, width).setValues([WORK_HEADER.slice()]);
-  sheet.getRange(headerRow, 1, 1, width).setNumberFormat("@");
+  var rows = [];
+  for (var i = 0; i < bodyRows.length; i++) {
+    rows.push(applyTotal(bodyRows[i]));
+  }
+  var lastRow = Math.max(sheet.getLastRow(), headerRow);
+  var start = headerRow + 1;
+  var spans = [];
+  if (lastRow >= start) {
+    var labels = sheet.getRange(start, 1, lastRow - headerRow, 2).getValues();
+    spans = personDaySpans(labels, name, date, start);
+  }
+  for (var extra = spans.length - 1; extra >= 1; extra--) {
+    sheet.deleteRows(spans[extra][0], spans[extra][1] - spans[extra][0] + 1);
+  }
+  if (!spans.length) {
+    if (!rows.length) {
+      return;
+    }
+    var at = Math.max(sheet.getLastRow(), headerRow) + 1;
+    var added = sheet.getRange(at, 1, rows.length, width);
+    added.setNumberFormat("@");
+    SpreadsheetApp.flush();
+    added.setValues(rows);
+    return;
+  }
+  var blockStart = spans[0][0];
+  var oldCount = spans[0][1] - blockStart + 1;
+  if (!rows.length) {
+    sheet.deleteRows(blockStart, oldCount);
+    return;
+  }
+  if (rows.length > oldCount) {
+    sheet.insertRowsAfter(spans[0][1], rows.length - oldCount);
+  } else if (rows.length < oldCount) {
+    sheet.deleteRows(blockStart + rows.length, oldCount - rows.length);
+  }
+  var block = sheet.getRange(blockStart, 1, rows.length, width);
+  block.setNumberFormat("@");
+  SpreadsheetApp.flush();
+  block.setValues(rows);
+}
+
+function writeWorkValues(values, dateText, fast) {
+  var sheet = workSheet(dateText);
+  var width = WORK_WIDTH;
+  var headerRow = 2;
+  if (!fast) {
+    sheet.getRange(headerRow, 1, 1, width).setValues([WORK_HEADER.slice()]);
+    sheet.getRange(headerRow, 1, 1, width).setNumberFormat("@");
+  }
   if (values.length > 1) {
     var body = values.slice(1);
     var range = sheet.getRange(headerRow + 1, 1, body.length, width);
     range.setNumberFormat("@");
-    SpreadsheetApp.flush();
-    range.setValues(body);
-    paintWorkRows(sheet, values);
+    if (!fast) {
+      SpreadsheetApp.flush();
+      range.setValues(body);
+      paintWorkRows(sheet, values);
+    } else {
+      range.setValues(body);
+    }
   }
   var oldLast = sheet.getLastRow();
   var endRow = headerRow + values.length - 1;
   if (oldLast > endRow) {
     var extra = sheet.getRange(endRow + 1, 1, oldLast - endRow, width);
     extra.clearContent();
-    extra.setBackground("#ffffff");
-    extra.setBorder(false, false, false, false, false, false);
+    if (!fast) {
+      extra.setBackground("#ffffff");
+      extra.setBorder(false, false, false, false, false, false);
+    }
   }
 }
