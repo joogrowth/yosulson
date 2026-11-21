@@ -88,6 +88,10 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-vis
 .chipbtn.writing[aria-pressed="true"]{background:#5f6368;color:#fff;border-color:#5f6368}
 .chipbtn.wait[aria-pressed="true"]{background:var(--warn);color:#fff;border-color:var(--warn)}
 .chipbtn.done[aria-pressed="true"]{background:var(--good);color:#fff;border-color:var(--good)}
+.pages{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:6px}
+.pages:not(:empty){margin-top:12px}
+.pages button{min-width:44px;min-height:44px}
+.pages button[aria-current="page"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
 .range.timefb{align-items:stretch}
 .range.timefb select{flex:1;min-width:0}
 .list{display:flex;flex-direction:column}
@@ -144,7 +148,12 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
   var PW_MIN = 4;
   var TIME_MINS = ['00', '10', '20', '30', '40', '50'];
 
-  var S = { token: '', role: '', rows: [], counts: { writing: 0, wait: 0, done: 0 }, filter: 'all', q: '', view: '' };
+  var PAGE_SIZE = 10;
+  var LIST_FILTERS = { writing: '견적작성중', wait: '견적의뢰', done: '견적완료', past: '지난기록' };
+  var SEOUL_DATE = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit'
+  });
+  var S = { token: '', role: '', rows: [], filter: 'writing', page: 1, q: '', view: '' };
 
   /* ───────── 작은 도구 ───────── */
   function $(sel, root) { return (root || document).querySelector(sel); }
@@ -633,11 +642,9 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     var i = -1;
     S.rows.forEach(function (r, k) { if (r.id === row.id) i = k; });
     if (i >= 0) S.rows[i] = row; else S.rows.push(row);
-    S.counts = countStatus(S.rows);
   }
   function removeLocalRow(id) {
     S.rows = S.rows.filter(function (r) { return r.id !== id; });
-    S.counts = countStatus(S.rows);
   }
   function confirmDeleteDraft(row, btn) {
     if (!row || !row.id) return;
@@ -662,7 +669,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     });
   }
   function refresh() {
-    return api('list').then(function (res) { S.rows = res.rows; S.counts = res.counts; });
+    return api('list').then(function (res) { S.rows = res.rows; });
   }
   function busy(btn, on, label) {
     if (!btn) return;
@@ -686,6 +693,9 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     return '';
   }
   function viewLogin(msg) {
+    S.filter = 'writing';
+    S.page = 1;
+    S.q = '';
     S.view = 'login';
     mount(authCard('배송견적', '<p class="muted">확인하는 중…</p>'));
     api('status').then(function (st) {
@@ -821,14 +831,14 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<div class="btns"><button class="btn" id="newDraft" type="button">+ 견적문의</button>' +
       '<button class="btn sub" id="reload" type="button">새로고침</button></div>' +
       '<div class="card"><input id="q" type="search" placeholder="이름 또는 전화번호로 검색" autocomplete="off" value="' + esc(S.q) + '">' +
-      '<div class="list" id="list"></div></div>');
+      '<div class="list" id="list"></div><nav class="pages" id="pages" aria-label="견적 목록 페이지"></nav></div>');
     bindTop();
     $('#newDraft').addEventListener('click', function () { viewDraft(null); });
     $('#reload').addEventListener('click', function () {
       var b = $('#reload'); busy(b, true, '불러오는 중…');
       refresh().then(function () { viewList(); toast('새로고침했습니다'); }).catch(function (e) { busy(b, false); fail(e); });
     });
-    $('#q').addEventListener('input', function (e) { S.q = e.target.value; drawList(); });
+    $('#q').addEventListener('input', function (e) { S.q = e.target.value; S.page = 1; drawList(); });
     drawList();
   }
   function matches(r, q) {
@@ -840,19 +850,64 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     if (digits.length >= 3 && String(r.phone || '').replace(/\D/g, '').indexOf(digits) >= 0) return true;
     return false;
   }
-  function drawList() {
-    var c = S.counts;
-    $('#chips').innerHTML =
-      '<button class="chipbtn writing" type="button" data-f="writing" aria-pressed="' + (S.filter === 'writing') + '">견적작성중 ' + (c.writing || 0) + '건</button>' +
-      '<button class="chipbtn wait" type="button" data-f="wait" aria-pressed="' + (S.filter === 'wait') + '">견적의뢰 ' + (c.wait || 0) + '건</button>' +
-      '<button class="chipbtn done" type="button" data-f="done" aria-pressed="' + (S.filter === 'done') + '">견적완료 ' + (c.done || 0) + '건</button>';
-    $all('#chips button').forEach(function (b) {
-      b.addEventListener('click', function () { S.filter = S.filter === b.dataset.f ? 'all' : b.dataset.f; drawList(); });
+  function listGroup(row, today) {
+    var status = canonStatus(row.status);
+    if (status === STATUS_WRITING) return 'writing';
+    if (status === STATUS_WAIT) return 'wait';
+    if (status === STATUS_DONE) {
+      return /^\d{4}-\d{2}-\d{2}$/.test(row.date) && row.date < today ? 'past' : 'done';
+    }
+  }
+  function drawPages(total) {
+    var nav = $('#pages');
+    var html = [];
+    if (total > 1) {
+      var previous = 0;
+      for (var page = 1; page <= total; page++) {
+        if (page !== 1 && page !== total && Math.abs(page - S.page) > 2) continue;
+        if (previous && page > previous + 1) html.push('<span aria-hidden="true">…</span>');
+        html.push('<button class="ghost" type="button" data-page="' + page + '" aria-label="' + page + ' 페이지"' +
+          (page === S.page ? ' aria-current="page"' : '') + '>' + page + '</button>');
+        previous = page;
+      }
+    }
+    nav.innerHTML = html.join('');
+    $all('#pages button').forEach(function (button) {
+      button.addEventListener('click', function () {
+        S.page = Number(button.dataset.page);
+        drawList();
+        $('#pages [aria-current="page"]').focus();
+      });
     });
-    var writings = S.rows.filter(function (r) { return r.status === STATUS_WRITING; }).sort(function (a, b) { return a.id < b.id ? -1 : 1; });
-    var waits = S.rows.filter(function (r) { return canonStatus(r.status) === STATUS_WAIT; }).sort(function (a, b) { return a.id < b.id ? -1 : 1; });
-    var dones = S.rows.filter(function (r) { return r.status === STATUS_DONE; }).sort(function (a, b) { return a.id < b.id ? 1 : -1; });
-    var rows = (S.filter === 'writing' ? writings : S.filter === 'wait' ? waits : S.filter === 'done' ? dones : writings.concat(waits, dones)).filter(function (r) { return matches(r, S.q); });
+  }
+  function drawList() {
+    var today = SEOUL_DATE.format(new Date());
+    var groups = { writing: [], wait: [], done: [], past: [] };
+    S.rows.forEach(function (row) {
+      var group = listGroup(row, today);
+      if (group) groups[group].push(row);
+    });
+    $('#chips').innerHTML = Object.keys(LIST_FILTERS).map(function (key) {
+      return '<button class="chipbtn ' + key + '" type="button" data-f="' + key + '" aria-pressed="' +
+        (S.filter === key) + '">' + LIST_FILTERS[key] + ' ' + groups[key].length + '건</button>';
+    }).join('');
+    $all('#chips button').forEach(function (button) {
+      button.addEventListener('click', function () {
+        if (S.filter === button.dataset.f) return;
+        S.filter = button.dataset.f;
+        S.page = 1;
+        drawList();
+        $('#chips [aria-pressed="true"]').focus();
+      });
+    });
+    var rows = groups[S.filter].filter(function (row) { return matches(row, S.q); });
+    var descending = S.filter === 'done' || S.filter === 'past';
+    rows.sort(function (a, b) { return descending ? b.id.localeCompare(a.id) : a.id.localeCompare(b.id); });
+    var totalPages = Math.ceil(rows.length / PAGE_SIZE);
+    S.page = Math.min(S.page, Math.max(1, totalPages));
+    drawPages(totalPages);
+    var offset = (S.page - 1) * PAGE_SIZE;
+    rows = rows.slice(offset, offset + PAGE_SIZE);
     var el = $('#list');
     if (!rows.length) { el.innerHTML = '<p class="muted">' + (S.rows.length ? '찾는 건이 없습니다.' : '아직 건이 없습니다. “+ 견적문의”로 시작하세요.') + '</p>'; return; }
     el.innerHTML = rows.map(function (r) {
