@@ -352,6 +352,7 @@ function naverTitleText_(row) {
   }
   var who = naverWho_(row);
   if (who) L.push('담당자: ' + who);
+  if (row.notes) L.push('', String(row.notes));
   return L.join('\n').replace(/\n+$/, '');
 }
 
