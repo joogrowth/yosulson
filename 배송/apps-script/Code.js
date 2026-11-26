@@ -33,7 +33,8 @@ var TOKEN_HOURS = 24;          // 마지막으로 쓴 때부터 24시간
 var PW_MIN = 4;                // 비밀번호 최소 글자 수
 var DATA_START = 3;            // 3행부터 데이터
 var TYPES = ['배송', '배송세팅', '출장', '반출장', '픽업'];
-var STATUS_WRITING = '견적작성중';
+var STATUS_WRITING = '견적문의';
+var STATUS_WRITING_OLD = '견적작성중';
 var STATUS_WAIT = '견적의뢰';
 var STATUS_WAIT_OLD = '견적대기';
 var STATUS_DONE = '견적완료';
@@ -863,12 +864,14 @@ function setup() {
   yearSheets_().forEach(function (sh) { writeHeaders_(sh); lookSheet_(sh); }); // 여러 번 실행해도 안전하다.
   var filled = fillCustomerAddresses_();
   var renamed = renameWaitStatus_();
+  var writingRenamed = renameWritingStatus();
   return {
     adminRegistered: adminRegistered_(),
     ownerRegistered: ownerRegistered_(),
     sheets: ss_().getSheets().map(function (s) { return s.getName(); }),
     customerAddressesUpdated: filled.updated,
-    waitRenamed: renamed.renamed
+    waitRenamed: renamed.renamed,
+    writingRenamed: writingRenamed.renamed
   };
 }
 
@@ -893,7 +896,55 @@ function renameWaitStatus_() {
   return { renamed: renamed };
 }
 
+// 편집기에서 직접 실행: 상태 칸의 옛 이름과 기존 드롭다운만 바꾼다. 반복 실행해도 된다.
+function renameWritingStatus() {
+  return withLock_(function () {
+    var col = colIndex_('status') + 1;
+    var renamed = 0;
+    var dropdownsUpdated = 0;
+    yearSheets_().forEach(function (sh) {
+      var height = sh.getMaxRows() - DATA_START + 1;
+      if (height < 1) return;
+      var statusRange = sh.getRange(DATA_START, col, height, 1);
+      var rules = statusRange.getDataValidations();
+      var changedRules = false;
+      rules.forEach(function (rowRules) {
+        var rule = rowRules[0];
+        if (!rule) return;
+        var criteria = rule.getCriteriaType();
+        var args = rule.getCriteriaValues();
+        var values;
+        if (criteria === SpreadsheetApp.DataValidationCriteria.VALUE_IN_LIST) {
+          values = args[0];
+        } else if (criteria === SpreadsheetApp.DataValidationCriteria.VALUE_IN_RANGE) {
+          values = [].concat.apply([], args[0].getValues());
+        } else return;
+        if (values.indexOf(STATUS_WRITING_OLD) < 0) return;
+        // 범위형 드롭다운도 이 상태 칸의 목록만 바꾼다. 원본 범위는 고치지 않는다.
+        var updated = values.map(canonStatus_).filter(function (v, index, all) {
+          return v !== '' && all.indexOf(v) === index;
+        });
+        var next = rule.copy().requireValueInList(updated, args[1]).build();
+        rowRules[0] = next;
+        changedRules = true;
+        dropdownsUpdated++;
+      });
+      if (changedRules) statusRange.setDataValidations(rules);
+      var last = sh.getLastRow();
+      if (last < DATA_START) return;
+      var vals = sh.getRange(DATA_START, col, last - DATA_START + 1, 1).getValues();
+      vals.forEach(function (row, i) {
+        if (String(row[0]) !== STATUS_WRITING_OLD) return;
+        sh.getRange(DATA_START + i, col).setValue(STATUS_WRITING);
+        renamed++;
+      });
+    });
+    return { renamed: renamed, dropdownsUpdated: dropdownsUpdated };
+  });
+}
+
 function canonStatus_(st) {
+  if (st === STATUS_WRITING_OLD || st === STATUS_WRITING) return STATUS_WRITING;
   if (st === STATUS_WAIT_OLD || st === STATUS_WAIT) return STATUS_WAIT;
   return st;
 }
@@ -1070,7 +1121,7 @@ function timeText_(v, label) {
 
 function cleanDraft_(d, opts) {
   opts = opts || {};
-  var loose = !!opts.loose; // 견적작성중: 빈칸 허용
+  var loose = !!opts.loose; // 견적문의: 빈칸 허용
   var o = {};
   o.sang = d.sang === '예' ? '예' : '아니오';
   o.type = line_(d.type, 20);
@@ -1190,7 +1241,7 @@ function finalize_(req) {
   });
 }
 
-// 상태만 바꾼다. 제원·견적글·복기는 그대로 둔다. (완료↔대기/작성중 되돌리기)
+// 상태만 바꾼다. 제원·견적글·복기는 그대로 둔다. (완료↔의뢰/문의 되돌리기)
 function setStatus_(req) {
   var id = String(req.id || '');
   var status = String(req.status || '');
@@ -1209,7 +1260,7 @@ function setStatus_(req) {
 // 고객리스트: 이름 + 소속이 같으면 같은 고객. 연락처·주소가 있으면 최신 값으로 고친다. 메모는 건드리지 않는다.
 // 주소는 견적문의의 장소(place)를 그대로 넣는다.
 function upsertCustomer_(d) {
-  if (!d || !d.name) return; // 작성중 빈 이름은 고객목록에 넣지 않는다
+  if (!d || !d.name) return; // 견적문의의 빈 이름은 고객목록에 넣지 않는다
   var sh = ensureCustomerSheet_();
   var last = sh.getLastRow();
   var rows = last >= 2 ? sh.getRange(2, 1, last - 1, CUSTOMER_HEADERS.length).getValues() : [];
