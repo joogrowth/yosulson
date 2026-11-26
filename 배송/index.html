@@ -136,6 +136,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
    */
   var API_URL = 'https://script.google.com/macros/s/AKfycbwK1uXP1m0CYyb9cxTiRcDIIQVh3LJcPkWvg45gUn-GBkf7u6j_GGp7lxbGmFRy7goguw/exec';
   var DEMO = !API_URL;
+  var showSang = false; // 표시 여부는 목록 응답으로 받는다. 설정은 Code.js의 SHOW_SANG 한 곳에서 한다.
 
   var TYPES = ['배송', '배송세팅', '출장', '반출장', '픽업'];
   var STATUS_WRITING = '견적문의';
@@ -287,7 +288,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
   function rangeJoin(a, b) { return a ? (b ? a + ' ~ ' + b : a) : ''; }
   function rangeSplit(s) { var p = String(s || '').split(' ~ '); return [(p[0] || '').trim(), (p[1] || '').trim()]; }
   function titleLine(d) {
-    var typePart = d.type ? '[' + (d.sang === '예' ? '상담' : '') + d.type + '] ' : '';
+    var typePart = d.type ? '[' + (showSang && d.sang === '예' ? '상담' : '') + d.type + '] ' : '';
     var name = d.name || '(이름 없음)';
     return typePart + name + (d.org ? ' / ' + d.org : '');
   }
@@ -394,7 +395,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
 
   function rowToDraft(r) {
     return {
-      sang: r.sang || '예', type: r.type || '', name: r.name || '', org: r.org || '', date: r.date || '',
+      sang: r.sang == null ? '예' : r.sang, type: r.type || '', name: r.name || '', org: r.org || '', date: r.date || '',
       arrive: r.arrive || '', eventTime: r.eventTime || '', place: r.place || '', contactName: r.contactName || '',
       phone: r.phone || '', notes: r.notes || ''
     };
@@ -404,6 +405,12 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       labor11: c.labor[0], labor12: c.labor[1], labor13: c.labor[2], vehicle: c.vehicle, fuelCost: c.fuelCost,
       tollTotal: c.tollTotal, upkeep: c.upkeep, total11: c.totals[0], total12: c.totals[1], total13: c.totals[2]
     };
+  }
+  // 저장된 본문은 보존하고, 첫 줄의 종류만 현재 상담 표시 설정에 맞춘다.
+  function displayedQuoteText(row) {
+    return String(row.text || '').replace(/^\[(?:상담)?(배송세팅|배송|출장|반출장|픽업)\]/, function (_, type) {
+      return '[' + (showSang && row.sang === '예' ? '상담' : '') + type + ']';
+    });
   }
 
   /* ───────── 서버 요청 ───────── */
@@ -672,7 +679,10 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     });
   }
   function refresh() {
-    return api('list').then(function (res) { S.rows = res.rows; });
+    return api('list').then(function (res) {
+      S.rows = res.rows;
+      showSang = res.showSang === true;
+    });
   }
   function busy(btn, on, label) {
     if (!btn) return;
@@ -964,7 +974,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
   /* ───────── 견적문의 입력 ───────── */
   function draftFormHTML(d) {
     var a = rangeSplit(d.arrive), e = rangeSplit(d.eventTime);
-    return '<div class="row2"><label class="sw"><input type="checkbox" id="sang"' + (d.sang === '예' ? ' checked' : '') + '><span class="track"></span><span>상담</span></label>' +
+    return '<div class="row2"><label class="sw"' + (showSang ? '' : ' style="display:none"') + '><input type="checkbox" id="sang" data-sang="' + esc(d.sang) + '"' + (d.sang === '예' ? ' checked' : '') + '><span class="track"></span><span>상담</span></label>' +
       '<div class="field grow"><label for="type">종류</label><select id="type">' +
       '<option value=""' + (d.type ? '' : ' selected') + '>선택</option>' +
       TYPES.map(function (t) { return '<option value="' + t + '"' + (d.type === t ? ' selected' : '') + '>' + t + '</option>'; }).join('') +
@@ -981,7 +991,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
   }
   function readDraft() {
     return {
-      sang: $('#sang').checked ? '예' : '아니오',
+      sang: showSang ? ($('#sang').checked ? '예' : '아니오') : $('#sang').dataset.sang,
       type: $('#type').value.trim(),
       name: $('#name').value.trim(),
       org: $('#org').value.trim(),
@@ -1096,10 +1106,10 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       naverCalBtn(true) +
       '<div id="delDraftBox"></div></div>');
     bindTop();
-    $('#finalPre').textContent = r.text || '';
+    $('#finalPre').textContent = displayedQuoteText(r);
     $('#back').addEventListener('click', viewList);
-    $('#copy').addEventListener('click', function () { copyText(r.text || ''); });
-    bindKakaoShare(function () { return r.text || ''; });
+    $('#copy').addEventListener('click', function () { copyText(displayedQuoteText(r)); });
+    bindKakaoShare(function () { return displayedQuoteText(r); });
     $('#editDone').addEventListener('click', function () { viewSpecs(r); });
     function revert(status, btnId, msg) {
       var btn = $('#' + btnId);
@@ -1239,7 +1249,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     bindKakaoShare(function () {
       if (canonStatus(row.status) === STATUS_DONE) {
         var done = recompute();
-        return (done && done.text) || row.text || '';
+        return (done && done.text) || displayedQuoteText(row);
       }
       return requestShareText(readDraft());
     });

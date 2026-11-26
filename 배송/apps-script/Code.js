@@ -33,6 +33,7 @@ var TOKEN_HOURS = 24;          // 마지막으로 쓴 때부터 24시간
 var PW_MIN = 4;                // 비밀번호 최소 글자 수
 var DATA_START = 3;            // 3행부터 데이터
 var TYPES = ['배송', '배송세팅', '출장', '반출장', '픽업'];
+var SHOW_SANG = false; // true로 바꾸고 기존 웹앱을 새 버전 배포하면 상담 스위치·표시가 복원된다.
 var STATUS_WRITING = '견적문의';
 var STATUS_WRITING_OLD = '견적작성중';
 var STATUS_WAIT = '견적의뢰';
@@ -325,7 +326,7 @@ function naverIcal_(row) {
 }
 
 function naverTitle_(row) {
-  var typePart = row.type ? '[' + (row.sang === '예' ? '상담' : '') + row.type + '] ' : '';
+  var typePart = row.type ? '[' + (SHOW_SANG && row.sang === '예' ? '상담' : '') + row.type + '] ' : '';
   return typePart + (row.name || '(이름 없음)') + (row.org ? ' / ' + row.org : '');
 }
 
@@ -1102,7 +1103,7 @@ function list_(role) {
   var rows = [];
   yearSheets_().forEach(function (sh) { rows = rows.concat(readRows_(sh)); });
   var out = rows.map(function (r) { return adminView_(r); });
-  return { rows: out, counts: countStatus_(rows) };
+  return { rows: out, counts: countStatus_(rows), showSang: SHOW_SANG };
 }
 
 function str_(v, max) {
@@ -1205,6 +1206,7 @@ function saveDraft_(role, req) {
       obj = {};
       obj.id = nextId_(sh, currentYear_());
     }
+    if (!SHOW_SANG && id) d.sang = obj.sang; // 숨김 중에는 기존 상담 값을 덮어쓰지 않는다.
     DRAFT_KEYS.forEach(function (k) { obj[k] = d[k]; });
     obj.status = status;
     writeRow_(sh, row, obj);
@@ -1235,6 +1237,7 @@ function finalize_(req) {
     var loc = findRow_(id);
     if (!loc) fail_('notfound', '해당 건을 찾을 수 없습니다.');
     var obj = loc.obj; // 복기 등 시트에서만 고르는 값은 그대로 남는다.
+    if (!SHOW_SANG) d.sang = obj.sang;
     DRAFT_KEYS.forEach(function (k) { obj[k] = d[k]; });
     SPEC_KEYS.forEach(function (k) { obj[k] = sp[k]; });
     CALC_KEYS.forEach(function (k) { obj[k] = c[k]; });
