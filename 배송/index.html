@@ -138,7 +138,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
   var DEMO = !API_URL;
 
   var TYPES = ['배송', '배송세팅', '출장', '반출장', '픽업'];
-  var STATUS_WRITING = '견적작성중';
+  var STATUS_WRITING = '견적문의';
   var STATUS_WAIT = '견적의뢰';
   var STATUS_DONE = '견적완료';
   var WAGES = [11000, 12000, 13000];
@@ -149,7 +149,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
   var TIME_MINS = ['00', '10', '20', '30', '40', '50'];
 
   var PAGE_SIZE = 10;
-  var LIST_FILTERS = { writing: '견적작성중', wait: '견적의뢰', done: '견적완료', past: '지난기록' };
+  var LIST_FILTERS = { writing: '견적문의', wait: '견적의뢰', done: '견적완료', past: '지난기록' };
   var SEOUL_DATE = new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit'
   });
@@ -468,7 +468,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     rows.forEach(function (r) {
       if (r.status === STATUS_DONE) counts.done++;
       else if (canonStatus(r.status) === STATUS_WAIT) counts.wait++;
-      else if (r.status === STATUS_WRITING) counts.writing++;
+      else if (canonStatus(r.status) === STATUS_WRITING) counts.writing++;
     });
     return counts;
   }
@@ -548,7 +548,8 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       return out;
     }
     if (b.action === 'saveDraft') {
-      var st = b.status === STATUS_WRITING || b.status === STATUS_WAIT ? b.status : '';
+      var st = canonStatus(b.status);
+      if (st !== STATUS_WRITING && st !== STATUS_WAIT) st = '';
       if (!st) return bad('bad', '저장 상태가 맞지 않습니다.');
       if (st === STATUS_WAIT) {
         if (TYPES.indexOf((b.draft && b.draft.type) || '') < 0) return bad('bad', '종류를 목록에서 골라 주세요.');
@@ -588,6 +589,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       return out;
     }
     if (b.action === 'setStatus') {
+      b.status = canonStatus(b.status);
       if ([STATUS_WRITING, STATUS_WAIT, STATUS_DONE].indexOf(b.status) < 0) return bad('bad', '상태가 맞지 않습니다.');
       var rs = rows.filter(function (x) { return x.id === b.id; })[0];
       if (!rs) return bad('notfound', '해당 건을 찾을 수 없습니다.');
@@ -623,6 +625,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     if (c) c.addEventListener('click', viewOwnerAccount);
   }
   function canonStatus(st) {
+    if (st === '견적작성중' || st === STATUS_WRITING) return STATUS_WRITING;
     if (st === '견적대기' || st === STATUS_WAIT) return STATUS_WAIT;
     return st || '';
   }
@@ -1010,7 +1013,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<h1 id="draftTitle">견적문의' + (row ? ' 수정 ' + statusChip(row.status) : '') + '</h1>' +
       '<div class="card">' + draftFormHTML(d) + '</div>' +
       '<div class="card" id="draftActions"><h2>견적문의 글</h2><pre class="msg" id="preview"></pre>' +
-      '<div class="btns"><button class="btn sub" id="saveWriting" type="button">작성중 저장</button>' +
+      '<div class="btns"><button class="btn sub" id="saveWriting" type="button">문의 저장</button>' +
       '<button class="btn" id="saveWait" type="button">견적의뢰</button></div>' +
       '<div class="btns"><button class="btn sub" id="copy" type="button">복사</button>' +
       kakaoShareBtn() + '</div>' +
@@ -1070,7 +1073,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
         back(res.row);
       }).catch(function (e) { busy(btn, false); fail(e); });
     }
-    $('#saveWriting').addEventListener('click', function () { saveAs(STATUS_WRITING, 'saveWriting', '견적작성중으로 저장했습니다'); });
+    $('#saveWriting').addEventListener('click', function () { saveAs(STATUS_WRITING, 'saveWriting', '견적문의로 저장했습니다'); });
     $('#saveWait').addEventListener('click', function () { saveAs(STATUS_WAIT, 'saveWait', '견적의뢰로 보냈습니다', true); });
     bindNaverCal(function () { return row && row.id; });
     var delBtn = $('#delDraft');
@@ -1089,7 +1092,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<button class="btn sub" id="editDone" type="button">수정</button>' +
       '<button class="btn sub" id="delDraft" type="button">삭제</button></div>' +
       '<div class="btns"><button class="btn sub" id="toWait" type="button">견적의뢰로</button>' +
-      '<button class="btn sub" id="toWriting" type="button">작성중으로</button></div>' +
+      '<button class="btn sub" id="toWriting" type="button">문의로</button></div>' +
       naverCalBtn(true) +
       '<div id="delDraftBox"></div></div>');
     bindTop();
@@ -1108,7 +1111,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       }).catch(function (e) { busy(btn, false); fail(e); });
     }
     $('#toWait').addEventListener('click', function () { revert(STATUS_WAIT, 'toWait', '견적의뢰로 되돌렸습니다'); });
-    $('#toWriting').addEventListener('click', function () { revert(STATUS_WRITING, 'toWriting', '견적작성중으로 되돌렸습니다'); });
+    $('#toWriting').addEventListener('click', function () { revert(STATUS_WRITING, 'toWriting', '견적문의로 되돌렸습니다'); });
     $('#delDraft').addEventListener('click', function () { confirmDeleteDraft(r, $('#delDraft')); });
     bindNaverCal(function () { return r.id; });
   }
@@ -1241,7 +1244,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       return requestShareText(readDraft());
     });
     bindNaverCal(function () { return row.id; });
-    // 대기 화면: 문의(작성중)로 돌리기 / 완료에서 수정 중: 대기로 돌리기. 문의·제원 값은 남긴다.
+    // 의뢰 화면: 문의로 돌리기 / 완료에서 수정 중: 의뢰로 돌리기. 문의·제원 값은 남긴다.
     $('#midStatus').addEventListener('click', function () {
       var dd = readDraft();
       var toWriting = row.status !== STATUS_DONE;
@@ -1257,7 +1260,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       busy(btn, true);
       api('saveDraft', { id: row.id, draft: dd, status: status }).then(function (res) {
         upsertRow(res.row);
-        toast(toWriting ? '견적문의(작성중)로 돌렸습니다' : '견적의뢰로 돌렸습니다');
+        toast(toWriting ? '견적문의로 되돌렸습니다' : '견적의뢰로 돌렸습니다');
         return refresh().then(function () { openRow(row.id); });
       }).catch(function (e) { busy(btn, false); fail(e); });
     });
