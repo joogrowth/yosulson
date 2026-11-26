@@ -14,7 +14,7 @@
  *   TOKEN_SECRET 은 처음 로그인할 때 자동으로 만들어진다.
  *   네이버 동의: NAVER_CLIENT_ID, NAVER_CLIENT_SECRET 은 스크립트 속성에만 둔다.
  *   동의가 끝나면 NAVER_ACCESS_TOKEN, NAVER_REFRESH_TOKEN, NAVER_EXPIRES_AT 가 같은 곳에 저장된다.
- *   견적의뢰·견적완료의 네이버 버튼은 대표님·팀장님 모두 누른다. 대표님은 네이버에 로그인하지 않는다.
+ *   견적문의·견적의뢰·견적완료의 네이버 버튼은 대표님·팀장님 모두 누른다. 대표님은 네이버에 로그인하지 않는다.
  *   일정은 요술손일정(26년)에만 넣는다. 캘린더 번호는 스크립트 속성 NAVER_CALENDAR_ID. 없거나 내 캘린더 값이면 넣지 않는다.
  *   관리자 비밀번호를 잊었을 때: 프로젝트 설정 > 스크립트 속성에서 ADMIN_HASH, ADMIN_SALT 를 지우면 등록 화면이 다시 나온다.
  *
@@ -223,8 +223,7 @@ function naverAccess_(props) {
   return String(body.access_token);
 }
 
-// 견적의뢰·견적완료 건을 네이버 캘린더에 넣는다.
-// 한 번 올라간 건은 다시 올리지 못한다. 고치려면 캘린더에서 지우고 다시 누른다.
+// 세 단계는 별개 일정으로 넣는다. 같은 단계의 재등록은 캘린더에서 지운 뒤에 한다.
 function naverCalendar_(req) {
   var id = String(req.id || '');
   if (!id) fail_('bad', '건을 지정해 주세요.');
@@ -232,7 +231,7 @@ function naverCalendar_(req) {
   if (!loc) fail_('notfound', '해당 건을 찾을 수 없습니다.');
   var row = loc.obj;
   var st = canonStatus_(row.status);
-  if (st !== STATUS_WAIT && st !== STATUS_DONE) fail_('bad', '견적의뢰 또는 견적완료에서만 넣을 수 있습니다.');
+  if (STATUSES.indexOf(st) < 0) fail_('bad', '견적문의, 견적의뢰, 견적완료에서만 넣을 수 있습니다.');
   if (!row.date || !/^\d{4}-\d{2}-\d{2}$/.test(String(row.date))) fail_('bad', '날짜를 먼저 적어 주세요.');
   var props = props_();
   var cal = String(props.getProperty('NAVER_CALENDAR_ID') || '');
@@ -290,7 +289,13 @@ function naverFailKind_(httpCode, body) {
 }
 
 function naverIcal_(row) {
-  var uid = 'yosulson-' + String(row.id).replace(/[^A-Za-z0-9-]/g, '');
+  var stages = {};
+  stages[STATUS_WRITING] = { suffix: 'inquiry', color: '🟡' };
+  stages[STATUS_WAIT] = { suffix: 'request', color: '🟠' };
+  stages[STATUS_DONE] = { suffix: 'done', color: '🟢' };
+  var stage = stages[canonStatus_(row.status)];
+  if (!stage) fail_('bad', '견적문의, 견적의뢰, 견적완료에서만 넣을 수 있습니다.');
+  var uid = 'yosulson-' + String(row.id).replace(/[^A-Za-z0-9-]/g, '') + '-' + stage.suffix;
   var ymd = String(row.date).replace(/-/g, '');
   // 제목란에만 글을 넣는다. 시간·장소·메모 칸은 쓰지 않는다. 날짜만 잡아 일정이 그날에 있게 한다.
   return ''
@@ -314,7 +319,7 @@ function naverIcal_(row) {
     + 'UID:' + uid + '\n'
     + 'DTSTART;VALUE=DATE:' + ymd + '\n'
     + 'DTEND;VALUE=DATE:' + naverNextDay_(ymd) + '\n'
-    + 'SUMMARY:' + naverEscIcal_(naverTitleText_(row)) + '\n'
+    + 'SUMMARY:' + naverEscIcal_(stage.color + ' ' + naverTitleText_(row)) + '\n'
     + 'END:VEVENT\n'
     + 'END:VCALENDAR';
 }

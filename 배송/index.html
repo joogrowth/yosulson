@@ -601,7 +601,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
     if (b.action === 'naverCalendar') {
       var nr = rows.filter(function (x) { return x.id === b.id; })[0];
       if (!nr) return bad('notfound', '해당 건을 찾을 수 없습니다.');
-      if (canonStatus(nr.status) !== STATUS_WAIT && nr.status !== STATUS_DONE) return bad('bad', '견적의뢰 또는 견적완료에서만 넣을 수 있습니다.');
+      if ([STATUS_WRITING, STATUS_WAIT, STATUS_DONE].indexOf(canonStatus(nr.status)) < 0) return bad('bad', '견적문의, 견적의뢰, 견적완료에서만 넣을 수 있습니다.');
       if (!nr.date) return bad('bad', '날짜를 먼저 적어 주세요.');
       out.demo = true;
       return out;
@@ -1017,7 +1017,7 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       '<button class="btn" id="saveWait" type="button">견적의뢰</button></div>' +
       '<div class="btns"><button class="btn sub" id="copy" type="button">복사</button>' +
       kakaoShareBtn() + '</div>' +
-      naverCalBtn(row && canonStatus(row.status) === STATUS_WAIT) +
+      naverCalBtn(row && [STATUS_WRITING, STATUS_WAIT, STATUS_DONE].indexOf(canonStatus(row.status)) >= 0) +
       (row ? '<div class="btns"><button class="btn sub" id="delDraft" type="button">삭제</button></div>' : '') +
       '<div id="delDraftBox"></div></div>');
     bindTop();
