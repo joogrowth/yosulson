@@ -320,7 +320,7 @@ function naverIcal_(row) {
     + 'UID:' + uid + '\n'
     + 'DTSTART;VALUE=DATE:' + ymd + '\n'
     + 'DTEND;VALUE=DATE:' + naverNextDay_(ymd) + '\n'
-    + 'SUMMARY:' + naverEscIcal_(stage.color + ' ' + naverTitleText_(row)) + '\n'
+    + 'SUMMARY:' + naverEscIcal_(stage.color + naverTitleText_(row)) + '\n'
     + 'END:VEVENT\n'
     + 'END:VCALENDAR';
 }
