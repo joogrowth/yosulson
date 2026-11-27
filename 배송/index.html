@@ -42,6 +42,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 .btn.small{min-height:36px;padding:6px 12px;font-size:13px}
 .ghost{background:transparent;border:1px solid var(--line);border-radius:10px;padding:6px 10px;min-height:36px;font-size:13px}
 .btns{display:flex;gap:6px;flex-wrap:nowrap}
+.btns[hidden]{display:none}
 .btns > *{flex:1;min-width:0;padding-left:8px;padding-right:8px;font-size:13px;white-space:nowrap}
 .btns.sharebtns{flex-wrap:wrap}
 .btns.sharebtns > *{flex:1 1 calc(50% - 6px)}
@@ -1059,32 +1060,36 @@ pre.msg{margin:0;background:var(--box);border:1px solid var(--line);border-radiu
       box.insertAdjacentHTML('beforebegin', '<div class="btns"><button class="btn sub" id="delDraft" type="button">삭제</button></div>');
       $('#delDraft').addEventListener('click', function () { confirmDeleteDraft(row, $('#delDraft')); });
     }
-    function saveAs(status, btnId, msg, stay) {
+    var actions = $('#draftActions');
+    var saving = false;
+    function saveAs(status, btnId, msg) {
+      if (saving) return;
       var dd = readDraft();
       var err = status === STATUS_WAIT ? draftError(dd) : draftTimeError();
       if (err) { toast(err); return; }
       var btn = $('#' + btnId);
+      var other = $(btnId === 'saveWriting' ? '#saveWait' : '#saveWriting');
+      saving = true;
       busy(btn, true);
+      other.disabled = true;
       api('saveDraft', { id: row ? row.id : '', draft: dd, status: status }).then(function (res) {
-        upsertRow(res.row);
+        row = res.row;
+        upsertRow(row);
+        if (!actions.isConnected) return;
+        $('#draftTitle').innerHTML = '견적문의 수정 ' + statusChip(row.status);
+        showDelete();
+        $('#naverCalRow').hidden = false;
         toast(msg);
-        if (stay) {
-          row = res.row;
-          busy(btn, false);
-          $('#draftTitle').innerHTML = '견적문의 수정 ' + statusChip(row.status);
-          showDelete();
-          if (canonStatus(row.status) === STATUS_WAIT) {
-            var nrow = $('#naverCalRow');
-            if (nrow) nrow.hidden = false;
-          }
-          return;
-        }
-        if (back === viewList) return refresh().then(function () { viewList(); });
-        back(res.row);
-      }).catch(function (e) { busy(btn, false); fail(e); });
+      }).catch(function (e) {
+        if (actions.isConnected) toast(e.message || '처리하지 못했습니다.');
+      }).finally(function () {
+        saving = false;
+        busy(btn, false);
+        other.disabled = false;
+      });
     }
-    $('#saveWriting').addEventListener('click', function () { saveAs(STATUS_WRITING, 'saveWriting', '견적문의로 저장했습니다'); });
-    $('#saveWait').addEventListener('click', function () { saveAs(STATUS_WAIT, 'saveWait', '견적의뢰로 보냈습니다', true); });
+    $('#saveWriting').addEventListener('click', function () { saveAs(STATUS_WRITING, 'saveWriting', '저장됐습니다'); });
+    $('#saveWait').addEventListener('click', function () { saveAs(STATUS_WAIT, 'saveWait', '견적의뢰로 보냈습니다'); });
     bindNaverCal(function () { return row && row.id; });
     var delBtn = $('#delDraft');
     if (delBtn) delBtn.addEventListener('click', function () { confirmDeleteDraft(row, delBtn); });
